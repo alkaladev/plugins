@@ -1,6 +1,20 @@
-const { BotPlugin } = require("strange-sdk");
+const { BotPlugin } = require('strange-sdk');
 
-module.exports = new BotPlugin({
-    ownerOnly: false,
-    baseDir: __dirname, // Ya no necesitamos path.join porque estamos en la raíz
-});
+class ResponderPlugin extends BotPlugin {
+    constructor() {
+        super('responder');
+    }
+
+    async onReady() {
+        console.log('¡Plugin Responder listo para contestar!');
+    }
+
+    async onMessage(message) {
+        // Si el mensaje es "!hola", el bot responde
+        if (message.content.toLowerCase() === '!hola') {
+            await message.reply('¡Hola Jorge! El plugin de GitHub está funcionando correctamente. 🚀');
+        }
+    }
+}
+
+module.exports = new ResponderPlugin();
