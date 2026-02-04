@@ -1,0 +1,12 @@
+{
+    "TITLE": "Imagen",
+    "DESCRIPTION": "Comandos de imagen",
+
+    "CONFIG": "Configuración",
+    "EMBED": "Color del Embed",
+    "EMBED_DESC": "Cambia el color de los mensajes embed",
+    "API_URL": "URL de Strange API",
+    "API_URL_DESC": "Cambia la URL de la Strange API",
+    "API_KEY": "Clave de Strange API",
+    "API_KEY_DESC": "Añade tu clave (API Key) de Strange API aquí"
+}

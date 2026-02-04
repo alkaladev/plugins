@@ -1,0 +1,12 @@
+{
+    "TITLE": "Moderación",
+    "DESCRIPTION": "Gestiona los ajustes de moderación de tu servidor.",
+
+    "SETTINGS_TITLE": "Ajustes",
+    "CH_TITLE": "Canal de Registros",
+    "CH_DESC": "El canal donde se enviarán todas las acciones de moderación.",
+    "MAXWARN_TITLE": "Máximo de Avisos",
+    "MAXWARN_DESC": "El número máximo de avisos que un usuario puede tener antes de que se tome la acción.",
+    "MAXWARN_ACTION_TITLE": "Acción por Avisos Máximos",
+    "MAXWARN_ACTION_DESC": "La acción a tomar cuando un usuario alcanza el número máximo de avisos."
+}

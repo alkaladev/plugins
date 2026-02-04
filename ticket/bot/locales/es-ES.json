@@ -1,0 +1,139 @@
+{
+    "TITLE": "Tickets",
+    "DESCRIPTION": "Gestiona el sistema de tickets",
+
+    "HANDLER": {
+        "TICKET_ID": "ID del Ticket",
+        "CATEGORY_LABEL": "Categoría",
+        "SERVER_LABEL": "Servidor",
+        "OWNER_LABEL": "Abierto por",
+
+        "CLOSE_PERMS": "No se puede cerrar el ticket, faltan permisos. ¡Contacta con el administrador!",
+        "CLOSE_LOG_EMBED_TITLE": "Ticket Cerrado",
+        "CLOSE_LOG_EMBED_REASON": "Razón",
+        "CLOSE_LOG_EMBED_OPENED": "Abierto por",
+        "CLOSE_LOG_EMBED_CLOSED": "Cerrado por",
+        "CLOSE_LOG_BTN": "Transcripción",
+        "CLOSE_FAIL": "¡Error al cerrar el ticket, ocurrió un problema!",
+        "CLOSE_ALL_REASON": "Cierre forzado de todos los tickets abiertos",
+
+        "OPEN_PERMS": "No puedo crear el canal del ticket, falta el permiso de `Gestionar Canales`. ¡Contacta con el administrador!",
+        "ALREADY_OPEN": "¡Ya tienes un ticket abierto!",
+        "TOO_MANY": "¡Hay demasiados tickets abiertos! Por favor, inténtalo más tarde.",
+        "OPEN_MENU_REPLY": "Por favor, elige una categoría de ticket en el menú desplegable.",
+        "OPEN_MENU_PLACEHOLDER": "Selecciona la categoría del ticket",
+        "OPEN_MENU_TIMEOUT": "La creación del ticket expiró. Por favor, inténtalo de nuevo.",
+        "OPEN_MENU_PROCESS": "Creando ticket...",
+        "OPEN_EMBED_TITLE": "Ticket {ticket:number}",
+        "OPEN_EMBED_DESC": "Hola {member:mention},\n¡Gracias por contactarnos! Por favor, espera pacientemente a que un miembro del staff te asista.",
+        "OPEN_EMBED_FOOTER": "Puedes cerrar tu ticket en cualquier momento pulsando el botón de abajo",
+        "OPEN_CLOSE_BTN": "Cerrar Ticket",
+        "OPEN_CREATE_FAIL": "¡Error al crear el canal del ticket, ocurrió un problema!",
+        "OPEN_SUCCESS": "¡Ticket creado! 🔥",
+        "OPEN_FAILED": "¡Error al crear el canal del ticket, ocurrió un problema!",
+        "OPEN_LOG_TITLE": "Ticket Creado",
+        "OPEN_LOG_BTN": "Ver Canal"
+    },
+
+    "CATEGORY": {
+        "DESCRIPTION": "gestiona las categorías de tickets",
+
+        "SUB_LIST_DESC": "listar todas las categorías de tickets",
+
+        "SUB_ADD_DESC": "añadir una nueva categoría de ticket",
+        "SUB_ADD_CAT_NAME": "el nombre de la categoría",
+        "SUB_ADD_CAT_DESC": "la descripción de la categoría",
+
+        "SUB_REMOVE_DESC": "eliminar una categoría de ticket",
+        "SUB_REMOVE_CAT_NAME": "el nombre de la categoría",
+
+        "SUB_CONFIG_DESC": "configurar categorías de tickets",
+        "SUB_CONFIG_CAT_NAME": "el nombre de la categoría",
+
+        "LIST_EMPTY": "No se encontraron categorías de tickets.",
+        "LIST_EMBED_TITLE": "Categorías de Tickets",
+
+        "ADD_NO_NAME": "¡Uso no válido! No se proporcionó el nombre de la categoría.",
+        "ADD_EXISTS": "Ya existe una categoría de ticket con el nombre {{category}}.",
+        "ADD_SUCCESS": "Categoría de ticket `{{category}}` añadida con éxito.",
+
+        "REMOVE_NOT_EXISTS": "No existe una categoría de ticket con el nombre {{category}}.",
+        "REMOVE_SUCCESS": "Categoría de ticket `{{category}}` eliminada con éxito.",
+
+        "CONFIG_NOT_EXISTS": "No existe una categoría de ticket con el nombre {{category}}.",
+        "CONFIG_CONTENT": "¿Qué te gustaría configurar para la categoría `{{category}}`?",
+        "CONFIG_BTN_MEM_ROLE": "Roles de Miembros",
+        "CONFIG_BTN_STAFF_ROLE": "Roles de Staff",
+        "CONFIG_BTN_MSG": "Mensaje de Apertura",
+        "CONFIG_MODAL_MEM_ROLE_TITLE": "Configurar Roles de Miembros",
+        "CONFIG_MODAL_MEM_ROLE_ADD": "Añadir ID de nuevo rol de miembro",
+        "CONFIG_MODAL_MEM_ROLE_REMOVE": "Eliminar ID de rol de miembro existente",
+        "CONFIG_MODAL_STAFF_ROLE_TITLE": "Configurar Roles de Staff",
+        "CONFIG_MODAL_STAFF_ROLE_ADD": "Añadir ID de nuevo rol de staff",
+        "CONFIG_MODAL_STAFF_ROLE_REMOVE": "Eliminar ID de rol de staff existente",
+        "CONFIG_MODAL_MSG_TITLE": "Configurar Mensaje de Apertura",
+        "CONFIG_MODAL_MSG_EMBED_TITLE": "Título del Embed",
+        "CONFIG_MODAL_MSG_EMBED_DESC": "Descripción del Embed",
+        "CONFIG_MODAL_MSG_EMBED_FOOTER": "Pie de página del Embed",
+        "CONFIG_ROLE_NOT_EXIST": "No existe un rol con la ID {{role}}.",
+        "CONFIG_MEM_ROLE_SUCCESS": "Configuración de roles de miembros actualizada con éxito.",
+        "CONFIG_STAFF_ROLE_SUCCESS": "Configuración de roles de staff actualizada con éxito.",
+        "CONFIG_MSG_SUCCESS": "Configuración del mensaje de apertura actualizada con éxito."
+    },
+
+    "TICKET": {
+        "DESCRIPTION": "varios comandos de tickets",
+
+        "SUB_SETUP_DESC": "configurar un nuevo mensaje de ticket",
+        "SUB_SETUP_CHANNEL": "el canal donde se enviará el mensaje de creación de tickets",
+
+        "SUB_LOG_DESC": "configurar canal de registros para tickets",
+        "SUB_LOG_CHANNEL": "el canal donde se enviarán los registros de tickets",
+
+        "SUB_LIMIT_DESC": "establecer el número máximo de tickets abiertos simultáneos",
+        "SUB_LIMIT_AMOUNT": "número máximo de tickets",
+
+        "SUB_CLOSE_DESC": "cierra el ticket [usar solo en canales de ticket]",
+
+        "SUB_CLOSEALL_DESC": "cierra todos los tickets abiertos",
+
+        "SUB_ADD_DESC": "añadir un usuario al ticket [usar solo en canales de ticket]",
+        "SUB_ADD_USER": "el usuario a añadir al ticket",
+
+        "SUB_REMOVE_DESC": "eliminar un usuario del ticket [usar solo en canales de ticket]",
+        "SUB_REMOVE_USER": "el usuario a eliminar del ticket",
+
+        "SETUP_PERMS": "Me falta el permiso de `Gestionar Canales` para crear canales de tickets",
+        "SETUP_TIMEOUT": "No se recibió respuesta, cancelando configuración",
+        "SETUP_BTN": "Configurar Mensaje",
+        "SETUP_MSG_CONTENT": "Por favor, usa el botón de abajo para configurar el mensaje del ticket",
+        "SETUP_MODAL_TITLE": "Configuración de Tickets",
+        "SETUP_MODAL_LABEL_TITLE": "Título del Embed",
+        "SETUP_MODAL_LABEL_DESC": "Descripción del Embed",
+        "SETUP_MODAL_LABEL_FOOTER": "Pie de página del Embed",
+        "SETUP_EMBED_TITLE": "Ticket de Soporte",
+        "SETUP_EMBED_DESC": "Por favor, usa el botón de abajo para crear un ticket",
+        "SETUP_EMBED_FOOTER": "¡Solo puedes tener 1 ticket abierto a la vez!",
+        "SETUP_EMBED_BTN": "Abrir Ticket",
+        "SETUP_DONE": "¡Listo! Mensaje de ticket creado",
+
+        "NOT_TICKET_CHANNEL": "¡Uy! Este comando solo puede usarse dentro de un canal de ticket",
+
+        "LOG_CHANNEL_PERMS": "¡Uy! No tengo permiso para enviar embeds a {{channel}}",
+        "LOG_CHANNEL_SUCCESS": "¡Configuración guardada! Los registros de tickets se enviarán a {{channel}}",
+
+        "LIMIT_TOO_LOW": "¡Uy! El límite debe ser al menos 5",
+        "LIMIT_SUCCESS": "Configuración guardada. Ahora puedes tener un máximo de `{{limit}}` tickets abiertos",
+
+        "CLOSE_REASON": "Cerrado por un moderador",
+        "CLOSE_PERMS": "No tengo permiso para cerrar tickets",
+        "CLOSE_ERROR": "Ocurrió un error al cerrar el ticket",
+
+        "CLOSE_ALL": "¡Listo! Éxitos: `{{success}}` | Fallidos: `{{failed}}`",
+
+        "DONE": "¡Hecho!",
+        "ADD_ERROR": "Error al añadir al usuario al ticket",
+        "INVALID_ID": "¡Uy! Necesitas introducir una ID de usuario o rol válida",
+        "REMOVE_ERROR": "Error al eliminar al usuario del ticket"
+    }
+}

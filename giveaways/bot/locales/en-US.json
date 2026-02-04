@@ -1,0 +1,106 @@
+{
+    "TITLE": "Gestor de Sorteos",
+    "DESCRIPTION": "Gestiona los sorteos en tu servidor",
+
+    "CMD_DESC": "comandos de sorteos",
+
+    "SUB_START_DESC": "iniciar un sorteo",
+    "SUB_START_CHANNEL_DESC": "el canal donde iniciar el sorteo",
+    "SUB_START_DURATION_DESC": "la duración del sorteo (ej. 1d, 1h, 1m, 1s)",
+    "SUB_START_PRIZE_DESC": "el premio del sorteo",
+    "SUB_START_WINNERS_DESC": "el número de ganadores del sorteo",
+    "SUB_START_ROLES_DESC": "los roles que pueden participar (separados por coma)",
+    "SUB_START_HOST_DESC": "el anfitrión del sorteo",
+
+    "SUB_PAUSE_DESC": "pausar un sorteo",
+    "SUB_PAUSE_MESSAGE_ID_DESC": "el ID del mensaje del sorteo",
+
+    "SUB_RESUME_DESC": "reanudar un sorteo",
+    "SUB_RESUME_MESSAGE_ID_DESC": "el ID del mensaje del sorteo",
+
+    "SUB_END_DESC": "finalizar un sorteo",
+    "SUB_END_MESSAGE_ID_DESC": "el ID del mensaje del sorteo",
+
+    "SUB_REROLL_DESC": "volver a sortear (reroll)",
+    "SUB_REROLL_MESSAGE_ID_DESC": "el ID del mensaje del sorteo",
+
+    "SUB_LIST_DESC": "listar todos los sorteos",
+
+    "SUB_EDIT_NAME": "editar",
+    "SUB_EDIT_DESC": "editar un sorteo",
+    "SUB_EDIT_MESSAGE_ID_DESC": "el ID del mensaje del sorteo",
+    "SUB_EDIT_DURATION_DESC": "minutos a añadir a la duración del sorteo",
+    "SUB_EDIT_PRIZE_DESC": "el nuevo premio para el sorteo",
+    "SUB_EDIT_WINNERS_DESC": "el nuevo número de ganadores",
+
+    "INVALID_MESSAGE_ID": "No proporcionaste un ID de mensaje válido.",
+    "MEMBER_PERMS": "Necesitas el permiso `Gestionar Mensajes` para usar este comando.",
+    "NOT_FOUND": "No pude encontrar un sorteo con ese ID de mensaje: {{messageId}}",
+
+    "EDIT_BTN_LABEL": "Editar Sorteo",
+    "EDIT_BTN_CONTENT": "Por favor, haz clic en el botón de abajo para editar el sorteo",
+    "EDIT_NO_RESPONSE": "¡No se recibió respuesta! Actualización del sorteo cancelada.",
+    "EDIT_MODAL_TITLE": "Actualización de Sorteo",
+    "EDIT_MODAL_DURATION": "¿Cuánta duración deseas añadir al sorteo?",
+    "EDIT_MODAL_PRIZE": "¿Nuevo premio para el sorteo?",
+    "EDIT_MODAL_WINNERS": "¿Nuevo número de ganadores?",
+    "EDIT_CREATING": "Actualizando sorteo...",
+    "EDIT_INVALID_DURATION": "No proporcionaste una duración válida. Actualización cancelada.",
+    "EDIT_INVALID_WINNERS": "No proporcionaste un número de ganadores válido. Actualización cancelada.",
+    "EDIT_SUCCESS": "¡Éxito! ¡Sorteo editado!",
+    "EDIT_ERROR": "Ocurrió un error al intentar editar el sorteo.",
+
+    "ALREADY_ENDED": "Ese sorteo ya ha finalizado.",
+    "END_SUCCESS": "¡Éxito! ¡Sorteo finalizado!",
+    "END_ERROR": "Ocurrió un error al intentar finalizar el sorteo.",
+
+    "NO_GIVEAWAYS": "No hay sorteos activos en este servidor.",
+    "LISTING_ERROR": "Ocurrió un error al listar los sorteos.",
+
+    "ALREADY_PAUSED": "Ese sorteo ya está pausado.",
+    "PAUSE_SUCCESS": "¡Éxito! ¡Sorteo pausado!",
+    "PAUSE_ERROR": "Ocurrió un error al intentar pausar el sorteo.",
+
+    "STILL_RUNNING": "No puedes volver a sortear un sorteo que aún está activo.",
+    "REROLL_SUCCESS": "¡Éxito! ¡Nuevo ganador sorteado!",
+    "REROLL_ERROR": "Ocurrió un error al intentar volver a sortear.",
+
+    "ALREADY_RESUMED": "Ese sorteo no está pausado.",
+    "RESUME_SUCCESS": "¡Éxito! ¡Sorteo reanudado!",
+    "RESUME_ERROR": "Ocurrió un error al intentar reanudar el sorteo.",
+
+    "START_CHANNEL": "¡Uso incorrecto! Proporciona un canal para iniciar el sorteo.",
+    "START_INVALID_CHANNEL": "¡Uy! No mencionaste un canal válido.",
+    "START_BTN_LABEL": "Configurar Sorteo",
+    "START_BTN_CONTENT": "Haz clic en el botón de abajo para configurar un nuevo sorteo",
+    "START_NO_RESPONSE": "La configuración se ha cancelado. No proporcionaste una respuesta válida.",
+    "START_MODEL_TITLE": "Configuración de Sorteo",
+    "START_MODAL_DURATION": "¿Cuál es la duración?",
+    "START_MODAL_PRIZE": "¿Cuál es el premio?",
+    "START_MODAL_WINNERS": "¿Cuántos ganadores habrá?",
+    "START_MODAL_ROLES": "¿IDs de los roles que pueden participar?",
+    "START_MODAL_HOST": "¿ID de usuario del anfitrión del sorteo?",
+    "START_CREATING": "Configurando sorteo...",
+    "START_CHANNEL_TYPE": "Solo puedes configurar sorteos en canales de texto.",
+    "START_CHANNEL_PERMS": "¡Uy, no puedo iniciar el sorteo! Necesito {{permissions}} en {{channel}}",
+    "START_INVALID_DURATION": "No proporcionaste una duración válida. Configuración cancelada.",
+    "START_INVALID_WINNERS": "No proporcionaste un número de ganadores válido. Configuración cancelada.",
+    "START_INVALID_HOST": "No proporcionaste un ID de usuario válido. Configuración cancelada.",
+    "START_SUCCESS": "¡Éxito! ¡Sorteo iniciado en {{channel}}!",
+    "START_ERROR": "Ocurrió un error al intentar iniciar el sorteo.",
+
+    "MESSAGES": {
+        "giveaway": "🎉 **SORTEO** 🎉",
+        "giveawayEnded": "🎉 **SORTEO FINALIZADO** 🎉",
+        "title": "{{prize}}",
+        "inviteToParticipate": "Reacciona con 🎁 para participar",
+        "winMessage": "¡Felicidades, {{winners}}! ¡Habéis ganado **{{prize}}**!\n{{messageURL}}",
+        "drawing": "Sorteo: {{timestamp}}",
+        "dropMessage": "¡Sé el primero en reaccionar con 🎁 para ganar!",
+        "embedFooter": "{{winnerCount}} ganador(es)",
+        "noWinner": "Sorteo cancelado, no hay participantes válidos.",
+        "winners": "Ganador(es)",
+        "endedAt": "Finalizó el",
+        "hostedBy": "Organizado por: {{host}}"
+    }
+}

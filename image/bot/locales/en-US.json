@@ -1,0 +1,25 @@
+{
+    "TITLE": "Imagen",
+    "DESCRIPTION": "Comandos de imagen",
+
+    "FILTER_DESCRIPTION": "añade un filtro a la imagen proporcionada",
+    "FILTER_NAME": "el filtro a aplicar",
+    "FILTER_USER": "el usuario a cuyo avatar se le aplicará el filtro",
+    "FILTER_LINK": "el enlace de la imagen a la que se le aplicará el filtro",
+    "GEN_DESCRIPTION": "genera un meme con la imagen proporcionada",
+    "GEN_NAME": "el meme a generar",
+    "GEN_USER": "el usuario a cuyo avatar se le generará el meme",
+    "GEN_LINK": "el enlace de la imagen a la que se le generará el meme",
+    "OVERLAY_DESCRIPTION": "añade una capa (overlay) sobre la imagen proporcionada",
+    "OVERLAY_NAME": "la capa a aplicar",
+    "OVERLAY_USER": "el usuario a cuyo avatar se le aplicará la capa",
+    "OVERLAY_LINK": "el enlace de la imagen a la que se le aplicará la capa",
+
+    "FILTER_FAIL": "Error al aplicar el filtro de imagen",
+    "GEN_FAIL": "Error al generar la imagen",
+    "OVERLAY_FAIL": "Error al aplicar la capa",
+
+    "INVALID_FILTER": "Filtro no válido. Por favor, usa un nombre de filtro correcto.",
+    "INVALID_GENERATOR": "Generador no válido. Por favor, usa un nombre de generador correcto.",
+    "INVALID_OVERLAY": "Capa no válida. Por favor, usa un nombre de capa correcto."
+}

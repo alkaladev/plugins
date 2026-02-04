@@ -1,0 +1,120 @@
+{
+    "TITLE": "Utilidad",
+    "DESCRIPTION": "Varios comandos de utilidad para hacerte la vida más fácil",
+
+    "BIGEMOJI": {
+        "DESCRIPTION": "agranda un emoji",
+        "EMOJI_DESC": "emoji a agrandar",
+        "EMBED_TITLE": "❯ Emoji Grande ❮",
+        "INVALID_EMOJI": "No es un emoji válido"
+    },
+
+    "COVID": {
+        "DESCRIPTION": "obtener estadísticas de covid para un país",
+        "COUNTRY_DESC": "nombre del país para obtener estadísticas",
+        "NOT_FOUND": "No se encontró ningún país con ese nombre",
+        "CASES_TOTAL": "Casos Totales",
+        "CASES_TODAY": "Casos Hoy",
+        "DEATHS_TOTAL": "Muertes Totales",
+        "DEATHS_TODAY": "Muertes Hoy",
+        "RECOVERED": "Recuperados",
+        "ACTIVE": "Activos",
+        "CRITICAL": "Críticos",
+        "CASES_PER_MILLION": "Casos por Millón",
+        "DEATHS_PER_MILLION": "Muertes por Millón",
+        "LAST_UPDATED": "Última actualización el {{date}}"
+    },
+
+    "GITHUB": {
+        "DESCRIPTION": "muestra estadísticas de Github de un usuario",
+        "USERNAME_DESC": "nombre de usuario de Github",
+        "NOT_FOUND": "No se encontró ningún usuario con ese nombre",
+
+        "NOT_PROVIDED": "No proporcionado",
+
+        "USER_INFO": "Información de Usuario",
+        "NAME": "Nombre Real",
+        "LOCATION": "Ubicación",
+        "ID": "ID de Github",
+        "WEBSITE": "Sitio Web",
+
+        "STATS": "Estadísticas Sociales",
+        "FOLLOWERS": "Seguidores",
+        "FOLLOWING": "Siguiendo"
+    },
+
+    "PASTE": {
+        "DESCRIPTION": "Pega algo en sourceb.in",
+        "TITLE_DESC": "título para tu contenido",
+        "CONTENT_DESC": "contenido a publicar",
+        "ERROR": "❌ Algo salió mal",
+        "EMBED_TITLE": "Enlaces del pegado",
+        "NORMAL": "Normal",
+        "RAW": "Bruto (Raw)"
+    },
+
+    "POKEDEX": {
+        "DESCRIPTION": "muestra información de un Pokémon",
+        "POKEMON_DESC": "nombre del Pokémon",
+        "NOT_FOUND": "Pokémon no encontrado",
+        "EMBED_TITLE": "Pokédex {{name}}",
+        "ID": "ID",
+        "NAME": "Nombre",
+        "SPECIES": "Especie",
+        "TYPE": "Tipo(s)",
+        "ABILITIES_NORMAL": "Habilidades (Normales)",
+        "ABILITIES_HIDDEN": "Habilidad (Oculta)",
+        "EGG_GROUP": "Grupo(s) Huevo",
+        "GENDER": "Género",
+        "HEIGHT": "Altura",
+        "WEIGHT": "Peso",
+        "EVOLUTION": "Etapa Evolutiva Actual",
+        "EVOLUTION_LINE": "Línea Evolutiva",
+        "IS_STARTER": "¿Es inicial?",
+        "IS_LEGENDARY": "¿Es legendario?",
+        "IS_MYTHICAL": "¿Es mítico?",
+        "IS_GENERATION": "¿Generación?"
+    },
+
+    "PROXIES": {
+        "DESCRIPTION": "Obtén una lista de proxies",
+        "TYPE_DESC": "tipo de proxy",
+        "FETCHING": "Obteniendo proxies. Por favor, espera...",
+        "ERROR": "Error al obtener los proxies",
+        "EMPTY": "No se pudieron obtener datos. Inténtalo más tarde",
+        "SUCCESS": "Proxies obtenidos con éxito"
+    },
+
+    "URBAN": {
+        "DESCRIPTION": "busca en el Urban Dictionary",
+        "WORD_DESC": "la palabra que quieres buscar",
+        "NO_MATCH": "No se encontró nada que coincida con `{{word}}`",
+        "AUTHOR": "Autor",
+        "ID": "ID",
+        "RATING": "Likes / Dislikes",
+        "EXAMPLE": "Ejemplo",
+        "CREATED": "Creado el {{date}}"
+    },
+
+    "WEATHER": {
+        "DESCRIPTION": "obten información del clima",
+        "PLACE_DESC": "país/ciudad para obtener el clima",
+        "NOT_FOUND": "Lo siento, no pude encontrar información climática para {{place}}.",
+        "PLACE": "Ubicación",
+        "REGION": "Región",
+        "COUNTRY": "País",
+        "WEATHER": "Estado del Clima",
+        "DATE": "Fecha",
+        "TIME": "Hora",
+        "TEMPERATURE": "Temperatura",
+        "CLOUD_COVER": "Nubosidad",
+        "WIND_SPEED": "Velocidad del Viento",
+        "WIND_DIRECTION": "Dirección del Viento",
+        "PRESSURE": "Presión",
+        "PRECIPITATION": "Precipitación",
+        "HUMIDITY": "Humedad",
+        "VISIBILITY": "Visibilidad",
+        "UV_INDEX": "Índice UV",
+        "LAST_CHECKED": "Última comprobación a las {{time}} GMT"
+    }
+}

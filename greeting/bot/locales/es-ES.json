@@ -1,0 +1,99 @@
+{
+    "TITLE": "Bienvenidas",
+    "DESCRIPTION": "Gestiona los mensajes de bienvenida y despedida de tu servidor",
+
+    "AUTOROLE": {
+        "DESCRIPTION": "configura el rol que se otorga cuando un miembro se une al servidor",
+        "SUB_ADD": "configurar el rol que se otorgará al unirse un miembro",
+        "SUB_ADD_ROLE": "el rol a otorgar",
+        "SUB_ADD_ROLE_ID": "el ID del rol a otorgar",
+        "SUB_REMOVE": "desactivar el autorol",
+
+        "MISSING_ROLE": "Por favor, proporciona un rol o un ID de rol",
+        "ROLE_NOT_FOUND": "No se encontraron roles que coincidan con tu búsqueda",
+        "EVERYONE_ROLE": "No puedes establecer `@everyone` como autorol",
+        "MISSING_PERM": "No tengo el permiso de `Gestionar Roles`",
+        "ROLE_PERM": "No tengo permisos suficientes para asignar este rol",
+        "MANAGED_ROLE": "¡Uy! Este rol está gestionado por una integración externa",
+        "ENABLED": "¡Autorole activado! Los usuarios recibirán el rol `{{role}}` al unirse",
+        "DISABLED": "El autorol ha sido desactivado"
+    },
+
+    "WELCOME": {
+        "DESCRIPTION": "Configura el mensaje de bienvenida para tu servidor",
+        "SUB_STATUS": "Activa o desactiva el mensaje de bienvenida",
+        "SUB_STATUS_STATUS": "activar o desactivar",
+        "SUB_CHANNEL": "Establece el canal para enviar el mensaje de bienvenida",
+        "SUB_PREVIEW": "Vista previa del mensaje de bienvenida",
+        "SUB_DESC": "Configura la descripción del mensaje de bienvenida",
+        "SUB_THUMBNAIL": "Activa o desactiva la miniatura en el mensaje de bienvenida",
+        "SUB_COLOR": "Establece el color del mensaje de bienvenida",
+        "SUB_IMAGE": "Establece la imagen para el mensaje de bienvenida",
+        "SUB_MSG": "Configura el mensaje de bienvenida",
+        "SUB_MSG_CHANNEL": "el canal para enviar el mensaje de bienvenida",
+        "SUB_MSG_DESC": "la descripción del mensaje de bienvenida",
+        "SUB_MSG_THUMBNAIL": "activar o desactivar miniatura",
+        "SUB_MSG_COLOR": "el color del mensaje de bienvenida",
+        "SUB_MSG_FOOTER": "el pie de página del mensaje de bienvenida",
+        "SUB_MSG_IMAGE": "la imagen del mensaje de bienvenida",
+
+        "INVALID_STATUS": "Estado no válido. El valor debe ser `on/off`",
+        "INVALID_CONTENT": "¡Argumentos insuficientes! Proporciona un contenido válido",
+        "INVALID_THUMBNAIL": "Estado no válido. El valor debe ser `on/off`",
+        "INVALID_COLOR": "Color no válido. Debe ser un código de color hex válido",
+        "INVALID_IMAGE": "URL de imagen no válida. Por favor, proporciona una URL válida",
+
+        "WELCOME_DISABLED": "El mensaje de bienvenida no está activado en este servidor",
+
+        "CHANNEL_NOT_CONFIG": "No hay ningún canal configurado para enviar bienvenidas",
+        "PREVIEW_SENT": "Vista previa de bienvenida enviada a {{channel}}",
+
+        "ENABLED": "¡Configuración guardada! El mensaje de bienvenida ahora está activado",
+        "DISABLED": "¡Configuración guardada! El mensaje de bienvenida ahora está desactivado",
+
+        "CHANNEL_NO_PERMS": "¡Uy! ¿No puedo enviar saludos a ese canal? Necesito los permisos de `Escribir mensajes` e `Insertar enlaces` en {{channel}}",
+        "CHANNEL_SET": "¡Configuración guardada! Los mensajes de bienvenida se enviarán a {{channel}}",
+
+        "CONFIG_UPDATED": "¡Configuración guardada! Mensaje de bienvenida actualizado",
+        "CONFIG_SAVED": "¡Configuración guardada! El mensaje de bienvenida se enviará a {{channel}}"
+    },
+
+    "FAREWELL": {
+        "DESCRIPTION": "Configura el mensaje de despedida para tu servidor",
+        "SUB_STATUS": "Activa o desactiva el mensaje de despedida",
+        "SUB_STATUS_STATUS": "activar o desactivar",
+        "SUB_CHANNEL": "Establece el canal para enviar el mensaje de despedida",
+        "SUB_PREVIEW": "Vista previa del mensaje de despedida",
+        "SUB_DESC": "Configura la descripción del mensaje de despedida",
+        "SUB_THUMBNAIL": "Activa o desactiva la miniatura en el mensaje de despedida",
+        "SUB_COLOR": "Establece el color del mensaje de despedida",
+        "SUB_IMAGE": "Establece la imagen para el mensaje de despedida",
+        "SUB_MSG": "Configura el mensaje de despedida",
+        "SUB_MSG_CHANNEL": "el canal para enviar el mensaje de despedida",
+        "SUB_MSG_DESC": "la descripción del mensaje de despedida",
+        "SUB_MSG_THUMBNAIL": "activar o desactivar miniatura",
+        "SUB_MSG_COLOR": "el color del mensaje de despedida",
+        "SUB_MSG_FOOTER": "el pie de página del mensaje de despedida",
+        "SUB_MSG_IMAGE": "la imagen del mensaje de despedida",
+
+        "INVALID_STATUS": "Estado no válido. El valor debe ser `on/off`",
+        "INVALID_CONTENT": "¡Argumentos insuficientes! Proporciona un contenido válido",
+        "INVALID_THUMBNAIL": "Estado no válido. El valor debe ser `on/off`",
+        "INVALID_COLOR": "Color no válido. Debe ser un código de color hex válido",
+        "INVALID_IMAGE": "URL de imagen no válida. Por favor, proporciona una URL válida",
+
+        "FAREWELL_DISABLED": "El mensaje de despedida no está activado en este servidor",
+
+        "CHANNEL_NOT_CONFIG": "No hay ningún canal configurado para enviar despedidas",
+        "PREVIEW_SENT": "Vista previa de despedida enviada a {{channel}}",
+
+        "ENABLED": "¡Configuración guardada! El mensaje de despedida ahora está activado",
+        "DISABLED": "¡Configuración guardada! El mensaje de despedida ahora está desactivado",
+
+        "CHANNEL_NO_PERMS": "¡Uy! ¿No puedo enviar saludos a ese canal? Necesito los permisos de `Escribir mensajes` e `Insertar enlaces` en {{channel}}",
+        "CHANNEL_SET": "¡Configuración guardada! Los mensajes de despedida se enviarán a {{channel}}",
+
+        "CONFIG_UPDATED": "¡Configuración guardada! Mensaje de despedida actualizado",
+        "CONFIG_SAVED": "¡Configuración guardada! El mensaje de despedida se enviará a {{channel}}"
+    }
+}

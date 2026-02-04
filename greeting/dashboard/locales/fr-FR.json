@@ -1,0 +1,16 @@
+{
+    "TITLE": "Salutations",
+    "DESCRIPTION": "Gérer les messages d'accueil pour votre serveur",
+
+    "WELCOME_TITLE": "Configuration de bienvenue",
+    "WELCOME_PLACEHOLDER": "Bienvenue sur le serveur {member:name} 🎉",
+
+    "FAREWELL_TITLE": "Configuration d'adieu",
+    "FAREWELL_PLACEHOLDER": "Au revoir {member:name} 👋",
+
+    "CHANNEL_TITLE": "Chaîne",
+    "CHANNEL_DESC": "Le canal où le message sera envoyé",
+
+    "AUTOROLE_TITLE": "Rôle à attribuer",
+    "AUTOROLE_DESC": "Le rôle qui sera attribué aux utilisateurs lorsqu'ils rejoindront le serveur"
+}

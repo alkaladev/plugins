@@ -1,0 +1,82 @@
+{
+    "TITLE": "Configuración",
+    "DESCRIPTION": "Configuración principal de la aplicación",
+
+    "HANDLER": {
+        "PLUGIN_DISABLED": "Este plugin está desactivado por el administrador del servidor",
+        "CMD_DISABLED": "Este comando está desactivado por el administrador del servidor",
+        "CMD_NOT_FOUND": "Comando no encontrado",
+        "OWNER_ONLY": "Este comando solo está disponible para el dueño del bot",
+        "USER_PERMISSIONS": "Necesitas los siguientes permisos para ejecutar este comando: {{permissions}}",
+        "BOT_PERMISSIONS": "Necesito los siguientes permisos para ejecutar este comando: {{permissions}}",
+        "COOLDOWN": "¡Estás en tiempo de espera! Por favor, espera {{time}} segundos",
+        "ERROR": "Ocurrió un error al ejecutar este comando"
+    },
+
+    "HELP": {
+        "DESCRIPTION": "menú de ayuda de comandos",
+        "PLUGIN_DESC": "nombre del plugin",
+        "COMMAND_DESC": "nombre del comando",
+
+        "PLUGIN_NOT_FOUND": "No se encontró ningún plugin que coincida",
+        "COMMAND_NOT_FOUND": "No se encontró ningún comando que coincida",
+        "NOT_FOUND": "No se encontró ningún plugin o comando coincidente",
+
+        "MENU_DESC": "Ver comandos del plugin {{plugin}}",
+        "MENU_PLACEHOLDER": "Selecciona el plugin para el cual necesitas ayuda",
+        "EMPTY_CATEGORY": "No hay comandos en este plugin",
+
+        "CMD_DESC": "Descripción",
+        "CMD_SUBCOMMANDS": "Subcomandos",
+        "PLUGIN_EMBED_FOOTER": "Página {{page}} de {{pages}}. Escribe {{prefix}}help <comando> para más información"
+    },
+
+    "PING": {
+        "DESCRIPTION": "muestra la latencia actual del bot con los servidores de Discord",
+        "TITLE": "🏓 Pong",
+        "RESPONSE": "🏓 Pong : `{{ping}}ms`",
+        "MESSAGE_LATENCY": "📨 Latencia de Mensaje",
+        "RESPONSE_TIME": "⚡ Tiempo de Respuesta",
+        "API_LATENCY": "🌐 Latencia de la API"
+    },
+
+    "PLUGIN": {
+        "DESCRIPTION": "comandos de gestión de plugins",
+        "SUB_LIST": "listar todos los plugins",
+        "SUB_INFO": "obtener información sobre un plugin",
+        "SUB_STATUS": "gestionar el estado de un plugin",
+
+        "LIST_EMBED_TITLE": "Lista de Plugins Disponibles",
+        "LIST_EMBED_FOOTER": "Total: {{count}}",
+        "ENABLED": "Activado",
+        "DISABLED": "Desactivado",
+
+        "INFO_MISSING_PLUGIN": "Falta el nombre del plugin",
+        "NOT_FOUND": "No se encontró ningún plugin con el nombre: {{plugin}}",
+        "INFO_EMBED_TITLE": "Información del Plugin: {{plugin}}",
+        "INFO_EMBED_DESC": "**Nombre:** {{name}}\n**Versión:** {{version}}\n**Estado:** {{status}}\n**Comandos de Prefijo:** {{prefixCmds}}\n**Comandos Slash:** {{slashCmds}}",
+
+        "STATUS_SELECT_PLACEHOLDER": "Plugins Disponibles",
+        "STATUS_SELECT_PROMPT": "Selecciona/Deselecciona los plugins que quieras activar/desactivar",
+        "STATUS_SELECT_TIMEOUT": "¡Tiempo agotado! No realizaste ninguna selección",
+        "STATUS_SELECT_PROCESSING": "Procesando tu selección...",
+        "STATUS_SELECT_SUCCESS": "Se han activado/desactivado los plugins seleccionados correctamente",
+
+        "SUB_ENABLE": "activar un plugin",
+        "SUB_DISABLE": "desactivar un plugin"
+    },
+
+    "LANG": {
+        "DESCRIPTION": "establece el idioma del bot",
+        "NEW_LANG": "nuevo idioma",
+        "INVALID_LANG": "¡Uy! `{{lang}}` no es un idioma válido.\nIdiomas disponibles: `{{langChoices}}`",
+        "SUCCESS": "¡Éxito! El idioma se ha establecido en `{{lang}}`"
+    },
+
+    "PREFIX": {
+        "DESCRIPTION": "establece un nuevo prefijo para este servidor",
+        "NEW_PREFIX": "nuevo prefijo a establecer",
+        "TOO_LONG": "¡El prefijo es demasiado largo! Debe tener 2 caracteres o menos.",
+        "SUCCESS": "El nuevo prefijo se ha establecido en `{{prefix}}`"
+    }
+}

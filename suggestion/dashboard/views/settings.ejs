@@ -1,0 +1,282 @@
+<section class="border-border bg-bg-panel rounded-lg border p-4 shadow-sm">
+  <form
+    x-data="{
+    formData: {
+      upvote_emoji: '<%= settings.upvote_emoji %>',
+      downvote_emoji: '<%= settings.downvote_emoji %>',
+      default_ch: '<%= settings.channel_id %>',
+      default_embed: '<%= settings.default_embed %>',
+      approved_ch: '<%= settings.approved_channel %>',
+      approved_embed: '<%= settings.approved_embed %>',
+      rejected_ch: '<%= settings.rejected_channel %>',
+      rejected_embed: '<%= settings.rejected_embed %>',
+      staff_roles: <%= JSON.stringify(settings.staff_roles) %>
+    },
+    saving: false,
+    async submitForm() {
+      this.saving = true;
+      try {
+        const response = await fetch(window.location.href, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(this.formData)
+        });
+        
+        if (!response.ok) throw new Error('Failed to update settings');
+        Alpine.store('toast').show('<%=tr(`SETTINGS_SAVE`)%>', 'success');
+      } catch (error) {
+        Alpine.store('toast').show('<%=tr(`SETTINGS_SAVE_ERROR`)%>', 'error');
+      } finally {
+        this.saving = false;
+      }
+    }
+  }"
+    @submit.prevent="submitForm">
+    <!-- START: Card Body -->
+
+    <!-- START: ROW 1 -->
+    <div class="mb-3">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
+        <!-- START: Column 1 (Upvote Emoji) -->
+        <div>
+          <div class="mb-2">
+            <label for="upvote_emoji" class="text-text text-sm font-semibold"
+              ><%= tr("suggestion:UPVOTE_TITLE") %></label
+            >
+            <div class="text-text-muted text-sm font-normal"><%= tr("suggestion:UPVOTE_DESC") %></div>
+          </div>
+          <input
+            type="text"
+            x-model="formData.upvote_emoji"
+            name="upvote_emoji"
+            maxlength="2"
+            id="upvote_emoji"
+            class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 shadow-sm sm:text-sm"
+            required />
+        </div>
+        <!-- END: Column 1 -->
+
+        <!-- START: Column 2 (Downvote Emoji) -->
+        <div>
+          <div class="mb-2">
+            <label for="downvote_emoji" class="text-text text-sm font-semibold"
+              ><%= tr("suggestion:DOWNVOTE_TITLE") %></label
+            >
+            <div class="text-text-muted text-sm font-normal"><%= tr("suggestion:DOWNVOTE_DESC") %></div>
+          </div>
+          <input
+            type="text"
+            x-model="formData.downvote_emoji"
+            name="downvote_emoji"
+            maxlength="2"
+            id="downvote_emoji"
+            class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 shadow-sm sm:text-sm"
+            required />
+        </div>
+        <!-- END: Column 2 -->
+      </div>
+    </div>
+    <!-- END: ROW 1 -->
+
+    <!-- START: ROW 2 -->
+    <div class="mb-3">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
+        <!-- START: Column 1 (Default Channel) -->
+        <div>
+          <div class="mb-2">
+            <label for="default_ch" class="text-text text-sm font-semibold"
+              ><%= tr("suggestion:DEFAULT_CH_TITLE") %></label
+            >
+            <div class="text-text-muted text-sm font-normal"><%= tr("suggestion:DEFAULT_CH_DESC") %></div>
+          </div>
+          <select
+            x-model="formData.default_ch"
+            name="default_ch"
+            id="default_ch"
+            class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm">
+            <option value="" selected disabled><%= tr("CHANNEL_SELECT") %></option>
+            <% channels.map((ch) => { %>
+            <option value="<%= ch.id %>"><%= ch.name %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <!-- START: Column 2 (Default Embed) -->
+        <div>
+          <div class="mb-2">
+            <label for="default_embed" class="text-text text-sm font-semibold"
+              ><%= tr("suggestion:DEFAULT_EMBED_TITLE") %></label
+            >
+            <div class="text-text-muted text-sm font-normal"><%= tr("suggestion:DEFAULT_EMBED_DESC") %></div>
+          </div>
+          <input
+            type="color"
+            x-model="formData.default_embed"
+            name="default_embed"
+            id="default_embed"
+            class="focus:border-primary focus:ring-primary border-border bg-bg-panel text-text block h-10 w-full rounded-lg border p-0.5 shadow-sm sm:text-sm"
+            required />
+        </div>
+      </div>
+    </div>
+    <!-- END: ROW 2 -->
+
+    <!-- START: ROW 3 -->
+    <div class="mb-3">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
+        <!-- START: Column 1 (Approved Channel) -->
+        <div>
+          <div class="mb-2">
+            <label for="approved_ch" class="text-text text-sm font-semibold"
+              ><%= tr("suggestion:APPROVED_CH_TITLE") %></label
+            >
+            <div class="text-text-muted text-sm font-normal"><%= tr("suggestion:APPROVED_CH_DESC") %></div>
+          </div>
+          <select
+            x-model="formData.approved_ch"
+            name="approved_ch"
+            id="approved_ch"
+            class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm">
+            <option value="" selected disabled><%= tr("CHANNEL_SELECT") %></option>
+            <% channels.map((ch) => { %>
+            <option value="<%= ch.id %>"><%= ch.name %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <!-- START: Column 2 (Approved Embed) -->
+        <div>
+          <div class="mb-2">
+            <label for="approved_embed" class="text-text text-sm font-semibold"
+              ><%= tr("suggestion:APPROVED_EMBED_TITLE") %></label
+            >
+            <div class="text-text-muted text-sm font-normal"><%= tr("suggestion:APPROVED_EMBED_DESC") %></div>
+          </div>
+          <input
+            type="color"
+            x-model="formData.approved_embed"
+            name="approved_embed"
+            id="approved_embed"
+            class="focus:border-primary focus:ring-primary border-border bg-bg-panel text-text block h-10 w-full rounded-lg border p-0.5 shadow-sm sm:text-sm"
+            required />
+        </div>
+      </div>
+    </div>
+    <!-- END: ROW 3 -->
+
+    <!-- START: ROW 4 -->
+    <div class="mb-3">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
+        <!-- START: Column 1 (Rejected Channel) -->
+        <div>
+          <div class="mb-2">
+            <label for="rejected_ch" class="text-text text-sm font-semibold"
+              ><%= tr("suggestion:REJECTED_CH_TITLE") %></label
+            >
+            <div class="text-text-muted text-sm font-normal"><%= tr("suggestion:REJECTED_CH_DESC") %></div>
+          </div>
+          <select
+            x-model="formData.rejected_ch"
+            name="rejected_ch"
+            id="rejected_ch"
+            class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm">
+            <option value="" selected disabled><%= tr("CHANNEL_SELECT") %></option>
+            <% channels.map((ch) => { %>
+            <option value="<%= ch.id %>"><%= ch.name %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <!-- START: Column 2 (Rejected Embed) -->
+        <div>
+          <div class="mb-2">
+            <label for="rejected_embed" class="text-text text-sm font-semibold"
+              ><%= tr("suggestion:REJECTED_EMBED_TITLE") %></label
+            >
+            <div class="text-text-muted text-sm font-normal"><%= tr("suggestion:REJECTED_EMBED_DESC") %></div>
+          </div>
+          <input
+            type="color"
+            x-model="formData.rejected_embed"
+            name="rejected_embed"
+            id="rejected_embed"
+            class="focus:border-primary focus:ring-primary border-border bg-bg-panel text-text block h-10 w-full rounded-lg border p-0.5 shadow-sm sm:text-sm"
+            required />
+        </div>
+      </div>
+    </div>
+    <!-- END: ROW 4 -->
+
+    <!-- START: ROW 5 -->
+    <div class="mb-3">
+      <div class="mb-2">
+        <label for="staff_roles" class="text-text text-sm font-semibold"><%= tr("suggestion:STAFF_TITLE") %></label>
+        <div class="text-text-muted text-sm font-normal"><%= tr("suggestion:STAFF_DESC") %></div>
+      </div>
+      <div class="relative w-full">
+        <button
+          id="dropdownStaffRolesButton"
+          data-dropdown-toggle="dropdownStaffRolesCheckbox"
+          class="border-border bg-bg-interactive text-text inline-flex w-full items-center rounded-lg border px-3 py-2.5 text-left text-sm"
+          type="button">
+          <span
+            x-text="formData.staff_roles.length ? `${formData.staff_roles.length} role${formData.staff_roles.length > 1 ? 's' : ''} selected` : 'No roles selected'"></span>
+          <svg
+            class="ms-auto h-3 w-3"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 10 6">
+            <path stroke="#6b7280" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4" />
+          </svg>
+        </button>
+        <div
+          id="dropdownStaffRolesCheckbox"
+          class="divide-border bg-bg-panel absolute left-0 z-10 hidden w-full divide-y rounded-lg shadow-sm">
+          <ul class="text-text-muted space-y-3 p-3 text-sm" aria-labelledby="dropdownStaffRolesButton">
+            <% roles.forEach((role) => { %>
+            <li>
+              <div class="flex items-center">
+                <input
+                  type="checkbox"
+                  :id="'<%= role.id %>'"
+                  :value="'<%= role.id %>'"
+                  :checked="formData.staff_roles.includes('<%= role.id %>')"
+                  @change="
+                    if ($event.target.checked) {
+                      if (!formData.staff_roles.includes('<%= role.id %>')) formData.staff_roles.push('<%= role.id %>');
+                    } else {
+                      formData.staff_roles = formData.staff_roles.filter(id => id !== '<%= role.id %>');
+                    }
+                  "
+                  class="border-border bg-bg-interactive text-primary focus:ring-primary h-4 w-4 rounded-sm focus:ring-2" />
+                <label :for="'<%= role.id %>'" class="text-text ms-2 text-sm font-medium"><%= role.name %></label>
+              </div>
+            </li>
+            <% }) %>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <!-- END: ROW 5 -->
+
+    <!-- END: Card Body -->
+
+    <!-- START: Card Footer -->
+    <div class="border-border mt-4 flex items-center justify-between border-t pt-3 sm:pt-6">
+      <div></div>
+      <div class="flex-shrink-0">
+        <button
+          type="submit"
+          :disabled="saving"
+          :class="{'opacity-50': saving}"
+          class="bg-primary hover:bg-primary-dark focus:ring-primary inline-flex items-center rounded-lg px-3 py-2 text-center text-sm font-medium text-white focus:outline-none focus:ring-4">
+          <span x-show="!saving"><%= tr('BTN_SAVE') %></span>
+          <span x-show="saving"><%= tr('BTN_SAVING') %></span>
+        </button>
+      </div>
+    </div>
+  </form>
+</section>

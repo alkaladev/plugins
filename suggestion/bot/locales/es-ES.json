@@ -1,0 +1,91 @@
+{
+    "TITLE": "Sugerencias",
+    "DESCRIPTION": "Gestiona las sugerencias de tu servidor",
+
+    "HANDLER": {
+        "NOT_FOUND": "Sugerencia no encontrada",
+        "MESSAGE_NOT_FOUND": "Mensaje de sugerencia no encontrado",
+        "APPROVE_BTN": "Aprobar",
+        "REJECT_BTN": "Rechazar",
+        "DELETE_BTN": "Eliminar",
+        "STATS_FIELD": "Estadísticas",
+        "REASON_FIELD": "Razón",
+        "MODAL_REASON": "Motivo",
+        "APPROVE_PERMS": "No tienes permiso para aprobar sugerencias",
+        "ALREADY_APPROVED": "La sugerencia ya ha sido aprobada",
+        "APPROVE_EMBED_TITLE": "Sugerencia Aprobada",
+        "APPROVE_EMBED_FOOTER": "Aprobada por {{user}}",
+        "APPROVED": "Sugerencia aprobada",
+        "APPROVE_FAILED": "Error al aprobar la sugerencia.",
+        "APPROVE_MODAL_TITLE": "Aprobar Sugerencia",
+        "REJECT_PERMS": "No tienes permiso para rechazar sugerencias",
+        "ALREADY_REJECTED": "La sugerencia ya ha sido rechazada",
+        "REJECTED_EMBED_TITLE": "Sugerencia Rechazada",
+        "REJECTED_EMBED_FOOTER": "Rechazada por {{user}}",
+        "REJECTED": "Sugerencia rechazada",
+        "REJECT_FAILED": "Error al rechazar la sugerencia.",
+        "REJECT_MODAL_TITLE": "Rechazar Sugerencia",
+        "DELETE_PERMS": "No tienes permiso para eliminar sugerencias",
+        "DELETED": "Sugerencia eliminada",
+        "DELETE_FAILED": "Error al eliminar la sugerencia. Por favor, bórrala manualmente",
+        "DELETE_MODAL_TITLE": "Eliminar Sugerencia"
+    },
+
+    "SUGGEST": {
+        "DESCRIPTION": "enviar una sugerencia",
+        "SUGGESTION_DESC": "la sugerencia que quieres enviar",
+        "CHANNEL_NOT_SET": "¡El canal de sugerencias no está configurado!",
+        "CHANNEL_NOT_FOUND": "¡No se encontró el canal de sugerencias!",
+
+        "TITLE": "Nueva Sugerencia",
+        "SUBMITTER": "Enviada por",
+        "APPROVE_BTN_LABEL": "Aprobar",
+        "REJECT_BTN_LABEL": "Rechazar",
+        "DELETE_BTN_LABEL": "Eliminar",
+
+        "ERROR": "¡Error al enviar el mensaje al canal de sugerencias!",
+        "SUCCESS": "¡Sugerencia enviada con éxito!"
+    },
+
+    "SUGGESTION": {
+        "DESCRIPTION": "configurar el sistema de sugerencias",
+        "SUB_STATUS": "Activar/desactivar sistema de sugerencias",
+        "SUB_STATUS_STATUS": "on/off",
+        "SUB_CHANNEL": "Establecer canal de sugerencias",
+        "SUB_CHANNEL_NAME": "el canal donde se enviarán las sugerencias",
+        "SUB_APPCH": "Configurar canal de sugerencias aprobadas",
+        "SUB_APPCH_NAME": "el canal donde se enviarán las sugerencias aprobadas",
+        "SUB_REJCH": "Configurar canal de sugerencias rechazadas",
+        "SUB_REJCH_NAME": "el canal donde se enviarán las sugerencias rechazadas",
+        "SUB_APPROVE": "Aprobar una sugerencia",
+        "SUB_APPROVE_REASON": "el motivo para aprobar la sugerencia",
+        "SUB_REJECT": "Rechazar una sugerencia",
+        "SUB_REJECT_REASON": "el motivo para rechazar la sugerencia",
+        "SUB_STAFFADD": "Añadir un rol de staff",
+        "SUB_STAFFADD_ROLE": "el rol a añadir como staff",
+        "SUB_STAFFREMOVE": "Eliminar un rol de staff",
+        "SUB_STAFFREMOVE_ROLE": "el rol a eliminar del staff",
+        "SUB_COMMON_CHANNEL": "el canal donde se encuentra el mensaje de la sugerencia",
+        "SUB_COMMON_MESSAGE": "el ID del mensaje de la sugerencia",
+
+        "INVALID_STATUS": "Estado no válido. El valor debe ser `on/off`",
+        "STATUS_ENABLED": "El sistema de sugerencias ahora está activado",
+        "STATUS_DISABLED": "El sistema de sugerencias ahora está desactivado",
+
+        "CHANNEL_DISABLED": "¡Canal de sugerencias eliminado! El sistema ha sido desactivado",
+        "CHANNEL_PERMS": "Necesito los siguientes permisos en {{channel}}\n{{permissions}}",
+        "CHANNEL_SET": "El canal de sugerencias se ha establecido en `{{channel}}`",
+
+        "APPROVED_DISABLED": "El canal de sugerencias aprobadas ha sido desactivado",
+        "APPROVED_SET": "Las sugerencias aprobadas se enviarán a `{{channel}}`",
+
+        "REJECTED_DISABLED": "El canal de sugerencias rechazadas ha sido desactivado",
+        "REJECTED_SET": "Las sugerencias rechazadas se enviarán a `{{channel}}`",
+
+        "STAFF_ROLE_EXISTS": "`{{role}}` ya es un rol de staff",
+        "STAFF_ROLE_ADDED": "`{{role}}` ahora es un rol de staff",
+
+        "STAFF_ROLE_NOT_EXISTS": "`{{role}}` no es un rol de staff",
+        "STAFF_ROLE_REMOVED": "`{{role}}` ya no es un rol de staff"
+    }
+}

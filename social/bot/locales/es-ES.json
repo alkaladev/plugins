@@ -1,0 +1,22 @@
+{
+    "TITLE": "Social",
+    "DESCRIPTION": "Comandos sociales",
+
+    "REP": {
+        "DESCRIPTION": "gestiona la reputación de los usuarios",
+        "SUB_VIEW_DESC": "ver la reputación de un usuario",
+        "SUB_VIEW_USER_DESC": "el usuario del que quieres ver la reputación",
+        "SUB_GIVE_DESC": "dar reputación a un usuario",
+        "SUB_GIVE_USER_DESC": "el usuario al que quieres dar reputación",
+
+        "INVALID_USER": "Usuario no válido. Por favor, menciona a un usuario real o proporciona su ID",
+        "NO_REP": "{{user}} aún no tiene reputación",
+        "VIEW_REP_TITLE": "Reputación de {{target}}",
+        "GIVEN": "Entregada",
+        "RECEIVED": "Recibida",
+
+        "BOT_REP": "No puedes dar reputación a los bots",
+        "SELF_REP": "No puedes darte reputación a ti mismo",
+        "REP_COOLDOWN": "Debes esperar {{time}} antes de dar reputación de nuevo"
+    }
+}

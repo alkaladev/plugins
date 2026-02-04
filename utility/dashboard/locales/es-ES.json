@@ -1,0 +1,8 @@
+{
+    "TITLE": "Utilidad",
+    "DESCRIPTION": "Varios comandos de utilidad para hacerte la vida más fácil",
+
+    "CONFIG_TITLE": "Configuración",
+    "API_KEY": "Clave API de Weather Stack",
+    "API_KEY_DESC": "Consigue tu clave API en: https://weatherstack.com"
+}

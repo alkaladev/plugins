@@ -1,0 +1,27 @@
+{
+    "TITLE": "Configuración",
+    "DESCRIPTION": "Configuración principal de la aplicación",
+
+    "SETTINGS_TITLE": "Ajustes",
+    "PREFIX_TITLE": "Prefijo",
+    "PREFIX_DESC": "El prefijo para los comandos del bot",
+    "LOCALE_TITLE": "Idioma",
+    "LOCALE_DESC": "El idioma configurado para el bot",
+
+    "SERVER_DEFAULTS": "Valores por defecto del servidor",
+    "SUPPORT": "Servidor de soporte",
+    "SUPPORT_DESC": "Enlace de invitación de Discord para el servidor de soporte",
+    "SLASH": "Comandos Slash",
+    "SLASH_DESC": "Activar/desactivar comandos de barra (/)",
+    "CONTEXT": "Menú contextual",
+    "CONTEXT_DESC": "Activar/desactivar menús contextuales",
+
+    "DASH_DEFAULTS": "Valores por defecto del panel",
+    "LOGO": "Logo",
+    "LOGO_DESC": "Logo para el panel de control",
+    "LOGO_URL": "URL del Logo",
+    "LOGO_URL_DESC": "Enlace directo a la imagen del logo",
+
+    "ENABLED": "Activado",
+    "DISABLED": "Desactivado"
+}

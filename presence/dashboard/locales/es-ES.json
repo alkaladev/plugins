@@ -1,0 +1,14 @@
+{
+    "TITLE": "Presencia",
+    "DESCRIPTION": "Configura el estado del bot",
+
+    "CONFIG_TITLE": "Configuración",
+    "STATUS": "Estado",
+    "STATUS_DESC": "Establece el estado del bot (en línea, ausente, etc.)",
+    "TYPE": "Tipo",
+    "TYPE_DESC": "Establece el tipo de actividad del bot",
+    "MESSAGE": "Mensaje",
+    "MESSAGE_DESC": "Establece el mensaje de estado del bot",
+
+    "UPDATE_NOTE": "Nota: El estado se actualiza aproximadamente cada 10 minutos para evitar límites de velocidad (rate limiting)."
+}

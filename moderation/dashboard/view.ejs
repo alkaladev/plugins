@@ -1,0 +1,116 @@
+<section class="border-border bg-bg-panel rounded-lg border p-4 shadow-sm">
+  <form
+    x-data="{
+    formData: {
+      log_channel: '<%= settings.modlog_channel %>',
+      maxwarn_count: '<%= settings.max_warn.limit %>',
+      maxwarn_action: '<%= settings.max_warn.action %>'
+    },
+    saving: false,
+    async submitForm() {
+      this.saving = true;
+      try {
+        const response = await fetch(window.location.href, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(this.formData)
+        });
+        if (!response.ok) throw new Error('Failed to update settings');
+        Alpine.store('toast').show('<%=tr(`SETTINGS_SAVE`)%>', 'success');
+      } catch (error) {
+        Alpine.store('toast').show('<%=tr(`SETTINGS_SAVE_ERROR`)%>', 'error');
+      } finally {
+        this.saving = false;
+      }
+    }
+  }"
+    @submit.prevent="submitForm">
+    <!-- START: Card Body -->
+    <div class="mb-3">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <!-- START: Column 1 (Modlog) -->
+        <div>
+          <div class="mb-2">
+            <label for="log_channel" class="text-text text-sm font-semibold"><%= tr("moderation:CH_TITLE") %></label>
+            <div class="text-text-muted text-sm font-normal"><%= tr("moderation:CH_DESC") %></div>
+          </div>
+          <select
+            x-model="formData.log_channel"
+            name="log_channel"
+            id="log_channel"
+            class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm">
+            <option value=""><%= tr("CHANNEL_SELECT") %></option>
+            <% channels.map((ch) => { %>
+            <option value="<%= ch.id %>"><%= ch.name %></option>
+            <% }) %>
+          </select>
+        </div>
+        <!-- END: Column 1 -->
+
+        <!-- START: Column 2 (Max Warnings) -->
+        <div>
+          <div class="mb-2">
+            <label for="maxwarn_count" class="text-text text-sm font-semibold"
+              ><%= tr("moderation:MAXWARN_TITLE") %></label
+            >
+            <div class="text-text-muted text-sm font-normal"><%= tr("moderation:MAXWARN_DESC") %></div>
+          </div>
+          <input
+            x-model="formData.maxwarn_count"
+            type="number"
+            min="0"
+            max="100"
+            name="maxwarn_count"
+            id="maxwarn_count"
+            class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 shadow-sm sm:text-sm"
+            required />
+        </div>
+        <!-- END: Column 2 -->
+
+        <!-- START: Column 3 (Max Warn Action) -->
+        <div>
+          <div class="mb-2">
+            <label for="maxwarn_action" class="text-text text-sm font-semibold"
+              ><%= tr("moderation:MAXWARN_ACTION_TITLE") %></label
+            >
+            <div class="text-text-muted text-sm font-normal"><%= tr("moderation:MAXWARN_ACTION_DESC") %></div>
+          </div>
+          <select
+            x-model="formData.maxwarn_action"
+            name="maxwarn_action"
+            id="maxwarn_action"
+            class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm">
+            <option selected="selected"><%= settings.max_warn.action %></option>
+            <% if(settings.max_warn.action !== "TIMEOUT") { %>
+            <option>TIMEOUT</option>
+            <% } %> <% if(settings.max_warn.action !== "KICK") { %>
+            <option>KICK</option>
+            <% } %> <% if(settings.max_warn.action !== "BAN") { %>
+            <option>BAN</option>
+            <% } %>
+          </select>
+        </div>
+        <!-- END: Column 3 -->
+      </div>
+    </div>
+    <!-- END: Card Body -->
+
+    <!-- START: Card Footer -->
+    <div class="border-border mt-4 flex items-center justify-between border-t pt-3 sm:pt-6">
+      <div></div>
+      <div class="flex-shrink-0">
+        <button
+          type="submit"
+          :disabled="saving"
+          :class="{'opacity-50': saving}"
+          class="bg-primary hover:bg-primary-dark focus:ring-primary inline-flex items-center rounded-lg px-3 py-2 text-center text-sm font-medium text-white focus:outline-none focus:ring-4">
+          <span x-show="!saving"><%= tr('BTN_SAVE') %></span>
+          <span x-show="saving"><%= tr('BTN_SAVING') %></span>
+        </button>
+      </div>
+    </div>
+    <!-- END: Card Footer -->
+  </form>
+</section>

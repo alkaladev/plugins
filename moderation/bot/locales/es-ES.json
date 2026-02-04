@@ -1,0 +1,226 @@
+{
+    "TITLE": "Moderación",
+    "DESCRIPTION": "Gestiona los ajustes de moderación de tu servidor.",
+
+    "BAN": {
+        "DESCRIPTION": "banea al miembro especificado",
+        "USER_DESC": "El miembro a banear",
+        "REASON_DESC": "El motivo del baneo",
+        "SUCCESS": "¡{{target}} ha sido baneado del servidor!",
+        "BOT_PERM": "No tengo permiso para banear a {{target}}",
+        "MEMBER_PERM": "No tienes permiso para banear a {{target}}",
+        "FAILED": "Error al intentar banear a {{target}}"
+    },
+
+    "KICK": {
+        "DESCRIPTION": "expulsa al miembro especificado",
+        "USER_DESC": "El miembro a expulsar",
+        "REASON_DESC": "El motivo de la expulsión",
+        "SUCCESS": "¡{{target}} ha sido expulsado del servidor!",
+        "BOT_PERM": "No tengo permiso para expulsar a {{target}}",
+        "MEMBER_PERM": "No tienes permiso para expulsar a {{target}}",
+        "FAILED": "Error al intentar expulsar a {{target}}"
+    },
+
+    "MAXWARN": {
+        "DESCRIPTION": "configura la advertencia máxima",
+        "SUB_LIMIT_DESC": "establece el máximo de avisos antes de realizar una acción",
+        "SUB_LIMIT_AMOUNT_DESC": "número máximo de avisos",
+        "SUB_ACTION_DESC": "establece la acción a realizar tras alcanzar el máximo de avisos",
+        "SUB_ACTION_ACTION_DESC": "acción a realizar",
+
+        "INVALID_LIMIT": "Límite no válido. El máximo de avisos debe ser un número mayor a 0",
+        "INVALID_ACTION": "Acción no válida. Las acciones pueden ser `Timeout`/`Kick`/`Ban`",
+        "LIMIT_SET": "El máximo de avisos se ha fijado en {{limit}}",
+        "TIMEOUT_PERM": "No tengo permiso para silenciar (timeout) miembros",
+        "KICK_PERM": "No tengo permiso para expulsar miembros",
+        "BAN_PERM": "No tengo permiso para banear miembros",
+        "ACTION_SET": "La acción por avisos máximos se ha fijado en `{{action}}`"
+    },
+
+    "MODLOG": {
+        "DESCRIPTION": "activa o desactiva los registros de moderación",
+        "CHANNEL_DESC": "canal para enviar los registros",
+        "INVALID_CHANNEL": "¡Uso incorrecto del comando! Por favor, menciona un canal.",
+        "ALREADY_DISABLED": "Los registros de moderación ya están desactivados",
+        "CHANNEL_PERMS": "¡Uy! ¿No puedo enviar registros a ese canal? Necesito los permisos de `Escribir mensajes` e `Insertar enlaces` en ese canal",
+        "SUCCESS": "Los registros de moderación se enviarán ahora a {{channel}}",
+        "DISABLED": "Los registros de moderación han sido desactivados"
+    },
+
+    "NICK": {
+        "DESCRIPTION": "comandos de apodos",
+        "SUB_SET_DESC": "establece el apodo del miembro especificado",
+        "SUB_SET_USER": "el usuario al que cambiar el apodo",
+        "SUB_SET_NAME": "el nuevo apodo para el usuario",
+        "SUB_RESET_DESC": "restablece el apodo de un miembro",
+        "SUB_RESET_USER": "el usuario al que restablecer el apodo",
+
+        "MISSING_NICK": "Debes proporcionar un apodo",
+        "BOT_PERM": "¡Uy! No puedo gestionar el apodo de {{target}}",
+        "MEMBER_PERM": "¡Uy! No puedes gestionar el apodo de {{target}}",
+
+        "SET_SUCCESS": "Se ha cambiado el apodo de {{target}} a {{nickname}}",
+        "SET_FAIL": "Error al cambiar el apodo de {{target}}. ¿Proporcionaste un nombre válido?",
+
+        "RESET_SUCCESS": "Se ha restablecido el apodo de {{target}}",
+        "RESET_FAIL": "Error al restablecer el apodo de {{target}}"
+    },
+
+    "PURGE": {
+        "DESCRIPTION": "comandos de limpieza (purge)",
+        "SUB_ALL_DESC": "elimina la cantidad especificada de mensajes",
+        "SUB_ATTACH_DESC": "elimina mensajes que contengan archivos adjuntos",
+        "SUB_BOT_DESC": "elimina mensajes enviados por bots",
+        "SUB_LINK_DESC": "elimina mensajes que contengan enlaces",
+        "SUB_TOKEN_DESC": "elimina mensajes que contengan una palabra específica",
+        "SUB_TOKEN_TOKEN": "la palabra o texto a buscar",
+        "SUB_USER_DESC": "elimina mensajes enviados por un usuario específico",
+        "SUB_USER_USER": "el usuario cuyos mensajes se van a eliminar",
+        "SUB_COMMON_CHANNEL": "El canal donde limpiar los mensajes",
+        "SUB_COMMON_AMOUNT": "número de mensajes a eliminar (Máx 99)",
+
+        "INVALID_AMOUNT": "La cantidad de mensajes a eliminar debe ser un número entre 1 y 99",
+        "TOO_MANY_MESSAGES": "La cantidad máxima de mensajes que puedo eliminar es 99",
+
+        "SUCCESS": "Se han limpiado con éxito {{amount}} mensajes en {{channel}}",
+        "MEMBER_PERM": "No tienes permisos de `Leer historial de mensajes` y `Gestionar mensajes` en {{channel}}",
+        "BOT_PERM": "No tengo permisos de `Leer historial de mensajes` y `Gestionar mensajes` en {{channel}}",
+        "NO_MESSAGES": "No se encontraron mensajes que puedan ser eliminados",
+        "ERROR": "¡Ocurrió un error! No se pudieron limpiar los mensajes"
+    },
+
+    "SOFTBAN": {
+        "DESCRIPTION": "baneo suave al miembro. Expulsa y borra sus mensajes",
+        "USER_DESC": "El miembro a banear suavemente",
+        "REASON_DESC": "El motivo del soft-ban",
+        "SUCCESS": "¡{{target}} ha sido baneado suavemente del servidor!",
+        "BOT_PERM": "No tengo permiso para banear suavemente a {{target}}",
+        "MEMBER_PERM": "No tienes permiso para banear suavemente a {{target}}",
+        "FAILED": "Error al intentar banear suavemente a {{target}}"
+    },
+
+    "TIMEOUT": {
+        "DESCRIPTION": "aplica un timeout al miembro especificado",
+        "USER_DESC": "El miembro a silenciar",
+        "DURATION_DESC": "La duración del timeout",
+        "REASON_DESC": "El motivo del timeout",
+        "INVALID_TIME": "Por favor, proporciona una duración válida. Ejemplo: 1d/1h/1m/1s",
+        "SUCCESS": "¡{{target}} ha sido silenciado!",
+        "BOT_PERM": "No tengo permiso para aplicar timeout a {{target}}",
+        "MEMBER_PERM": "No tienes permiso para aplicar timeout a {{target}}",
+        "ALREADY_TIMED_OUT": "{{target}} ya tiene un timeout activo",
+        "FAILED": "Error al intentar aplicar timeout a {{target}}"
+    },
+
+    "UNBAN": {
+        "DESCRIPTION": "desbanea al miembro especificado",
+        "NAME_DESC": "el nombre del miembro a desbanear",
+        "REASON_DESC": "el motivo del desbaneo",
+        "MENU_CONTENT": "Por favor, selecciona al usuario que deseas desbanear",
+        "MENU_PLACEHOLDER": "Elige un usuario",
+        "SUCCESS": "¡{{target}} ha sido desbaneado!",
+        "FAILED": "Error al intentar desbanear a {{target}}"
+    },
+
+    "UNTIMEOUT": {
+        "DESCRIPTION": "elimina el timeout de un miembro",
+        "USER_DESC": "El miembro al que quitar el timeout",
+        "REASON_DESC": "El motivo de la eliminación del timeout",
+        "SUCCESS": "¡Se ha eliminado el timeout de {{target}}!",
+        "BOT_PERM": "No tengo permiso para quitar el timeout de {{target}}",
+        "MEMBER_PERM": "No tienes permiso para quitar el timeout de {{target}}",
+        "NO_TIMEOUT": "{{target}} no tiene ningún timeout activo",
+        "FAILED": "Error al intentar quitar el timeout de {{target}}"
+    },
+
+    "VOICE": {
+        "DESCRIPTION": "comandos de moderación de voz",
+        "SUB_MUTE_DESC": "silencia la voz de un miembro",
+        "SUB_MUTE_USER": "el usuario a silenciar",
+        "SUB_MUTE_REASON": "el motivo del silencio",
+        "SUB_UNMUTE_DESC": "des-silencia la voz de un miembro",
+        "SUB_UNMUTE_USER": "el usuario a des-silenciar",
+        "SUB_UNMUTE_REASON": "el motivo del des-silencio",
+        "SUB_DEAFEN_DESC": "ensordece a un miembro en canales de voz",
+        "SUB_DEAFEN_USER": "el usuario a ensordecer",
+        "SUB_DEAFEN_REASON": "el motivo",
+        "SUB_UNDEAFEN_DESC": "quita el ensordecimiento de un miembro",
+        "SUB_UNDEAFEN_USER": "el usuario a des-ensordecer",
+        "SUB_UNDEAFEN_REASON": "el motivo",
+        "SUB_KICK_DESC": "expulsa a un miembro del canal de voz",
+        "SUB_KICK_USER": "el usuario a expulsar",
+        "SUB_KICK_REASON": "el motivo",
+        "SUB_MOVE_DESC": "mueve a un miembro a otro canal de voz",
+        "SUB_MOVE_USER": "el usuario a mover",
+        "SUB_MOVE_CHANNEL": "el canal al que mover al usuario",
+        "SUB_MOVE_REASON": "el motivo del movimiento",
+
+        "INVALID_CHANNEL_TYPE": "Tipo de canal no válido. Por favor, indica un canal de voz real",
+
+        "VMUTE_SUCCESS": "La voz de {{target}} ha sido silenciada en el servidor",
+        "VMUTE_MEMBER_PERM": "No tienes permiso para silenciar la voz de {{target}}",
+        "VMUTE_BOT_PERM": "No tengo permiso para silenciar la voz de {{target}}",
+        "VMUTE_NO_VOICE": "{{target}} no está en ningún canal de voz",
+        "VMUTE_ALREADY_MUTED": "{{target}} ya está silenciado",
+        "VMUTE_ERROR": "Error al silenciar la voz de {{target}}",
+
+        "VUNMUTE_SUCCESS": "La voz de {{target}} ha sido des-silenciada",
+        "VUNMUTE_MEMBER_PERM": "No tienes permiso para des-silenciar la voz de {{target}}",
+        "VUNMUTE_BOT_PERM": "No tengo permiso para des-silenciar la voz de {{target}}",
+        "VUNMUTE_NO_VOICE": "{{target}} no está en ningún canal de voz",
+        "VUNMUTE_NOT_MUTED": "{{target}} no tiene el silencio de voz activado",
+        "VUNMUTE_ERROR": "Error al des-silenciar a {{target}}",
+
+        "DEAFEN_SUCCESS": "{{target}} ha sido ensordecido",
+        "DEAFEN_MEMBER_PERM": "No tienes permiso para ensordecer a {{target}}",
+        "DEAFEN_BOT_PERM": "No tengo permiso para ensordecer a {{target}}",
+        "DEAFEN_NO_VOICE": "{{target}} no está en ningún canal de voz",
+        "DEAFEN_ALREADY_DEAFENED": "{{target}} ya está ensordecido",
+        "DEAFEN_ERROR": "Error al ensordecer a {{target}}",
+
+        "UNDEAFEN_SUCCESS": "Se ha quitado el ensordecimiento de {{target}}",
+        "UNDEAFEN_MEMBER_PERM": "No tienes permiso para des-ensordecer a {{target}}",
+        "UNDEAFEN_BOT_PERM": "No tengo permiso para des-ensordecer a {{target}}",
+        "UNDEAFEN_NO_VOICE": "{{target}} no está en ningún canal de voz",
+        "UNDEAFEN_NOT_DEAFENED": "{{target}} no está ensordecido",
+        "UNDEAFEN_ERROR": "Error al des-ensordecer a {{target}}",
+
+        "KICK_SUCCESS": "{{target}} ha sido desconectado del canal de voz",
+        "KICK_MEMBER_PERM": "No tienes permiso para expulsar de voz a {{target}}",
+        "KICK_BOT_PERM": "No tengo permiso para expulsar de voz a {{target}}",
+        "KICK_NO_VOICE": "{{target}} no está en ningún canal de voz",
+        "KICK_ERROR": "Error al desconectar a {{target}} del canal de voz",
+
+        "MOVE_SUCCESS": "{{target}} ha sido movido con éxito a {{channel}}",
+        "MOVE_MEMBER_PERM": "No tienes permiso para mover a {{target}}",
+        "MOVE_BOT_PERM": "No tengo permiso para mover a {{target}}",
+        "MOVE_NO_VOICE": "{{target}} no está en ningún canal de voz",
+        "MOVE_TARGET_PERM": "{{target}} no tiene permiso para unirse a {{channel}}",
+        "MOVE_ALREADY_IN_CHANNEL": "{{target}} ya está en {{channel}}",
+        "MOVE_ERROR": "Error al mover a {{target}} a {{channel}}"
+    },
+
+    "WARN": {
+        "DESCRIPTION": "advierte al miembro especificado",
+        "USER_DESC": "El miembro a advertir",
+        "REASON_DESC": "El motivo de la advertencia",
+        "SUCCESS": "¡{{target}} ha sido advertido!",
+        "BOT_PERM": "No tengo permiso para advertir a {{target}}",
+        "MEMBER_PERM": "No tienes permiso para advertir a {{target}}",
+        "FAILED": "Error al intentar advertir a {{target}}"
+    },
+
+    "WARNINGS": {
+        "DESCRIPTION": "lista o limpia las advertencias de un usuario",
+        "SUB_LIST_DESC": "lista todos los avisos de un usuario",
+        "SUB_LIST_USER": "usuario del que ver los avisos",
+        "SUB_CLEAR_DESC": "limpia todos los avisos de un usuario",
+        "SUB_CLEAR_USER": "usuario al que limpiar los avisos",
+
+        "NO_USER": "No se proporcionó ningún usuario",
+        "NO_WARNINGS": "{{target}} no tiene advertencias",
+        "WARNINGS_TITLE": "Advertencias de {{target}}",
+        "WARN_CLEAR": "Se han limpiado todas las advertencias de {{target}}"
+    }
+}

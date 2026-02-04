@@ -1,0 +1,45 @@
+{
+    "TITLE": "Estadísticas",
+    "DESCRIPTION": "Gestiona las estadísticas en tu servidor",
+
+    "RANK": {
+        "DESCRIPTION": "muestra el rango de los miembros en este servidor",
+        "USER_DESC": "usuario del que mostrar el rango",
+        "NOT_ENOUGH_XP": "¡`{{user}}` aún no tiene un rango!",
+        "API_ERROR": "Error al generar la tarjeta de rango"
+    },
+
+    "STATS": {
+        "DESCRIPTION": "muestra las estadísticas de los miembros en este servidor",
+        "USER_DESC": "el usuario del que obtener estadísticas",
+        "NAME": "Etiqueta de Usuario",
+        "ID": "ID de Usuario",
+        "CREATED_AT": "⌚ Miembro desde",
+        "MESSAGE_STATS_TITLE": "💬 Mensajes enviados",
+        "MESSAGE_STATS": "❯ Mensajes Enviados: {{count}}\n❯ Comandos de Prefijo: {{prefix}}\n❯ Comandos de Barra (/): {{slash}}\n ❯ XP Ganado: {{xp}}\n❯ Nivel Actual: {{level}}",
+        "VOICE_STATS_TITLE": "🔊 Estadísticas de Voz",
+        "VOICE_STATS": "❯ Conexiones Totales: {{connections}}\n❯ Tiempo Transcurrido: {{time}} minutos",
+        "FOOTER": "Estadísticas Generadas"
+    },
+
+    "TRACKING": {
+        "DESCRIPTION": "activa o desactiva el rastreo de estadísticas en el servidor",
+        "STATUS_DESC": "activar o desactivar",
+        "INVALID_STATUS": "Estado no válido. El valor debe ser `on/off`",
+        "ENABLED": "¡Configuración guardada! El rastreo de estadísticas ahora está activado",
+        "DISABLED": "¡Configuración guardada! El rastreo de estadísticas ahora está desactivado"
+    },
+
+    "XP": {
+        "DESCRIPTION": "configura el sistema de niveles",
+        "SUB_MESSAGE": "configura un mensaje personalizado de subida de nivel",
+        "SUB_MESSAGE_MESSAGE": "mensaje a mostrar cuando un usuario sube de nivel",
+        "SUB_CHANNEL": "configura un canal personalizado para subidas de nivel",
+        "SUB_CHANNEL_CHANNEL": "canal donde mostrar los mensajes de subida de nivel",
+        "NO_MATCH_CHANNEL": "No se encontró ningún canal con ese nombre",
+        "INVALID_MESSAGE": "Mensaje no válido. Por favor, proporciona un mensaje",
+        "MESSAGE_SAVED": "Configuración guardada. ¡Mensaje de subida de nivel actualizado!",
+        "INVALID_CHANNEL": "Canal no válido. Por favor, proporciona un canal",
+        "CHANNEL_SAVED": "Configuración guardada. ¡Canal de subida de nivel actualizado!"
+    }
+}

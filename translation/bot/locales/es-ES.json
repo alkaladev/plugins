@@ -1,0 +1,25 @@
+{
+    "TITLE": "Traducción",
+    "DESCRIPTION": "Gestiona los ajustes de traducción",
+
+    "CMD_DESC": "traduce de un idioma a otro",
+    "CMD_LANGUAGE_DESC": "idioma al que traducir",
+    "CMD_TEXT_DESC": "texto a traducir",
+    "CMD_ERROR": "Error al traducir tu texto",
+
+    "FLAGTR_DESC": "configura la traducción por banderas en el servidor",
+    "FLAGTR_STATUS_DESC": "activa o desactiva la traducción mediante emojis de banderas",
+    "FLAGTR_ENABLED": "Traducción por banderas activada. Ahora puedes usar emojis de banderas para traducir",
+    "FLAGTR_DISABLED": "Traducción por banderas desactivada",
+
+    "TR_COOLDOWN": "¡{{user}}, debes esperar {{time}} antes de traducir de nuevo!",
+    "TR_BTN_LABEL": "Mensaje Original",
+    "TR_EMBED_TITLE": "Traducción del {{lng}}",
+    "TR_EMBED_FOOTER": "Solicitado por {{user}}",
+
+    "DASH": {
+        "SETTINGS": "Ajustes",
+        "FLAG_TR": "Traducción por Banderas",
+        "FLAG_TR_DESC": "Activa o desactiva la traducción al reaccionar con emojis de banderas"
+    }
+}

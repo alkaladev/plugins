@@ -1,0 +1,16 @@
+{
+    "TITLE": "Bienvenidas",
+    "DESCRIPTION": "Gestiona los mensajes de bienvenida y despedida de tu servidor",
+
+    "WELCOME_TITLE": "Configuración de Bienvenida",
+    "WELCOME_PLACEHOLDER": "¡Bienvenido al servidor {member:name}! 🎉",
+
+    "FAREWELL_TITLE": "Configuración de Despedida",
+    "FAREWELL_PLACEHOLDER": "¡Adiós {member:name}! 👋",
+
+    "CHANNEL_TITLE": "Canal",
+    "CHANNEL_DESC": "El canal donde se enviará el mensaje",
+
+    "AUTOROLE_TITLE": "Rol a asignar",
+    "AUTOROLE_DESC": "El rol que se asignará a los usuarios automáticamente cuando se unan al servidor"
+}

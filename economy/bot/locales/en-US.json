@@ -1,0 +1,63 @@
+{
+    "TITLE": "Economía",
+    "DESCRIPTION": "Gestiona la economía de tu servidor con este plugin.",
+
+    "BANK": {
+        "DESCRIPTION": "acceso a operaciones bancarias",
+        "BALANCE_DESC": "consulta tu saldo",
+        "BALANCE_USER": "nombre del usuario",
+        "DEPOSIT_DESC": "deposita monedas en tu cuenta bancaria",
+        "DEPOSIT_COINS": "número de monedas a depositar",
+        "WITHDRAW_DESC": "retira monedas de tu cuenta bancaria",
+        "WITHDRAW_COINS": "número de monedas a retirar",
+        "TRANSFER_DESC": "transfiere monedas a otro usuario",
+        "TRANSFER_USER": "nombre del usuario al que transferir monedas",
+        "TRANSFER_COINS": "número de monedas a transferir",
+
+        "INVALID_DEPOSIT": "Proporciona un número válido de monedas que desees depositar",
+        "INSUFFICIENT_WALLET": "Solo tienes {{coins}}{{currency}} monedas en tu cartera",
+
+        "INVALID_WITHDRAW": "Proporciona un número válido de monedas que desees retirar",
+        "INSUFFICIENT_BANK": "Solo tienes {{coins}}{{currency}} monedas en tu banco",
+
+        "INVALID_TRANSFER": "Proporciona un usuario y una cantidad de monedas válida para transferir",
+        "INVALID_TRANSFER_USER": "Proporciona un usuario válido para transferir monedas",
+        "INVALID_TRANSFER_AMOUNT": "Proporciona una cantidad válida de monedas para transferir",
+        "TRANSFER_BOTS": "No puedes transferir monedas a los bots",
+        "TRANSFER_SELF": "No puedes transferirte monedas a ti mismo",
+        "TRANSFER_INSUFFICIENT": "¡Saldo bancario insuficiente! Solo tienes {{coins}}{{currency}} en tu cuenta bancaria",
+        "TRANSFER_DEPOSIT": "Debes depositar tus monedas en el banco antes de poder transferirlas",
+        "TRANSFER_SUCCESS": "Has transferido con éxito {{coins}}{{currency}} a {{target}}",
+
+        "WALLET": "Cartera",
+        "BANK": "Banco",
+        "NET": "Patrimonio Neto",
+        "NEW_BALANCE": "Nuevo Saldo",
+        "UPDATED_BALANCE": "Saldo Actualizado"
+    },
+
+    "BEG": {
+        "DESCRIPTION": "pide limosna a alguien",
+        "SUCCESS": "**{{random}}** te donó **{{amount}}** {{currency}}\n**Saldo actualizado:** **{{coins}}** {{currency}}"
+    },
+
+    "DAILY": {
+        "DESCRIPTION": "recibe un bono diario",
+        "ALREADY_CLAIMED": "Puedes volver a ejecutar este comando en `{{time}}`",
+        "CLAIMED": "Recibiste {{daily}}{{currency}} como recompensa diaria\n**Saldo actualizado:** {{coins}}{{currency}}"
+    },
+
+    "GAMBLE": {
+        "DESCRIPTION": "prueba tu suerte apostando",
+        "COINS_DESC": "Cantidad de monedas para apostar",
+        "INVALID_AMOUNT": "La cantidad apostada debe ser un número válido",
+        "INVALID_AMOUNT_NEGATIVE": "La cantidad apostada no puede ser negativa",
+        "INVALID_AMOUNT_MIN": "La cantidad apostada no puede ser menor a {{min}}",
+        "INSUFFICIENT_COINS": "¡No tienes suficientes monedas para apostar!\n**Saldo de monedas:** {{coins}}{{currency}}",
+
+        "GAMBLE_TITLE": "Cantidad Apostada",
+        "MULTIPLIER": "Multiplicador",
+        "GAMBLE_WIN": "Ganaste: {{amount}}{{currency}}\nSaldo actualizado en cartera: {{coins}}{{currency}}",
+        "GAMBLE_LOSE": "Perdiste: {{amount}}{{currency}}\nSaldo actualizado en cartera: {{coins}}{{currency}}"
+    }
+}

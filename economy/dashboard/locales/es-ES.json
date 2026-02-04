@@ -1,0 +1,15 @@
+{
+    "TITLE": "Economía",
+    "DESCRIPTION": "Gestiona la economía de tu servidor con este plugin.",
+
+    "SETTINGS_TITLE": "Ajustes",
+    "CURRENCY_TITLE": "Moneda",
+    "CURRENCY_DESC": "Establece el emoji o carácter que representa la moneda de tu servidor.",
+    "DAILY_TITLE": "Monedas Diarias",
+    "DAILY_DESC": "Establece la cantidad de monedas que un jugador puede reclamar diariamente.",
+    "MIN_BEG_TITLE": "Cantidad Mínima de Súplica",
+    "MIN_BEG_DESC": "Establece la cantidad mínima de monedas que un jugador puede recibir al pedir limosna.",
+    "MAX_BEG_TITLE": "Cantidad Máxima de Súplica",
+    "MAX_BEG_DESC": "Establece la cantidad máxima de monedas que un jugador puede recibir al pedir limosna.",
+    "DEFAULTS": "Valores por Defecto del Servidor"
+}

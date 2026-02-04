@@ -1,0 +1,51 @@
+{
+    "TITLE": "Diversión",
+    "DESCRIPTION": "Comandos de entretenimiento",
+
+    "ANIMAL": {
+        "DESCRIPTION": "muestra una imagen aleatoria de un animal",
+        "NAME_DESC": "animal del que obtener la imagen",
+        "INVALID_ANIMAL": "Animal seleccionado no válido. Animales disponibles:\n{{animals}}"
+    },
+
+    "FACTS": {
+        "DESCRIPTION": "muestra datos curiosos de animales",
+        "ANIMAL_DESC": "muestra un dato aleatorio sobre un animal específico",
+        "INVALID_ANIMAL": "Animal seleccionado no válido. Animales disponibles:\n{{animals}}"
+    },
+
+    "FLIP": {
+        "DESCRIPTION": "lanza una moneda o invierte un mensaje",
+        "SUB_COIN_DESC": "lanza una moneda (cara o cruz)",
+        "SUB_MSG_DESC": "invierte el mensaje proporcionado",
+        "SUB_MSG_INPUT": "texto a invertir",
+
+        "TOSS_HEAD": "CARA",
+        "TOSS_TAIL": "CRUZ",
+        "TOSS_START": "{{user}}, lanzó una moneda",
+        "TOSS_AIR": "La moneda está en el aire...",
+        "TOSS_WIN": "Ganador",
+        "MISSING_TEXT": "Debes proporcionar un mensaje para invertir"
+    },
+
+    "MEME": {
+        "DESCRIPTION": "obtiene un meme aleatorio",
+        "CATEGORY_DESC": "la categoría del meme",
+        "FETCH_FAIL": "Error al obtener el meme. ¡Inténtalo de nuevo!",
+        "NO_MATCH": "No se encontró ningún meme que coincida con {{choice}}"
+    },
+
+    "SNAKE": {
+        "DESCRIPTION": "juega al juego de la serpiente (Snake) en Discord",
+        "START_GAME": "**Iniciando juego de la serpiente**",
+        "GAME_TITLE": "Juego de la Serpiente",
+        "GAME_OVER_TITLE": "Fin del Juego"
+    },
+
+    "TOGETHER": {
+        "DESCRIPTION": "Discord Together (Actividades)",
+        "TYPE_DESC": "el tipo de actividad",
+        "NO_VOICE_CHANNEL": "Debes estar en un canal de voz para usar este comando.",
+        "INVALID_GAME": "Juego no válido.\nJuegos válidos: {{games}}"
+    }
+}

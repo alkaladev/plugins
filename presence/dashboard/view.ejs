@@ -1,0 +1,127 @@
+<section class="mb-6">
+  <div class="border-border bg-bg-panel rounded-lg border p-4 shadow-sm sm:p-6 2xl:col-span-2">
+    <!-- START: Card Header -->
+    <div class="border-border mb-4 flex items-center justify-between border-b pb-4">
+      <h3 class="text-text text-lg font-semibold"><%= tr("presence:CONFIG_TITLE") %></h3>
+    </div>
+    <!-- END: Card Header -->
+
+    <form
+      x-data="{ 
+      formData: {
+        status: '<%= config.STATUS %>',
+        type: '<%= config.TYPE %>',
+        message: '<%= config.MESSAGE %>'
+      },
+      saving: false,
+      submitForm() {
+        if (this.saving) return;
+        this.saving = true;
+        fetch(window.location.href, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(this.formData)
+        })
+        .then(response => {
+          if (response.ok) {
+            Alpine.store('toast').show('<%=tr(`CONFIG_SAVE`)%>', 'success');
+          } else {
+            throw new Error('Update failed');
+          }
+        })
+        .catch(error => {
+          Alpine.store('toast').show('<%=tr(`CONFIG_SAVE_ERROR`)%>', 'error');
+        })
+        .finally(() => {
+          this.saving = false;
+        });
+      }
+    }"
+      @submit.prevent="submitForm">
+      <!-- START: Card Body -->
+      <div class="mb-3">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
+          <!-- START: Column 1 -->
+          <div>
+            <div class="mb-2">
+              <label for="status" class="text-text text-sm font-semibold"><%= tr("presence:STATUS") %></label>
+              <div class="text-text-muted text-sm font-normal"><%= tr("presence:STATUS_DESC") %></div>
+            </div>
+            <select
+              x-model="formData.status"
+              name="status"
+              id="status"
+              class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm">
+              <option value="online">Online</option>
+              <option value="idle">Idle</option>
+              <option value="dnd">Do Not Disturb</option>
+              <option value="invisible">Invisible</option>
+            </select>
+          </div>
+
+          <!-- START: Column 2 -->
+          <div>
+            <div class="mb-2">
+              <label for="type" class="text-text text-sm font-semibold"><%= tr("presence:TYPE") %></label>
+              <div class="text-text-muted text-sm font-normal"><%= tr("presence:TYPE_DESC") %></div>
+            </div>
+            <select
+              x-model="formData.type"
+              name="type"
+              id="type"
+              class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm">
+              <option value="PLAYING">Playing</option>
+              <option value="LISTENING">Listening</option>
+              <option value="WATCHING">Watching</option>
+              <option value="COMPETING">Competing</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <div class="grid gap-4 md:grid-cols-1 xl:grid-cols-1">
+          <!-- START: Column 1 -->
+          <div>
+            <div class="mb-2">
+              <label for="message" class="text-text text-sm font-semibold"><%= tr("presence:MESSAGE") %></label>
+              <div class="text-text-muted text-sm font-normal"><%= tr("presence:MESSAGE_DESC") %></div>
+            </div>
+            <input
+              x-model="formData.message"
+              type="text"
+              name="message"
+              id="message"
+              class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 shadow-sm sm:text-sm"
+              required />
+          </div>
+          <!-- END: Column 1 -->
+        </div>
+      </div>
+      <!-- END: Card Body -->
+
+      <!-- START: Card Footer -->
+      <div class="border-border mt-4 flex items-center justify-between border-t pt-3 sm:pt-6">
+        <div></div>
+        <div class="flex-shrink-0">
+          <button
+            type="submit"
+            :disabled="saving"
+            :class="{'opacity-50': saving}"
+            class="bg-primary hover:bg-primary-dark focus:ring-primary inline-flex items-center rounded-lg px-3 py-2 text-center text-sm font-medium text-white focus:outline-none focus:ring-4">
+            <span x-show="!saving"><%= tr('BTN_SAVE') %></span>
+            <span x-show="saving"><%= tr('BTN_SAVING') %></span>
+          </button>
+        </div>
+      </div>
+      <!-- END: Card Footer -->
+    </form>
+
+    <div class="text-text-muted mb-4 mt-2 text-sm">
+      <i class="fas fa-info-circle mr-1"></i>
+      <%= tr("presence:UPDATE_NOTE") %>
+    </div>
+  </div>
+</section>
