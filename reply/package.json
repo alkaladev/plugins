@@ -1,11 +1,8 @@
 {
   "name": "reply",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Plugin de respuestas personalizadas",
   "main": "index.js",
   "author": "Jorge",
-  "license": "MIT",
-  "dependencies": {
-    "strange-sdk": "workspace:*"
-  }
+  "license": "ISC"
 }
