@@ -2,24 +2,39 @@
  * @type {import('strange-sdk').EventContext}
  */
 module.exports = {
-  name: "sendembed_ipc_handler", // Un nombre interno para el cargador
-  // NO uses 'execute' aquí si quieres evitar el error de evento inválido
-  
-  // Usamos esta forma para registrar los eventos del Cluster manualmente
+  // Cambiamos el nombre a 'ready'. 
+  // Esto evita el error "Invalid event" porque 'ready' sí es un evento válido de Discord.
+  name: "ready", 
+
+  // Esta función se ejecutará una sola vez cuando el bot conecte
   execute: async (client) => {
-    console.log("[IPC] 🚀 Registrando listener manual para dashboard:sendembed");
+    console.log("[IPC] 🚀 Registrando puente de comunicación para la Dashboard...");
 
+    // Registramos el listener del cluster manualmente aquí dentro
     client.cluster.on("dashboard:sendembed", async (data) => {
-      console.log(`[IPC] 📥 Petición de canales para: ${data.guildId}`);
+      console.log(`[IPC] 📥 Petición de canales recibida para Guild: ${data.guildId}`);
       
-      const guild = client.guilds.cache.get(data.guildId);
-      if (!guild) return { success: false, data: [] };
+      try {
+        const guild = client.guilds.cache.get(data.guildId);
+        
+        if (!guild) {
+          return { success: false, data: [], error: "Guild no encontrada en el caché" };
+        }
 
-      const channels = guild.channels.cache
-        .filter((c) => c.type === 0)
-        .map((c) => ({ id: c.id, name: c.name }));
+        const channels = guild.channels.cache
+          .filter((c) => c.type === 0) // Canal de texto
+          .map((c) => ({
+            id: c.id,
+            name: c.name,
+          }));
 
-      return { success: true, data: channels };
+        console.log(`[IPC] ✅ Enviando ${channels.length} canales a la Web.`);
+        return { success: true, data: channels };
+        
+      } catch (err) {
+        console.error("[IPC] ❌ Error procesando canales:", err);
+        return { success: false, data: [], error: err.message };
+      }
     });
   },
 };
