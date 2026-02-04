@@ -72,3 +72,37 @@ router.put("/", async (req, res) => {
 });
 
 module.exports = router;
+
+
+
+router.get("/", async (req, res) => {
+    const guildId = res.locals.guild.id;
+    console.log(`[DASHBOARD] 🌐 Entrando a la ruta GET de Embed. Guild: ${guildId}`);
+
+    try {
+        console.log("[DASHBOARD] 📡 Lanzando broadcastOne para canales...");
+        
+        // Ponemos un timeout de 5 segundos para que no se quede colgada infinito
+        const channelsResp = await req.broadcastOne("dashboard:sendembed", { guildId }, 5000)
+            .catch(err => {
+                console.error("[DASHBOARD] ❌ Error en el broadcastOne (Timeout o Fallo):", err.message);
+                return { success: false };
+            });
+
+        console.log("[DASHBOARD] 📥 Respuesta recibida del bot:", JSON.stringify(channelsResp));
+
+        console.log("[DASHBOARD] 📦 Cargando settings de la DB...");
+        const settings = await db.getSettings(res.locals.guild);
+        console.log("[DASHBOARD] ✅ Settings cargados. Renderizando vista...");
+
+        res.render(path.join(__dirname, "view.ejs"), {
+            channels: (channelsResp && channelsResp.success) ? channelsResp.data : [],
+            settings,
+            tabs: ["Embed Builder"], 
+        });
+
+    } catch (error) {
+        console.error("[DASHBOARD] 🔥 Error fatal en el Router GET:", error);
+        res.status(500).send("Error interno del servidor");
+    }
+});

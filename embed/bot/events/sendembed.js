@@ -1,28 +1,29 @@
-/**
- * @type {import('strange-sdk').EventContext}
- */
 module.exports = {
-  name: "sendembed-ipc", // Este es el nombre del evento para el cargador de Strange
+  name: "sendembed-ipc",
   execute: async (client) => {
-    
-    // IMPORTANTE: Este nombre "dashboard:sendembed" debe ser igual al del router
+    console.log("[IPC] 🚀 Evento sendembed-ipc cargado y escuchando...");
+
     client.cluster.on("dashboard:sendembed", async (data) => {
-      const { guildId } = data;
-      const guild = client.guilds.cache.get(guildId);
+      console.log(`[IPC] 📥 Petición recibida para la Guild: ${data.guildId}`);
       
-      if (!guild) {
-        return { success: false, data: [], error: "Guild not found" };
+      try {
+        const guild = client.guilds.cache.get(data.guildId);
+        
+        if (!guild) {
+          console.error(`[IPC] ❌ Error: No se encontró la Guild ${data.guildId} en el cache del bot.`);
+          return { success: false, data: [], error: "Guild not found" };
+        }
+
+        const channels = guild.channels.cache
+          .filter((c) => c.type === 0)
+          .map((c) => ({ id: c.id, name: c.name }));
+
+        console.log(`[IPC] ✅ Enviando ${channels.length} canales a la Dashboard.`);
+        return { success: true, data: channels };
+      } catch (err) {
+        console.error(`[IPC] 💥 Error crítico en el evento:`, err);
+        return { success: false, data: [], error: err.message };
       }
-
-      // Filtramos los canales de texto para enviarlos a la dashboard
-      const channels = guild.channels.cache
-        .filter((c) => c.type === 0) // 0 = GuildText (Canal de texto)
-        .map((c) => ({
-          id: c.id,
-          name: c.name,
-        }));
-
-      return { success: true, data: channels };
     });
   },
 };
