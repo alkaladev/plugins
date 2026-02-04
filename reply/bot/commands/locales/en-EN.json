@@ -1,0 +1,15 @@
+{
+  "REPLY_PLUGIN": {
+    "DESCRIPTION": "Responde a un mensaje específico mediante su ID.",
+    "SUB_MSG_ID": "El ID del mensaje al que quieres responder.",
+    "SUB_CONTENT": "El contenido de tu respuesta.",
+    "SUCCESS": "✅ Respondido correctamente.",
+    "ERROR_NOT_FOUND": "❌ No se encontró el mensaje en ese canal.",
+    "ERROR_PERMS": "❌ No tengo permisos para enviar mensajes en ese canal.",
+    "DASHBOARD_TITLE": "Responder a Mensaje",
+    "LABEL_CHANNEL": "Seleccionar Canal",
+    "LABEL_MESSAGE_ID": "ID del Mensaje Original",
+    "LABEL_CONTENT": "Tu Respuesta",
+    "BUTTON_SEND": "Enviar Respuesta"
+  }
+}

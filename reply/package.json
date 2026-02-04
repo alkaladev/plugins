@@ -1,0 +1,9 @@
+{
+    "name": "reply",
+    "version": "0.1.0-beta",
+    "main": "index.js",
+    "author": "Jorge",
+    "dependencies": {
+        "strange-sdk": "workspace:*"
+    }
+}

@@ -1,0 +1,22 @@
+<form action="<%= req.baseUrl %>/responder" method="POST">
+    <div class="form-group mb-3">
+        <label>Canal donde está el mensaje:</label>
+        <select name="channelId" class="form-select">
+            <% channels.forEach(ch => { %>
+                <option value="<%= ch.id %>">#<%= ch.name %></option>
+            <% }) %>
+        </select>
+    </div>
+
+    <div class="form-group mb-3">
+        <label>ID del Mensaje original:</label>
+        <input type="text" name="messageId" class="form-control" placeholder="Ej: 1234567890..." required>
+    </div>
+
+    <div class="form-group mb-3">
+        <label>Contenido de tu respuesta:</label>
+        <textarea name="content" class="form-control" rows="3" required placeholder="Escribe aquí lo que dirá el bot..."></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Enviar Respuesta</button>
+</form>
