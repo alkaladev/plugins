@@ -1,4 +1,5 @@
 {
+    "NAME": "Responder",
     "TITLE": "Responder mensajes con el bot",
     "DESCRIPTION": "Responder mensajes de usuarios utilizando el bot, Akira responderá por ti."
 }
