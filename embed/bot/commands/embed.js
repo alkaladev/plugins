@@ -1,3 +1,48 @@
+// ... dentro de tu comando embed.js
+async function embedSetup(channel, member) {
+  const settings = await db.getSettings(member.guild);
+  
+  // Si ya configuró algo en la Dashboard, preguntamos si quiere enviar ESO 
+  // o empezar un diseño nuevo desde cero.
+  if (settings.embed.title || settings.embed.description) {
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId("SEND_SAVED").setLabel("Enviar Diseño Dashboard").setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId("EMBED_ADD").setLabel("Nuevo Diseño Manual").setStyle(ButtonStyle.Secondary)
+      );
+
+      const sentMsg = await channel.send({
+        content: "He encontrado un diseño guardado en la Dashboard. ¿Qué prefieres?",
+        components: [row]
+      });
+
+      const filter = (i) => i.member.id === member.id;
+      const choice = await sentMsg.awaitMessageComponent({ filter, time: 30000 }).catch(() => null);
+
+      if (!choice) return;
+
+      if (choice.customId === "SEND_SAVED") {
+          // AQUÍ CONSTRUIMOS EL EMBED USANDO settings.embed (Igual que en el paso anterior)
+          const embed = new EmbedBuilder()
+            .setTitle(settings.embed.title)
+            .setDescription(settings.embed.description?.replaceAll("\\n", "\n"))
+            .setColor(settings.embed.color)
+            .setImage(settings.embed.image)
+            .setThumbnail(settings.embed.thumbnail);
+          
+          if (settings.embed.fields?.length) embed.addFields(settings.embed.fields);
+          
+          await choice.update({ content: "✅ Enviando diseño de la Dashboard...", components: [] });
+          return channel.send({ embeds: [embed] });
+      }
+      
+      // Si elige "Nuevo Diseño", sigue tu lógica original del Modal...
+      await choice.update({ content: "Iniciando diseño manual...", components: [] });
+  }
+
+  // ... (Aquí sigue tu código original del modal que ya te funciona)
+}
+
+
 const {
   ApplicationCommandOptionType,
   ChannelType,

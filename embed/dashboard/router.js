@@ -5,19 +5,14 @@ const db = require("../db.service");
 router.get("/", async (req, res) => {
     const guildId = res.locals.guild.id;
     
-    // Obtenemos canales para saber dónde enviar el embed, y los settings actuales
     const [channelsResp, settings] = await Promise.all([
         req.broadcastOne("dashboard:sendembed", { guildId }),
         db.getSettings(res.locals.guild),
     ]);
 
-    const channels = channelsResp.success ? channelsResp.data : [];
-
     res.render(path.join(__dirname, "view.ejs"), {
-        channels,
+        channels: channelsResp.success ? channelsResp.data : [],
         settings,
-        settingsTab: false,
-        // En este caso, el tab principal es el constructor de Embed
         tabs: ["Embed Builder"], 
     });
 });
@@ -26,43 +21,38 @@ router.put("/", async (req, res) => {
     const settings = await db.getSettings(res.locals.guild);
     const body = req.body;
 
-    // Lógica para actualizar el Embed personalizado
     if (body.action === "embed_update") {
+        // Mapeo de los campos del Modal de Discord / Formulario Web
+        settings.embed.title = body.embed_title?.trim() || null;
         
-        // Texto y Descripción (limpiando espacios y saltos de línea)
-        if (body.embed_title !== undefined) settings.embed.title = body.embed_title.trim();
-        
-        if (body.embed_description !== undefined) {
+        // Procesar descripción con saltos de línea
+        if (body.embed_description) {
             settings.embed.description = body.embed_description.trim().replace(/\r?\n/g, "\\n");
+        } else {
+            settings.embed.description = null;
         }
 
-        // Color Hexadecimal
-        if (body.embed_color !== undefined) settings.embed.color = body.embed_color;
+        settings.embed.color = body.embed_color || "#2f3136";
+        settings.embed.image = body.embed_image?.trim() || null;
+        settings.embed.thumbnail = body.embed_thumbnail?.trim() || null;
 
-        // Imágenes (Grande y Thumbnail)
-        if (body.embed_image !== undefined) settings.embed.image = body.embed_image.trim();
-        if (body.embed_thumbnail !== undefined) settings.embed.thumbnail = body.embed_thumbnail.trim();
+        // Footer y Autor (Campos extra que añadimos para completar el diseño)
+        settings.embed.footer.text = body.embed_footer?.trim() || null;
+        settings.embed.author.name = body.embed_author?.trim() || null;
+        
+        // Timestamp
+        settings.embed.timestamp = body.embed_timestamp === true || body.embed_timestamp === "true";
 
-        // Footer y Autor
-        if (body.embed_footer !== undefined) settings.embed.footer.text = body.embed_footer.trim();
-        if (body.embed_author !== undefined) settings.embed.author.name = body.embed_author.trim();
-
-        // Iconos de Footer y Autor
-        if (body.embed_footer_icon !== undefined) settings.embed.footer.iconURL = body.embed_footer_icon.trim();
-        if (body.embed_author_icon !== undefined) settings.embed.author.iconURL = body.embed_author_icon.trim();
-
-        // Timestamp (Booleano)
-        if (body.embed_timestamp !== undefined) {
-            settings.embed.timestamp = (body.embed_timestamp === "true" || body.embed_timestamp === true);
-        }
-
-        // Gestión de campos (Fields) - Se asume que vienen como un Array
-        if (body.embed_fields != null) {
-            settings.embed.fields = body.embed_fields;
+        // Campos dinámicos (Fields) - Lo que en tu bot manejas con EMBED_FIELD_ADD
+        if (Array.isArray(body.embed_fields)) {
+            settings.embed.fields = body.embed_fields.map(f => ({
+                name: f.name,
+                value: f.value,
+                inline: f.inline === true || f.inline === "true"
+            }));
         }
     }
 
-    // Acción para resetear el embed si el usuario quiere empezar de cero
     if (body.action === "embed_reset") {
         settings.embed = {
             title: null,
