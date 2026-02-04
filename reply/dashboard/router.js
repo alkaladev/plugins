@@ -13,11 +13,12 @@ router.post("/send", async (req, res) => {
     console.log(`[DASHBOARD] Datos recibidos: ID=${body.message_id}, Contenido=${body.reply_content}`);
 
     try {
-        const response = await req.broadcastOne("reply:SEND_FROM_DASHBOARD", {
-            guildId,
-            messageId: body.message_id,
-            content: body.reply_content
-        });
+        // Dentro del router.post("/send", ...)
+const response = await req.broadcastOne("reply:SEND_FROM_DASHBOARD", {
+    guildId,
+    message_id: body.message_id,   // <--- Con guion bajo
+    reply_content: body.reply_content // <--- Con guion bajo
+});
 
         console.log(`[DASHBOARD] Respuesta del BOT:`, response);
 
