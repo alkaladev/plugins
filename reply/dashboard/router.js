@@ -6,19 +6,29 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/send", async (req, res) => {
-    const { message_id, reply_content } = req.body;
+    const body = req.body;
     const guildId = res.locals.guild.id;
 
-    const response = await req.broadcastOne("reply:SEND_FROM_DASHBOARD", {
-        guildId,
-        messageId: message_id,
-        content: reply_content
-    });
+    console.log(`[DASHBOARD] Intento de envío para la guild: ${guildId}`);
+    console.log(`[DASHBOARD] Datos recibidos: ID=${body.message_id}, Contenido=${body.reply_content}`);
 
-    if (response.success) {
-        res.status(200).send("Respuesta enviada");
-    } else {
-        res.status(500).send(response.error || "Error al enviar");
+    try {
+        const response = await req.broadcastOne("reply:SEND_FROM_DASHBOARD", {
+            guildId,
+            messageId: body.message_id,
+            content: body.reply_content
+        });
+
+        console.log(`[DASHBOARD] Respuesta del BOT:`, response);
+
+        if (response && response.success) {
+            res.status(200).send("OK");
+        } else {
+            res.status(500).send(response?.error || "Error desconocido");
+        }
+    } catch (err) {
+        console.error(`[DASHBOARD] ERROR CRÍTICO IPC:`, err);
+        res.status(500).send("Error de comunicación interna");
     }
 });
 
