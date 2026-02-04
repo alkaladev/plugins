@@ -1,29 +1,25 @@
+/**
+ * @type {import('strange-sdk').EventContext}
+ */
 module.exports = {
-  name: "sendembed-ipc",
+  name: "sendembed_ipc_handler", // Un nombre interno para el cargador
+  // NO uses 'execute' aquí si quieres evitar el error de evento inválido
+  
+  // Usamos esta forma para registrar los eventos del Cluster manualmente
   execute: async (client) => {
-    console.log("[IPC] 🚀 Evento sendembed-ipc cargado y escuchando...");
+    console.log("[IPC] 🚀 Registrando listener manual para dashboard:sendembed");
 
     client.cluster.on("dashboard:sendembed", async (data) => {
-      console.log(`[IPC] 📥 Petición recibida para la Guild: ${data.guildId}`);
+      console.log(`[IPC] 📥 Petición de canales para: ${data.guildId}`);
       
-      try {
-        const guild = client.guilds.cache.get(data.guildId);
-        
-        if (!guild) {
-          console.error(`[IPC] ❌ Error: No se encontró la Guild ${data.guildId} en el cache del bot.`);
-          return { success: false, data: [], error: "Guild not found" };
-        }
+      const guild = client.guilds.cache.get(data.guildId);
+      if (!guild) return { success: false, data: [] };
 
-        const channels = guild.channels.cache
-          .filter((c) => c.type === 0)
-          .map((c) => ({ id: c.id, name: c.name }));
+      const channels = guild.channels.cache
+        .filter((c) => c.type === 0)
+        .map((c) => ({ id: c.id, name: c.name }));
 
-        console.log(`[IPC] ✅ Enviando ${channels.length} canales a la Dashboard.`);
-        return { success: true, data: channels };
-      } catch (err) {
-        console.error(`[IPC] 💥 Error crítico en el evento:`, err);
-        return { success: false, data: [], error: err.message };
-      }
+      return { success: true, data: channels };
     });
   },
 };
