@@ -8,33 +8,25 @@ class EmbedService extends DBService {
     defineSchemas(_config) {
         return {
             settings: new Schema({
-                _id: String, // Guild ID
+                _id: String,
                 embed: {
-                    title: String,
-                    description: String,
+                    title: { type: String, default: "" },
+                    description: { type: String, default: "" },
                     color: { type: String, default: "#2f3136" },
                     image: String,
                     thumbnail: String,
-                    fields: [
-                        {
-                            _id: false,
-                            name: String,
-                            value: String,
-                            inline: { type: Boolean, default: false },
-                        },
-                    ],
-                    footer: {
-                        _id: false,
-                        text: String,
-                        iconURL: String,
+                    fields: { type: Array, default: [] },
+                    // IMPORTANTE: Definir sub-objetos para evitar errores de undefined
+                    footer: { 
+                        text: { type: String, default: "" }, 
+                        iconURL: { type: String, default: "" } 
                     },
-                    author: {
-                        _id: false,
-                        name: String,
-                        iconURL: String,
+                    author: { 
+                        name: { type: String, default: "" }, 
+                        iconURL: { type: String, default: "" } 
                     },
-                    timestamp: { type: Boolean, default: false },
-                },
+                    timestamp: { type: Boolean, default: false }
+                }
             }),
         };
     }

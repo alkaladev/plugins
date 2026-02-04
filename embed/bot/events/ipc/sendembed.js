@@ -2,46 +2,27 @@
  * @type {import('strange-sdk').EventContext}
  */
 module.exports = {
-  name: "embed-ipc", // Identificador interno
+  name: "sendembed-ipc", // Este es el nombre del evento para el cargador de Strange
   execute: async (client) => {
     
-    // Escuchar la petición de canales desde el Dashboard
-    // Se activa cuando el router hace: req.broadcastOne("dashboard:GET_EMBED_CHANNELS", ...)
-    client.cluster.on("dashboard:GET_EMBED_CHANNELS", async (data) => {
+    // IMPORTANTE: Este nombre "dashboard:sendembed" debe ser igual al del router
+    client.cluster.on("dashboard:sendembed", async (data) => {
       const { guildId } = data;
       const guild = client.guilds.cache.get(guildId);
-      if (!guild) return { success: false, data: [] };
+      
+      if (!guild) {
+        return { success: false, data: [], error: "Guild not found" };
+      }
 
-      // Obtenemos solo los canales de texto
+      // Filtramos los canales de texto para enviarlos a la dashboard
       const channels = guild.channels.cache
-        .filter((c) => c.type === 0) // 0 = GuildText
+        .filter((c) => c.type === 0) // 0 = GuildText (Canal de texto)
         .map((c) => ({
           id: c.id,
           name: c.name,
         }));
 
       return { success: true, data: channels };
-    });
-
-    // Escuchar la petición para ENVIAR el embed diseñado
-    client.cluster.on("dashboard:SEND_EMBED_MESSAGE", async (data) => {
-      const { guildId, channelId, embedData } = data;
-      const guild = client.guilds.cache.get(guildId);
-      if (!guild) return { success: false, error: "Servidor no encontrado" };
-
-      const channel = guild.channels.cache.get(channelId);
-      if (!channel) return { success: false, error: "Canal no encontrado" };
-
-      try {
-        // El objeto embedData debe tener el formato de Discord (el que definimos en el DBService)
-        await channel.send({
-          embeds: [embedData]
-        });
-        return { success: true };
-      } catch (err) {
-        console.error("Error enviando embed desde Dashboard:", err);
-        return { success: false, error: err.message };
-      }
     });
   },
 };
