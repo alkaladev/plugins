@@ -2,15 +2,19 @@ const { BotPlugin } = require('strange-sdk');
 
 class ResponderPlugin extends BotPlugin {
     constructor() {
-        super('responder');
+        super({
+            name: 'reply' 
+        });
     }
 
     async onReady() {
-        console.log('¡Plugin Responder listo para contestar!');
+        console.log('¡Plugin Responder listo!');
     }
 
     async onMessage(message) {
-        // Si el mensaje es "!hola", el bot responde
+        // Evitar que el bot se responda a sí mismo
+        if (message.author.bot) return;
+
         if (message.content.toLowerCase() === '!hola') {
             await message.reply('¡Hola Jorge! El plugin de GitHub está funcionando correctamente. 🚀');
         }
