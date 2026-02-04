@@ -1,15 +1,17 @@
 {
-  "REPLY_PLUGIN": {
-    "DESCRIPTION": "Responde a un mensaje específico mediante su ID.",
-    "SUB_MSG_ID": "El ID del mensaje al que quieres responder.",
-    "SUB_CONTENT": "El contenido de tu respuesta.",
-    "SUCCESS": "✅ Respondido correctamente.",
-    "ERROR_NOT_FOUND": "❌ No se encontró el mensaje en ese canal.",
-    "ERROR_PERMS": "❌ No tengo permisos para enviar mensajes en ese canal.",
-    "DASHBOARD_TITLE": "Responder a Mensaje",
-    "LABEL_CHANNEL": "Seleccionar Canal",
-    "LABEL_MESSAGE_ID": "ID del Mensaje Original",
-    "LABEL_CONTENT": "Tu Respuesta",
-    "BUTTON_SEND": "Enviar Respuesta"
+  "RESPONDER": {
+    "DESCRIPTION": "Responde a un mensaje específico mediante su ID",
+    "ID_DESC": "El ID del mensaje al que quieres responder",
+    "MSG_DESC": "El contenido de tu respuesta",
+    "ERROR_ID": "❌ No se pudo encontrar ningún mensaje con ese ID en este servidor.",
+    "ERROR_EXEC": "❌ Se produjo un error al intentar responder al mensaje.",
+    "SUCCESS": "✅ Respuesta enviada con éxito.",
+    "LOG_TITLE": "Mensaje respondido con el BOT",
+    "LOG_USER": "Usuario",
+    "LOG_CHANNEL": "Canal",
+    "LOG_ORIGINAL": "Mensaje Original",
+    "LOG_REPLY": "Tu respuesta",
+    "LOG_BOT_LINK": "Enlace del Bot",
+    "JUMP": "Saltar al mensaje"
   }
 }
