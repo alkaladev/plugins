@@ -1,0 +1,15 @@
+{
+  "REPLY_PLUGIN": {
+    "DESCRIPTION": "Répond à un message spécifique via son ID.",
+    "SUB_MSG_ID": "L'ID du message auquel vous souhaitez répondre.",
+    "SUB_CONTENT": "Le contenu de votre réponse.",
+    "SUCCESS": "✅ Réponse envoyée avec succès.",
+    "ERROR_NOT_FOUND": "❌ Message introuvable dans ce salon.",
+    "ERROR_PERMS": "❌ Je n'ai pas la permission d'envoyer des messages dans ce salon.",
+    "DASHBOARD_TITLE": "Répondre au Message",
+    "LABEL_CHANNEL": "Sélectionner le Salon",
+    "LABEL_MESSAGE_ID": "ID du Message Original",
+    "LABEL_CONTENT": "Votre Réponse",
+    "BUTTON_SEND": "Envoyer la Réponse"
+  }
+}
