@@ -1,16 +1,25 @@
-router.post("/responder", async (req, res) => {
-    const { channelId, messageId, content } = req.body;
+const path = require("path");
+const router = require("express").Router();
+
+router.get("/", async (req, res) => {
+    res.render(path.join(__dirname, "view.ejs"));
+});
+
+router.post("/send", async (req, res) => {
+    const { message_id, reply_content } = req.body;
     const guildId = res.locals.guild.id;
 
-    // El nombre del evento debe coincidir con el del IF (REPLY_TO_MESSAGE)
-    const response = await req.broadcastOne("REPLY_TO_MESSAGE", { 
-        payload: { channelId, messageId, content } 
+    const response = await req.broadcastOne("reply:SEND_FROM_DASHBOARD", {
+        guildId,
+        messageId: message_id,
+        content: reply_content
     });
 
-    if (response && response.success) {
-        // Puedes redirigir con un query para mostrar un mensaje de éxito
-        res.redirect(`${req.baseUrl}?success=true`);
+    if (response.success) {
+        res.status(200).send("Respuesta enviada");
     } else {
-        res.status(500).send(response?.error || "Error al procesar la respuesta");
+        res.status(500).send(response.error || "Error al enviar");
     }
 });
+
+module.exports = router;

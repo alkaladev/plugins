@@ -1,22 +1,84 @@
-<form action="<%= req.baseUrl %>/responder" method="POST">
-    <div class="form-group mb-3">
-        <label>Canal donde está el mensaje:</label>
-        <select name="channelId" class="form-select">
-            <% channels.forEach(ch => { %>
-                <option value="<%= ch.id %>">#<%= ch.name %></option>
-            <% }) %>
-        </select>
+<section class="border-border bg-bg-panel rounded-lg border p-4 shadow-sm">
+  <form
+    x-data="{
+    formData: {
+      message_id: '',
+      reply_content: ''
+    },
+    saving: false,
+    async submitForm() {
+      if (!this.formData.message_id || !this.formData.reply_content) {
+        return Alpine.store('toast').show('Por favor, rellena todos los campos', 'error');
+      }
+      this.saving = true;
+      try {
+        const response = await fetch(`${window.location.href}/send`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(this.formData)
+        });
+        
+        if (!response.ok) throw new Error('Failed to send reply');
+        
+        Alpine.store('toast').show('¡Respuesta enviada con éxito!', 'success');
+        this.formData.message_id = '';
+        this.formData.reply_content = '';
+      } catch (error) {
+        Alpine.store('toast').show('Error al enviar la respuesta', 'error');
+      } finally {
+        this.saving = false;
+      }
+    }
+  }"
+    @submit.prevent="submitForm">
+    
+    <div class="mb-3">
+      <div class="grid gap-4 md:grid-cols-2">
+        
+        <div>
+          <div class="mb-2">
+            <label for="message_id" class="text-text text-sm font-semibold">ID del Mensaje</label>
+            <div class="text-text-muted text-sm font-normal">Pega el ID del mensaje de Discord al que quieres responder.</div>
+          </div>
+          <input
+            x-model="formData.message_id"
+            type="text"
+            name="message_id"
+            id="message_id"
+            placeholder="Ej: 1309900119717445745"
+            class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 shadow-sm sm:text-sm"
+            required />
+        </div>
+        <div>
+          <div class="mb-2">
+            <label for="reply_content" class="text-text text-sm font-semibold">Contenido de la Respuesta</label>
+            <div class="text-text-muted text-sm font-normal">Escribe el mensaje que el bot enviará como respuesta.</div>
+          </div>
+          <textarea
+            x-model="formData.reply_content"
+            name="reply_content"
+            id="reply_content"
+            rows="3"
+            placeholder="Escribe aquí tu mensaje..."
+            class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 shadow-sm sm:text-sm"
+            required></textarea>
+        </div>
+        </div>
     </div>
-
-    <div class="form-group mb-3">
-        <label>ID del Mensaje original:</label>
-        <input type="text" name="messageId" class="form-control" placeholder="Ej: 1234567890..." required>
+    <div class="border-border mt-4 flex items-center justify-between border-t pt-3 sm:pt-6">
+      <div></div>
+      <div class="flex-shrink-0">
+        <button
+          type="submit"
+          :disabled="saving"
+          :class="{'opacity-50': saving}"
+          class="bg-primary hover:bg-primary-dark focus:ring-primary inline-flex items-center rounded-lg px-3 py-2 text-center text-sm font-medium text-white focus:outline-none focus:ring-4">
+          <span x-show="!saving">Enviar Respuesta</span>
+          <span x-show="saving">Enviando...</span>
+        </button>
+      </div>
     </div>
-
-    <div class="form-group mb-3">
-        <label>Contenido de tu respuesta:</label>
-        <textarea name="content" class="form-control" rows="3" required placeholder="Escribe aquí lo que dirá el bot..."></textarea>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Enviar Respuesta</button>
-</form>
+    </form>
+</section>
