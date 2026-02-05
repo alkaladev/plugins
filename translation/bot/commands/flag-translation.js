@@ -5,7 +5,7 @@ const db = require("../../db.service");
  * @type {import('strange-sdk').CommandType}
  */
 module.exports = {
-    name: "flagtranslation",
+    name: "btraducir",
     description: "translation:FLAGTR_DESC",
     userPermissions: ["ManageGuild"],
     command: {
@@ -19,7 +19,7 @@ module.exports = {
         ephemeral: true,
         options: [
             {
-                name: "status",
+                name: "estado",
                 description: "translation:FLAGTR_STATUS_DESC",
                 required: true,
                 type: ApplicationCommandOptionType.String,
@@ -40,7 +40,7 @@ module.exports = {
     async messageRun({ message, args }) {
         const status = args[0].toLowerCase();
         if (!["on", "off"].includes(status))
-            return message.reply("Invalid status. Value must be `on/off`");
+            return message.reply("Estado inválido. Debe ser `on/off`");
 
         const response = await setFlagTranslation(message, status);
         await message.reply(response);
@@ -49,7 +49,7 @@ module.exports = {
     async interactionRun({ interaction }) {
         const response = await setFlagTranslation(
             interaction,
-            interaction.options.getString("status"),
+            interaction.options.getString("estado"),
         );
         await interaction.followUp(response);
     },

@@ -23,27 +23,28 @@ const choices = [
     "pl",
     "ta",
     "te",
+    "es",
 ];
 
 /**
  * @type {import('strange-sdk').CommandType}
  */
 module.exports = {
-    name: "translate",
+    name: "traducir",
     description: "translation:CMD_DESC",
     cooldown: 20,
     botPermissions: ["EmbedLinks"],
     command: {
         enabled: true,
         aliases: ["tr"],
-        usage: "<iso-code> <message>",
+        usage: "<iso-code> <mensaje>",
         minArgsCount: 2,
     },
     slashCommand: {
         enabled: true,
         options: [
             {
-                name: "language",
+                name: "idioma",
                 description: "translation:CMD_LANGUAGE_DESC",
                 type: ApplicationCommandOptionType.String,
                 required: true,
@@ -53,7 +54,7 @@ module.exports = {
                 })),
             },
             {
-                name: "text",
+                name: "texto",
                 description: "translation:CMD_TEXT_DESC",
                 type: ApplicationCommandOptionType.String,
                 required: true,
@@ -67,21 +68,21 @@ module.exports = {
 
         if (!GOOGLE_TRANSLATE[outputCode]) {
             embed.setDescription(
-                "Invalid translation code. Visit [here](https://cloud.google.com/translate/docs/languages) to see list of supported translation codes",
+                "Código de traducción inválido. Visita [aquí](https://cloud.google.com/translate/docs/languages) para ver la lista de códigos de traducción compatibles.",
             );
             return message.reply({ embeds: [embed] });
         }
 
         const input = args.join(" ");
-        if (!input) message.reply("Provide some valid translation text");
+        if (!input) message.reply("Proporciona algún texto de traducción válido");
 
         const response = await getTranslation(message, message.author, input, outputCode);
         await message.reply(response);
     },
 
     async interactionRun({ interaction }) {
-        const outputCode = interaction.options.getString("language");
-        const input = interaction.options.getString("text");
+        const outputCode = interaction.options.getString("idioma");
+        const input = interaction.options.getString("texto");
         const response = await getTranslation(interaction, interaction.user, input, outputCode);
         await interaction.followUp(response);
     },
