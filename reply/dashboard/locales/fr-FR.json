@@ -1,8 +1,5 @@
 {
-    "PLUGIN": {
-    "NAME": "Responder"
-  },
-    "NAME": "Responder",
-    "TITLE": "Responder mensajes con el bot",
-    "DESCRIPTION": "Responder mensajes de usuarios utilizando el bot, Akira responderá por ti."
+  "NAME": "Répondeur",
+  "TITLE": "Répondre aux messages avec le bot",
+  "DESCRIPTION": "Répondez aux messages des utilisateurs via le bot ; Akira répondra pour vous."
 }
