@@ -15,7 +15,7 @@ const CHANNEL_PERMS = [
  * @type {import('strange-sdk').CommandType}
  */
 module.exports = {
-    name: "suggestion",
+    name: "sugerencias",
     description: "suggestion:SUGGESTION.DESCRIPTION",
     userPermissions: ["ManageGuild"],
     command: {
@@ -23,31 +23,31 @@ module.exports = {
         minArgsCount: 2,
         subcommands: [
             {
-                trigger: "channel <#channel|off>",
+                trigger: "canal <#canal|off>",
                 description: "suggestion:SUGGESTION.SUB_CHANNEL",
             },
             {
-                trigger: "appch <#channel>",
+                trigger: "aceptadas <#canal>",
                 description: "suggestion:SUGGESTION.SUB_APPCH",
             },
             {
-                trigger: "rejch <#channel>",
+                trigger: "rechazadas <#canal>",
                 description: "suggestion:SUGGESTION.SUB_REJCH",
             },
             {
-                trigger: "approve <messageId> [reason]",
+                trigger: "aprobadas <mensajeId> [motivo]",
                 description: "suggestion:SUGGESTION.SUB_APPROVE",
             },
             {
-                trigger: "reject <messageId> [reason]",
+                trigger: "rechazadas <mensajeId> [motivo]",
                 description: "suggestion:SUGGESTION.SUB_REJECT",
             },
             {
-                trigger: "staffadd <roleId>",
+                trigger: "añadirstaff <rolId>",
                 description: "suggestion:SUGGESTION.SUB_STAFFADD",
             },
             {
-                trigger: "staffremove <roleId>",
+                trigger: "eliminarstaff <rolId>",
                 description: "suggestion:SUGGESTION.SUB_STAFFREMOVE",
             },
         ],
@@ -57,12 +57,12 @@ module.exports = {
         ephemeral: true,
         options: [
             {
-                name: "status",
+                name: "estado",
                 description: "suggestion:SUGGESTION.SUB_STATUS",
                 type: ApplicationCommandOptionType.Subcommand,
                 options: [
                     {
-                        name: "status",
+                        name: "estado",
                         description: "suggestion:SUGGESTION.SUB_STATUS_STATUS",
                         required: true,
                         type: ApplicationCommandOptionType.String,
@@ -80,12 +80,12 @@ module.exports = {
                 ],
             },
             {
-                name: "channel",
+                name: "canal",
                 description: "suggestion:SUGGESTION.SUB_CHANNEL",
                 type: ApplicationCommandOptionType.Subcommand,
                 options: [
                     {
-                        name: "channel_name",
+                        name: "canal_nombre",
                         description: "suggestion:SUGGESTION.SUB_CHANNEL_NAME",
                         type: ApplicationCommandOptionType.Channel,
                         channelTypes: [ChannelType.GuildText],
@@ -94,12 +94,12 @@ module.exports = {
                 ],
             },
             {
-                name: "appch",
+                name: "aprobadas",
                 description: "suggestion:SUGGESTION.SUB_APPCH",
                 type: ApplicationCommandOptionType.Subcommand,
                 options: [
                     {
-                        name: "channel_name",
+                        name: "canal_nombre",
                         description: "suggestion:SUGGESTION.SUB_APPCH_NAME",
                         type: ApplicationCommandOptionType.Channel,
                         channelTypes: [ChannelType.GuildText],
@@ -108,12 +108,12 @@ module.exports = {
                 ],
             },
             {
-                name: "rejch",
+                name: "rechazadas",
                 description: "suggestion:SUGGESTION.SUB_REJCH",
                 type: ApplicationCommandOptionType.Subcommand,
                 options: [
                     {
-                        name: "channel_name",
+                        name: "canal_nombre",
                         description: "suggestion:SUGGESTION.SUB_REJCH_NAME",
                         type: ApplicationCommandOptionType.Channel,
                         channelTypes: [ChannelType.GuildText],
@@ -122,18 +122,18 @@ module.exports = {
                 ],
             },
             {
-                name: "approve",
+                name: "aprobar",
                 description: "suggestion:SUGGESTION.SUB_APPROVE",
                 type: ApplicationCommandOptionType.Subcommand,
                 options: [
                     {
-                        name: "message_id",
+                        name: "mensaje_id",
                         description: "suggestion:SUGGESTION.SUB_COMMON_MESSAGE",
                         type: ApplicationCommandOptionType.String,
                         required: true,
                     },
                     {
-                        name: "reason",
+                        name: "motivo",
                         description: "suggestion:SUGGESTION.SUB_APPROVE_REASON",
                         type: ApplicationCommandOptionType.String,
                         required: false,
@@ -141,18 +141,18 @@ module.exports = {
                 ],
             },
             {
-                name: "reject",
+                name: "rechazar",
                 description: "suggestion:SUGGESTION.SUB_REJECT",
                 type: ApplicationCommandOptionType.Subcommand,
                 options: [
                     {
-                        name: "message_id",
+                        name: "mensaje_id",
                         description: "suggestion:SUGGESTION.SUB_COMMON_MESSAGE",
                         type: ApplicationCommandOptionType.String,
                         required: true,
                     },
                     {
-                        name: "reason",
+                        name: "motivo",
                         description: "suggestion:SUGGESTION.SUB_REJECT_REASON",
                         type: ApplicationCommandOptionType.String,
                         required: false,
@@ -160,12 +160,12 @@ module.exports = {
                 ],
             },
             {
-                name: "staffadd",
+                name: "añadirstaff",
                 description: "suggestion:SUGGESTION.SUB_STAFFADD",
                 type: ApplicationCommandOptionType.Subcommand,
                 options: [
                     {
-                        name: "role",
+                        name: "rol",
                         description: "suggestion:SUGGESTION.SUB_STAFFADD_ROLE",
                         type: ApplicationCommandOptionType.Role,
                         required: true,
@@ -173,12 +173,12 @@ module.exports = {
                 ],
             },
             {
-                name: "staffremove",
+                name: "eliminarstaff",
                 description: "suggestion:SUGGESTION.SUB_STAFFREMOVE",
                 type: ApplicationCommandOptionType.Subcommand,
                 options: [
                     {
-                        name: "role",
+                        name: "rol",
                         description: "suggestion:SUGGESTION.SUB_STAFFREMOVE_ROLE",
                         type: ApplicationCommandOptionType.Role,
                         required: true,
@@ -195,7 +195,7 @@ module.exports = {
         let response;
 
         // channel
-        if (sub == "channel") {
+        if (sub == "canal") {
             const input = args[1];
             let matched = message.guild.findMatchingChannels(input);
             if (matched.length == 0) response = guild.getT("NO_MATCH_CHANNEL", { query: input });
@@ -205,7 +205,7 @@ module.exports = {
         }
 
         // appch
-        else if (sub == "appch") {
+        else if (sub == "aprobadas") {
             const input = args[1];
             let matched = message.guild.findMatchingChannels(input);
             if (matched.length == 0) response = guild.getT("NO_MATCH_CHANNEL", { query: input });
@@ -215,7 +215,7 @@ module.exports = {
         }
 
         // appch
-        else if (sub == "rejch") {
+        else if (sub == "rechazadas") {
             const input = args[1];
             let matched = message.guild.findMatchingChannels(input);
             if (matched.length == 0) response = guild.getT("NO_MATCH_CHANNEL", { query: input });
@@ -225,21 +225,21 @@ module.exports = {
         }
 
         // approve
-        else if (sub == "approve") {
+        else if (sub == "aprobar") {
             const messageId = args[1];
             const reason = args.slice(2).join(" ");
             response = await approveSuggestion(message.member, messageId, reason);
         }
 
         // reject
-        else if (sub == "reject") {
+        else if (sub == "rechazar") {
             const messageId = args[1];
             const reason = args.slice(2).join(" ");
             response = await rejectSuggestion(message.member, messageId, reason);
         }
 
         // staffadd
-        else if (sub == "staffadd") {
+        else if (sub == "añadirstaff") {
             const input = args[1];
             let matched = message.guild.findMatchingRoles(input);
             if (matched.length == 0) response = guild.getT("NO_MATCH_ROLE", { query: input });
@@ -249,7 +249,7 @@ module.exports = {
         }
 
         // staffremove
-        else if (sub == "staffremove") {
+        else if (sub == "eliminarstaff") {
             const input = args[1];
             let matched = message.guild.findMatchingRoles(input);
             if (matched.length == 0) response = guild.getT("NO_MATCH_ROLE", { query: input });
@@ -270,51 +270,51 @@ module.exports = {
         let response;
 
         // channel
-        if (sub == "channel") {
-            const channel = interaction.options.getChannel("channel_name");
+        if (sub == "canal") {
+            const channel = interaction.options.getChannel("canal_nombre");
             response = await setChannel(guild, settings, channel);
         }
 
         // app_channel
-        else if (sub == "appch") {
-            const channel = interaction.options.getChannel("channel_name");
+        else if (sub == "aprobadas") {
+            const channel = interaction.options.getChannel("canal_nombre");
             response = await setApprovedChannel(guild, settings, channel);
         }
 
         // rej_channel
-        else if (sub == "rejch") {
-            const channel = interaction.options.getChannel("channel_name");
+        else if (sub == "rechazadas") {
+            const channel = interaction.options.getChannel("canal_nombre");
             response = await setRejectedChannel(guild, settings, channel);
         }
 
         // approve
-        else if (sub == "approve") {
-            const messageId = interaction.options.getString("message_id");
-            const reason = interaction.options.getString("reason");
+        else if (sub == "aprobar") {
+            const messageId = interaction.options.getString("mensaje_id");
+            const reason = interaction.options.getString("motivo");
             response = await approveSuggestion(interaction.member, messageId, reason);
         }
 
         // reject
-        else if (sub == "reject") {
-            const messageId = interaction.options.getString("message_id");
-            const reason = interaction.options.getString("reason");
+        else if (sub == "rechazar") {
+            const messageId = interaction.options.getString("mensaje_id");
+            const reason = interaction.options.getString("motivo");
             response = await rejectSuggestion(interaction.member, messageId, reason);
         }
 
         // staffadd
-        else if (sub == "staffadd") {
-            const role = interaction.options.getRole("role");
+        else if (sub == "añadirstaff") {
+            const role = interaction.options.getRole("rol");
             response = await addStaffRole(guild, settings, role);
         }
 
         // staffremove
-        else if (sub == "staffremove") {
-            const role = interaction.options.getRole("role");
+        else if (sub == "eliminarstaff") {
+            const role = interaction.options.getRole("rol");
             response = await removeStaffRole(guild, settings, role);
         }
 
         // else
-        else response = "Not a valid subcommand";
+        else response = "No es un subcomando válido";
         await interaction.followUp(response);
     },
 };

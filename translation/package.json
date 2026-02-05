@@ -2,7 +2,7 @@
     "name": "translation",
     "version": "0.1.2",
     "main": "index.js",
-    "author": "Sai Teja Madha",
+    "author": "Jorge",
     "license": "ISC",
     "dependencies": {
         "@vitalets/google-translate-api": "^9.2.0",

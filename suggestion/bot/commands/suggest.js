@@ -12,19 +12,19 @@ const db = require("../../db.service");
  * @type {import('strange-sdk').CommandType}
  */
 module.exports = {
-    name: "suggest",
+    name: "sugerencia",
     description: "suggestion:SUGGEST.DESCRIPTION",
     cooldown: 20,
     command: {
         enabled: true,
-        usage: "<suggestion>",
+        usage: "<sugerencia>",
         minArgsCount: 1,
     },
     slashCommand: {
         enabled: true,
         options: [
             {
-                name: "suggestion",
+                name: "sugerencia",
                 description: "suggestion:SUGGEST.SUGGESTION_DESC",
                 type: ApplicationCommandOptionType.String,
                 required: true,
@@ -104,7 +104,7 @@ async function suggest({ guild, member }, suggestion) {
 
         return true;
     } catch (ex) {
-        member.client.logger.error("suggest", ex);
+        member.client.logger.error("sugerencia", ex);
         return guild.getT("suggestion:SUGGEST.ERROR");
     }
 }
