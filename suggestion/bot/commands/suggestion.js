@@ -35,11 +35,11 @@ module.exports = {
                 description: "suggestion:SUGGESTION.SUB_REJCH",
             },
             {
-                trigger: "aprobadas <mensajeId> [motivo]",
+                trigger: "aprobar <mensajeId> [motivo]",
                 description: "suggestion:SUGGESTION.SUB_APPROVE",
             },
             {
-                trigger: "rechazadas <mensajeId> [motivo]",
+                trigger: "rechazar <mensajeId> [motivo]",
                 description: "suggestion:SUGGESTION.SUB_REJECT",
             },
             {
