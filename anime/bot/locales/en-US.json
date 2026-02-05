@@ -1,11 +1,11 @@
 {
     "TITLE": "Anime",
-    "DESCRIPTION": "Comandos de anime",
+    "DESCRIPTION": "Anime commands",
 
     "REACT": {
-        "DESCRIPTION": "reacciones de anime",
-        "CATEGORY_DESC": "Categoría de reacciones de anime",
-        "INVALID_CHOICE": "Opción no válida: {{category}}.\nReacciones disponibles: {{choices}}",
-        "ERROR": "Error al obtener el meme. ¡Inténtalo de nuevo!"
+        "DESCRIPTION": "anime reactions",
+        "CATEGORY_DESC": "Anime reactions category",
+        "INVALID_CHOICE": "Invalid choice: {{category}}.\nAvailable reactions: {{choices}}",
+        "ERROR": "Failed to fetch meme. Try again!"
     }
 }
