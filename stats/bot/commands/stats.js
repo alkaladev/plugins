@@ -6,7 +6,7 @@ const db = require("../../db.service");
  * @type {import('strange-sdk').CommandType}
  */
 module.exports = {
-    name: "stats",
+    name: "estadisticas",
     description: "stats:STATS.DESCRIPTION",
     cooldown: 5,
     command: {
@@ -17,7 +17,7 @@ module.exports = {
         enabled: true,
         options: [
             {
-                name: "user",
+                name: "usuario",
                 description: "stats:STATS.USER_DESC",
                 type: ApplicationCommandOptionType.User,
                 required: false,
@@ -32,7 +32,7 @@ module.exports = {
     },
 
     async interactionRun({ interaction }) {
-        const member = interaction.options.getMember("user") || interaction.member;
+        const member = interaction.options.getMember("usuario") || interaction.member;
         const response = await stats(member);
         await interaction.followUp(response);
     },

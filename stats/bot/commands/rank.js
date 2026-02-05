@@ -7,7 +7,7 @@ const plugin = require("../index");
  * @type {import('strange-sdk').CommandType}
  */
 module.exports = {
-    name: "rank",
+    name: "rango",
     description: "stats:RANK.DESCRIPTION",
     cooldown: 5,
     botPermissions: ["AttachFiles"],
@@ -19,7 +19,7 @@ module.exports = {
         enabled: true,
         options: [
             {
-                name: "user",
+                name: "usuario",
                 description: "stats:RANK.USER_DESC",
                 type: ApplicationCommandOptionType.User,
                 required: false,
@@ -34,7 +34,7 @@ module.exports = {
     },
 
     async interactionRun({ interaction }) {
-        const user = interaction.options.getUser("user") || interaction.user;
+        const user = interaction.options.getUser("usuario") || interaction.user;
         const member = await interaction.guild.members.fetch(user);
         const response = await getRank(interaction, member);
         await interaction.followUp(response);

@@ -5,7 +5,7 @@ const db = require("../../db.service");
  * @type {import('strange-sdk').CommandType}
  */
 module.exports = {
-    name: "levelup",
+    name: "subirnivel",
     description: "stats:XP.DESCRIPTION",
     userPermissions: ["ManageGuild"],
     command: {
@@ -13,11 +13,11 @@ module.exports = {
         minArgsCount: 1,
         subcommands: [
             {
-                trigger: "message <new-message>",
+                trigger: "mensaje <nuevo-mensaje>",
                 description: "stats:XP.SUB_MESSAGE",
             },
             {
-                trigger: "channel <#channel|off>",
+                trigger: "canal <#canal|off>",
                 description: "stats:XP.SUB_CHANNEL",
             },
         ],
@@ -26,12 +26,12 @@ module.exports = {
         enabled: true,
         options: [
             {
-                name: "message",
+                name: "mensaje",
                 description: "stats:XP.SUB_MESSAGE",
                 type: ApplicationCommandOptionType.Subcommand,
                 options: [
                     {
-                        name: "message",
+                        name: "mensaje",
                         description: "stats:XP.SUB_MESSAGE_MESSAGE",
                         type: ApplicationCommandOptionType.String,
                         required: true,
@@ -39,12 +39,12 @@ module.exports = {
                 ],
             },
             {
-                name: "channel",
+                name: "canal",
                 description: "stats:XP.SUB_CHANNEL",
                 type: ApplicationCommandOptionType.Subcommand,
                 options: [
                     {
-                        name: "channel",
+                        name: "canal",
                         description: "stats:XP.SUB_CHANNEL_CHANNEL",
                         type: ApplicationCommandOptionType.Channel,
                         channelTypes: [ChannelType.GuildText],
@@ -94,13 +94,13 @@ module.exports = {
         if (sub === "message") {
             response = await setMessage(
                 interaction.guild,
-                interaction.options.getString("message"),
+                interaction.options.getString("mensaje"),
                 settings,
             );
         } else if (sub === "channel") {
             response = await setChannel(
                 interaction.guild,
-                interaction.options.getChannel("channel"),
+                interaction.options.getChannel("canal"),
                 settings,
             );
         } else response = interaction.guild.getT("INVALID_SUBCOMMAND", { sub });

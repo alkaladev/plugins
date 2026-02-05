@@ -1,17 +1,17 @@
 {
-    "TITLE": "Statistics",
-    "DESCRIPTION": "Manage statistics in your server",
+    "TITLE": "Estadísticas",
+    "DESCRIPTION": "Gestiona las estadísticas en tu servidor",
 
-    "SETTINGS_TITLE": "Settings",
-    "LVL_MSG_TITLE": "Level Up Message",
-    "LVL_MSG_DESC": "Message to send when a user levels up",
-    "LVL_CH_TITLE": "Level Channel",
-    "LVL_CH_DESC": "Channel for level up messages (Empty to send in the same channel)",
-    "COOLDOWN_TITLE": "Cooldown",
-    "COOLDOWN_DESC": "Time(in seconds) between messages to track statistics",
-    "CONFIG": "Server Defaults",
-    "API_URL": "Strange API URL",
-    "API_URL_DESC": "Change the URL of the Strange API",
-    "API_KEY": "Strange API Key",
-    "API_KEY_DESC": "Add your Strange API Key here"
+    "SETTINGS_TITLE": "Ajustes",
+    "LVL_MSG_TITLE": "Mensaje de Nivel",
+    "LVL_MSG_DESC": "Mensaje que se enviará cuando un usuario suba de nivel",
+    "LVL_CH_TITLE": "Canal de Niveles",
+    "LVL_CH_DESC": "Canal para los mensajes de subida de nivel (Vacío para enviar en el mismo canal)",
+    "COOLDOWN_TITLE": "Tiempo de Espera (Cooldown)",
+    "COOLDOWN_DESC": "Tiempo (en segundos) entre mensajes para contabilizar estadísticas",
+    "CONFIG": "Valores por Defecto del Servidor",
+    "API_URL": "URL de Strange API",
+    "API_URL_DESC": "Cambia la URL de la Strange API",
+    "API_KEY": "Clave de Strange API",
+    "API_KEY_DESC": "Añade tu clave (API Key) de Strange API aquí"
 }
