@@ -6,20 +6,20 @@ const db = require("../../db.service");
  * @type {import('strange-sdk').CommandType}
  */
 module.exports = {
-    name: "rep",
+    name: "reputacion",
     description: "social:REP.DESCRIPTION",
     botPermissions: ["EmbedLinks"],
     command: {
         enabled: true,
         minArgsCount: 1,
-        aliases: ["reputation"],
+        aliases: ["reputacion"],
         subcommands: [
             {
-                trigger: "view [user]",
+                trigger: "ver [usuario]",
                 description: "social:REP.SUB_VIEW_DESC",
             },
             {
-                trigger: "give [user]",
+                trigger: "dar [usuario]",
                 description: "social:REP.SUB_GIVE_DESC",
             },
         ],
@@ -28,12 +28,12 @@ module.exports = {
         enabled: true,
         options: [
             {
-                name: "view",
+                name: "ver",
                 description: "social:REP.SUB_VIEW_DESC",
                 type: ApplicationCommandOptionType.Subcommand,
                 options: [
                     {
-                        name: "user",
+                        name: "usuario",
                         description: "social:REP.SUB_VIEW_USER_DESC",
                         type: ApplicationCommandOptionType.User,
                         required: false,
@@ -41,12 +41,12 @@ module.exports = {
                 ],
             },
             {
-                name: "give",
+                name: "dar",
                 description: "social:REP.SUB_GIVE_DESC",
                 type: ApplicationCommandOptionType.Subcommand,
                 options: [
                     {
-                        name: "user",
+                        name: "usuario",
                         description: "social:REP.SUB_GIVE_USER_DESC",
                         type: ApplicationCommandOptionType.User,
                         required: true,
@@ -61,7 +61,7 @@ module.exports = {
         let response;
 
         // status
-        if (sub === "view") {
+        if (sub === "ver") {
             let target = message.author;
             if (args.length > 1) {
                 const resolved = (await message.guild.resolveMember(args[1])) || message.member;
@@ -71,7 +71,7 @@ module.exports = {
         }
 
         // give
-        else if (sub === "give") {
+        else if (sub === "dar") {
             const target = await message.guild.resolveMember(args[1]);
             if (!target) return message.replyT("social:REP.INVALID_USER");
             response = await giveReputation(message, message.author, target.user);
@@ -90,14 +90,14 @@ module.exports = {
         let response;
 
         // status
-        if (sub === "view") {
-            const target = interaction.options.getUser("user") || interaction.user;
+        if (sub === "ver") {
+            const target = interaction.options.getUser("usuario") || interaction.user;
             response = await viewReputation(interaction, target);
         }
 
         // give
-        if (sub === "give") {
-            const target = interaction.options.getUser("user");
+        if (sub === "dar") {
+            const target = interaction.options.getUser("usuario");
             response = await giveReputation(interaction, interaction.user, target);
         }
 
@@ -156,8 +156,8 @@ async function giveReputation({ guild }, user, target) {
     await targetData.save();
 
     const embed = EmbedUtils.embed()
-        .setDescription(`${target.toString()} +1 Rep!`)
-        .setFooter({ text: `By ${user.username}` })
+        .setDescription(`${target.toString()} +1 Reputación!`)
+        .setFooter({ text: `Por ${user.username}` })
         .setTimestamp(Date.now());
 
     return { embeds: [embed] };
