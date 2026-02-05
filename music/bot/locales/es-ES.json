@@ -1,0 +1,24 @@
+{
+  "PLAY": {
+    "DESCRIPTION": "Reproduce música de YouTube o Spotify",
+    "SONG_DESC": "Nombre o URL de la canción",
+    "PLAYLIST_ADDED": "Lista de reproducción agregada",
+    "TRACK_ADDED": "Canción agregada a la cola",
+    "TRACKS": "canciones",
+    "REQUESTER": "Pedido por"
+  },
+  "SKIP": {
+    "DESCRIPTION": "Salta la canción actual",
+    "SUCCESS": "⏭️ Canción saltada."
+  },
+  "STOP": {
+    "DESCRIPTION": "Detiene la música y vacía la cola",
+    "SUCCESS": "🛑 Reproducción detenida y cola limpiada."
+  },
+  "ERRORS": {
+    "NO_VOICE": "🚫 ¡Primero debes unirte a un canal de voz!",
+    "WRONG_VOICE": "🚫 Debes estar en el mismo canal de voz que el bot.",
+    "NO_RESULTS": "🚫 No se encontraron resultados.",
+    "NO_PLAYER": "🚫 No hay música reproduciéndose en este servidor."
+  }
+}

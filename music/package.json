@@ -1,12 +1,13 @@
 {
-    "name": "moderation",
-    "version": "0.1.0-beta",
+    "name": "music",
+    "version": "1.0.0",
+    "description": "Plugin de música con soporte para Lavalink",
     "main": "index.js",
     "author": "Jorge",
     "license": "ISC",
     "dependencies": {
-        "common-tags": "^1.8.2",
-        "enhanced-ms": "^2.3.0"
+        "lavalink-client": "^2.2.0",
+        "common-tags": "^1.8.2"
     },
     "peerDependencies": {
         "discord.js": "^14.19.0",
