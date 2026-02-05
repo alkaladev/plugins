@@ -12,7 +12,7 @@ module.exports = {
     command: {
         enabled: true,
         minArgsCount: 1,
-        aliases: ["reputacion"],
+        aliases: ["popularidad"],
         subcommands: [
             {
                 trigger: "ver [usuario]",

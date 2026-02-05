@@ -2,7 +2,7 @@
     "name": "social",
     "version": "0.1.0-beta",
     "main": "index.js",
-    "author": "Sai Teja Madha",
+    "author": "Jorge",
     "license": "ISC",
     "peerDependencies": {
         "discord.js": "^14.19.0",
