@@ -2,6 +2,9 @@ const { GiveawaysManager } = require("discord-giveaways");
 const db = require("../db.service");
 
 class MongooseGiveaways extends GiveawaysManager {
+    /**
+     * @param {import("discord.js").Client} client
+     */
     constructor(client) {
         super(
             client,
@@ -10,20 +13,16 @@ class MongooseGiveaways extends GiveawaysManager {
                     botsCanWin: false,
                 },
             },
-            false, // No inicializar todavía
+            false, // do not initialize manager yet
         );
         this.Model = db.getModel("giveaways");
-        
-        // Llamamos a la inicialización manual
-        this._init();
     }
 
-    // ESTE MÉTODO ES VITAL: discord-giveaways lo usa internamente para cargar la DB
     async getAllGiveaways() {
         return await this.Model.find().lean().exec();
     }
 
-    async saveGiveaway(messageId, giveawayData) {
+    async saveGiveaway(_messageId, giveawayData) {
         await this.Model.create(giveawayData);
         return true;
     }
