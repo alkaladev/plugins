@@ -1,8 +1,8 @@
 {
-    "TITLE": "Translation",
-    "DESCRIPTION": "Manage translation settings",
+    "TITLE": "Traducción",
+    "DESCRIPTION": "Gestionar la configuración de traducción",
 
-    "SETTINGS": "Settings",
-    "FLAG_TR": "Flag Translation",
-    "FLAG_TR_DESC": "Enable or disable translation using flag emoji"
+    "SETTINGS": "Configuración",
+    "FLAG_TR": "Traducción por Banderas",
+    "FLAG_TR_DESC": "Activa o desactiva la traducción mediante emojis de banderas"
 }
