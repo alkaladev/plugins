@@ -1,8 +1,8 @@
 {
     "name": "economy",
-    "version": "0.1.0-beta",
+    "version": "0.1.0",
     "main": "index.js",
-    "author": "Sai Teja Madha",
+    "author": "Jorge",
     "license": "ISC",
     "dependencies": {},
     "peerDependencies": {
