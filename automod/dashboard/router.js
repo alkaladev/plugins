@@ -5,7 +5,7 @@ const db = require("../db.service");
 router.get("/", async (req, res) => {
     const guildId = res.locals.guild.id;
     const [channelsResp, settings] = await Promise.all([
-        req.broadcastOne("dashboard:GET_GUILD_CHANNELS", { guildId }),
+        req.broadcastOne("getChannelsOf", guildId, { guildId }),
         db.getSettings(guildId),
     ]);
 
