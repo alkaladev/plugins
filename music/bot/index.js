@@ -26,26 +26,20 @@ class MusicPlugin extends BotPlugin {
             }
         });
 
+        // Esto ayuda, pero no siempre es suficiente en Strange
         client.music = this.music;
 
-        // --- MANEJO DE EVENTOS DE MÚSICA ---
-        
         this.music.on("trackStart", (player, track) => {
             const channel = client.channels.cache.get(player.textChannelId);
-            if (channel) {
-                channel.send(`🎶 Reproduciendo ahora: **${track.info.title}**`);
-            }
+            if (channel) channel.send(`🎶 Reproduciendo ahora: **${track.info.title}**`);
         });
 
         this.music.on("queueEnd", (player) => {
             const channel = client.channels.cache.get(player.textChannelId);
-            if (channel) {
-                channel.send("Wait... ¡La cola se ha terminado!");
-            }
-            player.destroy(); // Opcional: desconectar al terminar
+            if (channel) channel.send("Wait... ¡La cola se ha terminado!");
+            player.destroy();
         });
 
-        // Importante para que Lavalink reciba los cambios de estado de voz
         client.on("raw", (d) => this.music.sendRawData(d));
 
         await this.music.init(client.user.id);
@@ -53,4 +47,6 @@ class MusicPlugin extends BotPlugin {
     }
 }
 
-module.exports = new MusicPlugin();
+// CREAMOS LA INSTANCIA ANTES
+const musicPlugin = new MusicPlugin();
+module.exports = musicPlugin;

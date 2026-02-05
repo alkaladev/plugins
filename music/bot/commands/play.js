@@ -1,15 +1,11 @@
-const { 
-    EmbedBuilder, 
-    ApplicationCommandOptionType 
-} = require("discord.js");
+const { EmbedBuilder, ApplicationCommandOptionType } = require("discord.js");
 const { stripIndent } = require("common-tags");
+// IMPORTAMOS EL PLUGIN DIRECTAMENTE
+const musicPlugin = require("../index"); 
 
-/**
- * @type {import('strange-sdk').CommandType}
- */
 module.exports = {
     name: "play",
-    description: "music:PLAY.DESCRIPTION", // Usando el sistema de traducción
+    description: "music:PLAY.DESCRIPTION",
     cooldown: 5,
     command: {
         enabled: true,
@@ -41,26 +37,18 @@ module.exports = {
     },
 };
 
-/**
- * @param {import('discord.js').Message|import('discord.js').ChatInputCommandInteraction} context
- * @param {string} query
- */
 async function play(context, query) {
-    const { guild, member, channel, client } = context;
+    const { guild, member, channel } = context;
 
     if (!member.voice.channel) return guild.getT("music:ERRORS.NO_VOICE");
 
-    // Validar si ya hay un bot en otro canal
-    const botVoiceChannel = guild.members.me.voice.channel;
-    if (botVoiceChannel && member.voice.channel !== botVoiceChannel) {
-        return guild.getT("music:ERRORS.WRONG_VOICE");
-    }
-
-    // Crear o recuperar el player usando lavalink-client
-    let player = client.music.players.get(guild.id);
+    // USAMOS musicPlugin.music EN LUGAR DE client.music
+    if (!musicPlugin.music) return "🚫 El sistema de música no está listo.";
+    
+    let player = musicPlugin.music.players.get(guild.id);
 
     if (!player) {
-        player = client.music.createPlayer({
+        player = musicPlugin.music.createPlayer({
             guildId: guild.id,
             voiceChannelId: member.voice.channel.id,
             textChannelId: channel.id,
@@ -71,12 +59,10 @@ async function play(context, query) {
 
     if (!player.connected) await player.connect();
 
-    // Buscar pistas
     const res = await player.search(query, member.user);
-
     if (!res.tracks.length) return guild.getT("music:ERRORS.NO_RESULTS");
 
-    const embed = new EmbedBuilder().setColor(client.config?.EMBED_COLORS?.BOT || "#2f3136");
+    const embed = new EmbedBuilder().setColor("#2f3136");
 
     if (res.loadType === "playlist") {
         player.queue.add(res.tracks);
@@ -85,8 +71,7 @@ async function play(context, query) {
             .setDescription(stripIndent`
                 **${res.playlist.name}**
                 ${res.tracks.length} ${guild.getT("music:PLAY.TRACKS")}
-            `)
-            .setThumbnail(res.tracks[0].info.artworkUrl);
+            `);
     } else {
         const track = res.tracks[0];
         player.queue.add(track);
@@ -97,10 +82,7 @@ async function play(context, query) {
             .setFooter({ text: `${guild.getT("music:PLAY.REQUESTER")}: ${member.user.username}` });
     }
 
-    // Si no está reproduciendo, darle al play
-    if (!player.playing && !player.paused) {
-        await player.play();
-    }
+    if (!player.playing && !player.paused) await player.play();
 
     return { embeds: [embed] };
 }
