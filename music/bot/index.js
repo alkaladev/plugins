@@ -14,8 +14,8 @@ class MusicPlugin extends BotPlugin {
         this.music = new LavalinkManager({
             nodes: [
                 {
-                    host: process.env.LAVALINK_HOST || "localhost",
-                    port: parseInt(process.env.LAVALINK_PORT) || 2333,
+                    host: process.env.LAVALINK_HOST || "lavalink.jirayu.net",
+                    port: parseInt(process.env.LAVALINK_PORT) || 13592,
                     password: process.env.LAVALINK_PASSWORD || "youshallnotpass",
                     secure: false,
                 }
