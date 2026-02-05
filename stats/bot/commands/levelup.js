@@ -62,13 +62,13 @@ module.exports = {
         let response;
 
         // message
-        if (sub === "message") {
+        if (sub === "mensaje") {
             const msg = subcommandArgs.join(" ");
             response = await setMessage(message.guild, msg, settings);
         }
 
         // channel
-        else if (sub === "channel") {
+        else if (sub === "canal") {
             const input = subcommandArgs[0];
             let channel;
 
@@ -91,13 +91,13 @@ module.exports = {
         const settings = await db.getSettings(interaction.guild);
         let response;
 
-        if (sub === "message") {
+        if (sub === "mensaje") {
             response = await setMessage(
                 interaction.guild,
                 interaction.options.getString("mensaje"),
                 settings,
             );
-        } else if (sub === "channel") {
+        } else if (sub === "canal") {
             response = await setChannel(
                 interaction.guild,
                 interaction.options.getChannel("canal"),
