@@ -1,8 +1,8 @@
 {
     "name": "giveaways",
-    "version": "0.1.0",
+    "version": "0.1.0-beta",
     "main": "index.js",
-    "author": "Jorge",
+    "author": "Sai Teja Madha",
     "license": "ISC",
     "dependencies": {
         "discord-giveaways": "github:strange-bot/discord-giveaways",

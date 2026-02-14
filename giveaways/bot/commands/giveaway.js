@@ -24,7 +24,7 @@ const edit = require("./sub/edit");
  * @type {import('strange-sdk').CommandType}
  */
 module.exports = {
-    name: "sorteo",
+    name: "giveaway",
     description: "giveaways:DESCRIPTION",
     command: {
         enabled: true,

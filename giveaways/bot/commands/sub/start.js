@@ -44,7 +44,7 @@ module.exports = async (member, giveawayChannel, duration, prize, winners, hostI
             try {
                 host = await guild.client.users.fetch(hostId);
             } catch (ex) {
-                return guild.get("giveaways:START_INVALID_HOST");
+                return guild.geT("giveaways:START_INVALID_HOST");
             }
         }
         if (!host) host = member.user;
