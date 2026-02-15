@@ -1,108 +1,437 @@
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card bg-dark text-white shadow">
-                <div class="card-header border-secondary d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fa-solid fa-tower-broadcast me-2"></i>Configuración de Canales Dinámicos</h5>
-                    <button class="btn btn-success btn-sm" onclick="addRow()">
-                        <i class="fa-solid fa-plus me-1"></i> Añadir Generador
-                    </button>
+<!-- plugins/temp-channels/dashboard/view.ejs -->
+
+<div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
+                        <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 1 1 0 000 2H3a1 1 0 00-1 1v10a1 1 0 001 1h14a1 1 0 001-1V6a1 1 0 00-1-1h-3a1 1 0 000-2 2 2 0 00-2 2v3H4V5zm12 5a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path>
+                    </svg>
                 </div>
-                <div class="card-body">
-                    <p class="text-muted small">Configura los canales que, al entrar, crearán una patrulla y moverán al usuario. El orden en la lista define la prioridad de creación.</p>
+                <div>
+                    <h1 class="text-3xl font-bold text-white">Canales Temporales</h1>
+                    <p class="text-slate-400">Crea canales de voz dinámicos que se generan automáticamente</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Panel de Configuración (Izquierda) -->
+            <div class="lg:col-span-2">
+                <!-- Generadores -->
+                <div class="bg-slate-800 border border-slate-700 rounded-lg p-6 mb-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-white">Generadores de Canales</h2>
+                        <button id="addGeneratorBtn" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                            + Añadir Generador
+                        </button>
+                    </div>
+
+                    <!-- Lista de Generadores -->
+                    <div id="generatorsList" class="space-y-4">
+                        <div class="text-center py-8 text-slate-400">
+                            Cargando generadores...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Canales Activos -->
+                <div class="bg-slate-800 border border-slate-700 rounded-lg p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-white">Canales Activos</h2>
+                        <button id="refreshActiveBtn" class="text-slate-400 hover:text-white transition">
+                            🔄 Actualizar
+                        </button>
+                    </div>
+
+                    <!-- Lista de Canales Activos -->
+                    <div id="activeChannelsList" class="space-y-3">
+                        <div class="text-center py-8 text-slate-400">
+                            Cargando canales activos...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de Información (Derecha) -->
+            <div class="lg:col-span-1">
+                <div class="bg-slate-800 border border-slate-700 rounded-lg p-6 sticky top-6">
+                    <h3 class="text-lg font-bold text-white mb-4">Información</h3>
                     
-                    <form id="voiceForm">
-                        <div id="generatorsList">
-                            <% generators.forEach((gen, index) => { %>
-                                <div class="row g-3 mb-3 align-items-end generator-row border-bottom border-secondary pb-3" data-index="<%= index %>">
-                                    <div class="col-md-4">
-                                        <label class="form-label small">Canal de Origen</label>
-                                        <select class="form-select bg-secondary text-white border-0 sourceId">
-                                            <% channels.forEach(ch => { %>
-                                                <option value="<%= ch.id %>" <%= gen.sourceId === ch.id ? 'selected' : '' %>><%= ch.name %></option>
-                                            <% }) %>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label small">Prefijo del nombre</label>
-                                        <input type="text" class="form-control bg-secondary text-white border-0 namePrefix" value="<%= gen.namePrefix %>" placeholder="Ej: Patrulla #">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label small">Límite de usuarios</label>
-                                        <input type="number" class="form-control bg-secondary text-white border-0 userLimit" value="<%= gen.userLimit %>" min="0" max="99">
-                                    </div>
-                                    <div class="col-md-3 d-flex gap-2">
-                                        <button type="button" class="btn btn-outline-danger" onclick="removeRow(this)">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </button>
-                                        <div class="btn-group">
-                                            <button type="button" class="btn btn-outline-light" onclick="moveUp(this)"><i class="fa-solid fa-arrow-up"></i></button>
-                                            <button type="button" class="btn btn-outline-light" onclick="moveDown(this)"><i class="fa-solid fa-arrow-down"></i></button>
-                                        </div>
-                                    </div>
-                                </div>
-                            <% }) %>
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-sm text-slate-400 mb-2">¿Cómo funciona?</p>
+                            <ul class="text-sm text-slate-300 space-y-2">
+                                <li class="flex gap-2">
+                                    <span class="text-blue-400">•</span>
+                                    <span>Configura un canal de voz como "generador"</span>
+                                </li>
+                                <li class="flex gap-2">
+                                    <span class="text-blue-400">•</span>
+                                    <span>Cuando alguien se conecta, se crea un canal temporal</span>
+                                </li>
+                                <li class="flex gap-2">
+                                    <span class="text-blue-400">•</span>
+                                    <span>Se elimina automáticamente cuando está vacío</span>
+                                </li>
+                            </ul>
                         </div>
-                        
-                        <div class="mt-4">
-                            <button type="button" class="btn btn-primary w-100" onclick="saveConfig()">
-                                <i class="fa-solid fa-floppy-disk me-2"></i> Guardar Configuración
-                            </button>
+
+                        <div class="border-t border-slate-700 pt-4">
+                            <p class="text-sm text-slate-400 mb-2">Opciones de Configuración</p>
+                            <ul class="text-xs text-slate-300 space-y-1">
+                                <li><strong>Prefijo:</strong> Nombre para los canales (ej: "Patrulla")</li>
+                                <li><strong>Límite:</strong> Máximo de usuarios (0 = ilimitado)</li>
+                                <li><strong>Categoría:</strong> Dónde crear los canales</li>
+                            </ul>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-function addRow() {
-    const list = document.getElementById('generatorsList');
-    const firstRow = document.querySelector('.generator-row');
-    let newRow;
+<!-- Modal para añadir/editar generador -->
+<div id="generatorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full">
+        <h3 id="modalTitle" class="text-xl font-bold text-white mb-4">Nuevo Generador</h3>
 
-    if (firstRow) {
-        newRow = firstRow.cloneNode(true);
-        newRow.querySelectorAll('input').forEach(i => i.value = '');
-    } else {
-        // Fallback si no hay filas previas (puedes expandir este HTML)
-        location.reload(); // Simplificado para este ejemplo
-        return;
+        <form id="generatorForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Canal de Voz (Fuente)</label>
+                <select id="sourceChannelSelect" class="w-full bg-slate-700 border border-slate-600 rounded text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <option value="">Selecciona un canal...</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Prefijo de Nombre</label>
+                <input type="text" id="namePrefixInput" class="w-full bg-slate-700 border border-slate-600 rounded text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="ej: Patrulla, Squad, Equipo" required>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Límite de Usuarios</label>
+                <input type="number" id="userLimitInput" class="w-full bg-slate-700 border border-slate-600 rounded text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0 = ilimitado" min="0">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Categoría (Opcional)</label>
+                <select id="categoryCategorySelect" class="w-full bg-slate-700 border border-slate-600 rounded text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Sin categoría</option>
+                </select>
+            </div>
+
+            <div class="flex gap-3 pt-4">
+                <button type="button" onclick="closeGeneratorModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded font-medium transition">
+                    Cancelar
+                </button>
+                <button type="submit" class="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded font-medium transition">
+                    Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .generator-card {
+        @apply bg-slate-700 border border-slate-600 rounded-lg p-4 hover:border-blue-500 transition;
     }
-    list.appendChild(newRow);
-}
 
-function removeRow(btn) {
-    btn.closest('.generator-row').remove();
-}
+    .generator-card-header {
+        @apply flex items-center justify-between mb-3;
+    }
 
-function moveUp(btn) {
-    const row = btn.closest('.generator-row');
-    if (row.previousElementSibling) row.parentNode.insertBefore(row, row.previousElementSibling);
-}
+    .active-channel-item {
+        @apply bg-slate-700 border border-slate-600 rounded-lg p-3 flex items-center justify-between hover:border-slate-500 transition;
+    }
+</style>
 
-function moveDown(btn) {
-    const row = btn.closest('.generator-row');
-    if (row.nextElementSibling) row.parentNode.insertBefore(row.nextElementSibling, row);
-}
+<script>
+    // Estado del modal
+    let editingGeneratorSourceId = null;
+    let allChannels = [];
+    let allCategories = [];
 
-async function saveConfig() {
-    const rows = document.querySelectorAll('.generator-row');
-    const generators = Array.from(rows).map(row => ({
-        sourceId: row.querySelector('.sourceId').value,
-        namePrefix: row.querySelector('.namePrefix').value,
-        userLimit: row.querySelector('.userLimit').value
-    }));
+    // Inicializar
+    document.addEventListener("DOMContentLoaded", async () => {
+        await loadChannels();
+        await loadGenerators();
+        await loadActiveChannels();
 
-    const resp = await fetch(window.location.href + '/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ generators })
+        document.getElementById("addGeneratorBtn").addEventListener("click", openAddGeneratorModal);
+        document.getElementById("generatorForm").addEventListener("submit", handleGeneratorSubmit);
+        document.getElementById("refreshActiveBtn").addEventListener("click", loadActiveChannels);
     });
 
-    if (resp.ok) {
-        Swal.fire({ icon: 'success', title: 'Guardado', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+    /**
+     * Carga los canales y categorías del servidor
+     */
+    async function loadChannels() {
+        try {
+            const response = await fetch(`/api/guilds/${guildId}/channels`);
+            const result = await response.json();
+
+            if (result.success) {
+                allChannels = result.data.filter(c => c.type === 2); // Solo canales de voz (type 2)
+                allCategories = result.data.filter(c => c.type === 4); // Categorías (type 4)
+
+                // Actualizar selectores
+                updateChannelSelect();
+                updateCategorySelect();
+            }
+        } catch (error) {
+            console.error("Error cargando canales:", error);
+        }
     }
-}
+
+    /**
+     * Actualiza el selector de canales de voz
+     */
+    function updateChannelSelect() {
+        const select = document.getElementById("sourceChannelSelect");
+        select.innerHTML = '<option value="">Selecciona un canal...</option>';
+
+        allChannels.forEach(channel => {
+            const option = document.createElement("option");
+            option.value = channel.id;
+            option.textContent = `#${channel.name}`;
+            select.appendChild(option);
+        });
+    }
+
+    /**
+     * Actualiza el selector de categorías
+     */
+    function updateCategorySelect() {
+        const select = document.getElementById("categoryCategorySelect");
+        select.innerHTML = '<option value="">Sin categoría</option>';
+
+        allCategories.forEach(category => {
+            const option = document.createElement("option");
+            option.value = category.id;
+            option.textContent = category.name;
+            select.appendChild(option);
+        });
+    }
+
+    /**
+     * Abre el modal para añadir un nuevo generador
+     */
+    function openAddGeneratorModal() {
+        editingGeneratorSourceId = null;
+        document.getElementById("modalTitle").textContent = "Nuevo Generador";
+        document.getElementById("generatorForm").reset();
+        document.getElementById("generatorModal").classList.remove("hidden");
+    }
+
+    /**
+     * Abre el modal para editar un generador
+     */
+    function openEditGeneratorModal(generator) {
+        editingGeneratorSourceId = generator.sourceChannelId;
+        document.getElementById("modalTitle").textContent = "Editar Generador";
+        document.getElementById("sourceChannelSelect").value = generator.sourceChannelId;
+        document.getElementById("namePrefixInput").value = generator.namePrefix;
+        document.getElementById("userLimitInput").value = generator.userLimit || 0;
+        document.getElementById("categoryCategorySelect").value = generator.parentCategoryId || "";
+        document.getElementById("generatorModal").classList.remove("hidden");
+    }
+
+    /**
+     * Cierra el modal
+     */
+    function closeGeneratorModal() {
+        document.getElementById("generatorModal").classList.add("hidden");
+        editingGeneratorSourceId = null;
+    }
+
+    /**
+     * Maneja el envío del formulario de generador
+     */
+    async function handleGeneratorSubmit(e) {
+        e.preventDefault();
+
+        const sourceChannelId = document.getElementById("sourceChannelSelect").value;
+        const namePrefix = document.getElementById("namePrefixInput").value;
+        const userLimit = parseInt(document.getElementById("userLimitInput").value) || 0;
+        const parentCategoryId = document.getElementById("categoryCategorySelect").value;
+
+        try {
+            let response;
+
+            if (editingGeneratorSourceId) {
+                // Editar
+                response = await fetch(`/api/guild-plugin/temp-channels/generator/${editingGeneratorSourceId}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ namePrefix, userLimit, parentCategoryId }),
+                });
+            } else {
+                // Crear
+                response = await fetch("/api/guild-plugin/temp-channels/generator", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ sourceChannelId, namePrefix, userLimit, parentCategoryId }),
+                });
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                closeGeneratorModal();
+                await loadGenerators();
+                showNotification("Generador guardado correctamente", "success");
+            } else {
+                showNotification(result.error || "Error guardando generador", "error");
+            }
+        } catch (error) {
+            console.error("Error guardando generador:", error);
+            showNotification("Error guardando generador", "error");
+        }
+    }
+
+    /**
+     * Carga la lista de generadores
+     */
+    async function loadGenerators() {
+        try {
+            const response = await fetch("/api/guild-plugin/temp-channels/settings");
+            const result = await response.json();
+
+            const list = document.getElementById("generatorsList");
+
+            if (result.success && result.data.generators.length > 0) {
+                list.innerHTML = result.data.generators.map(gen => {
+                    const sourceChannel = allChannels.find(c => c.id === gen.sourceChannelId);
+                    const category = allCategories.find(c => c.id === gen.parentCategoryId);
+
+                    return `
+                        <div class="generator-card">
+                            <div class="generator-card-header">
+                                <div>
+                                    <h4 class="font-bold text-white">${gen.namePrefix}</h4>
+                                    <p class="text-sm text-slate-400">Canal: #${sourceChannel?.name || "Desconocido"}</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="openEditGeneratorModal(${JSON.stringify(gen).replace(/"/g, '&quot;')})" class="text-blue-400 hover:text-blue-300 transition">✏️</button>
+                                    <button onclick="deleteGenerator('${gen.sourceChannelId}')" class="text-red-400 hover:text-red-300 transition">🗑️</button>
+                                </div>
+                            </div>
+                            <div class="text-xs text-slate-400 space-y-1">
+                                <p>👥 Límite: ${gen.userLimit || "Ilimitado"} usuarios</p>
+                                ${category ? `<p>📁 Categoría: ${category.name}</p>` : ""}
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+            } else {
+                list.innerHTML = '<div class="text-center py-8 text-slate-400">No hay generadores configurados</div>';
+            }
+        } catch (error) {
+            console.error("Error cargando generadores:", error);
+        }
+    }
+
+    /**
+     * Elimina un generador
+     */
+    async function deleteGenerator(sourceChannelId) {
+        if (!confirm("¿Estás seguro de que quieres eliminar este generador?")) return;
+
+        try {
+            const response = await fetch(`/api/guild-plugin/temp-channels/generator/${sourceChannelId}`, {
+                method: "DELETE",
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                await loadGenerators();
+                showNotification("Generador eliminado", "success");
+            } else {
+                showNotification(result.error || "Error eliminando generador", "error");
+            }
+        } catch (error) {
+            console.error("Error eliminando generador:", error);
+            showNotification("Error eliminando generador", "error");
+        }
+    }
+
+    /**
+     * Carga los canales activos
+     */
+    async function loadActiveChannels() {
+        try {
+            const response = await fetch("/api/guild-plugin/temp-channels/active");
+            const result = await response.json();
+
+            const list = document.getElementById("activeChannelsList");
+
+            if (result.success && result.data.length > 0) {
+                list.innerHTML = result.data.map(channel => `
+                    <div class="active-channel-item">
+                        <div>
+                            <h4 class="font-medium text-white">${channel.name}</h4>
+                            <p class="text-xs text-slate-400">
+                                👥 ${channel.members}/${channel.maxMembers || "∞"} 
+                                • Creado: ${new Date(channel.createdAt).toLocaleString()}
+                            </p>
+                        </div>
+                        <button onclick="deleteActiveChannel('${channel.id}')" class="text-red-400 hover:text-red-300 transition">
+                            🗑️
+                        </button>
+                    </div>
+                `).join("");
+            } else {
+                list.innerHTML = '<div class="text-center py-8 text-slate-400">No hay canales temporales activos</div>';
+            }
+        } catch (error) {
+            console.error("Error cargando canales activos:", error);
+        }
+    }
+
+    /**
+     * Elimina un canal temporal activo
+     */
+    async function deleteActiveChannel(channelId) {
+        if (!confirm("¿Eliminar este canal temporal?")) return;
+
+        try {
+            const response = await fetch(`/api/guild-plugin/temp-channels/channel/${channelId}`, {
+                method: "DELETE",
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                await loadActiveChannels();
+                showNotification("Canal eliminado", "success");
+            } else {
+                showNotification(result.error || "Error eliminando canal", "error");
+            }
+        } catch (error) {
+            console.error("Error eliminando canal:", error);
+            showNotification("Error eliminando canal", "error");
+        }
+    }
+
+    /**
+     * Muestra una notificación
+     */
+    function showNotification(message, type = "info") {
+        // Implementar según tu sistema de notificaciones
+        console.log(`[${type.toUpperCase()}] ${message}`);
+    }
+
+    // Cerrar modal al hacer clic fuera
+    document.getElementById("generatorModal").addEventListener("click", (e) => {
+        if (e.target.id === "generatorModal") {
+            closeGeneratorModal();
+        }
+    });
 </script>

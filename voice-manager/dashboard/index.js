@@ -1,10 +1,17 @@
 const { DashboardPlugin } = require("strange-sdk");
-const path = require("path");
+const { Logger } = require("strange-sdk/utils");
+const dbService = require("../db.service");
 
 module.exports = new DashboardPlugin({
-    name: "Voice Manager",
-    icon: "fa-solid fa-microphone-lines",
     dependencies: [],
     baseDir: __dirname,
-    dashboardRouter: require("./router"), // Asegúrate de que router.js exista al lado
+    dbService,
+
+    async enable() {
+        Logger.info("[TempChannels-Dashboard] Plugin habilitado");
+    },
+
+    async disable() {
+        Logger.info("[TempChannels-Dashboard] Plugin deshabilitado");
+    },
 });

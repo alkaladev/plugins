@@ -1,10 +1,28 @@
 {
-  "name": "voice-manager",
+  "name": "temp-channels",
   "version": "1.0.0",
-  "main": "index.js",
-  "strange": {
-    "type": "plugin",
-    "printableName": "Voice Manager",
-    "icon": "fa-solid fa-microphone-lines"
+  "description": "Plugin que crea canales temporales automáticamente en Discord",
+  "main": "bot/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "plugin",
+    "voice",
+    "channels",
+    "temporary"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.0.0",
+    "strange-sdk": "latest",
+    "express": "^4.18.0"
+  },
+  "peerDependencies": {
+    "discord.js": "^14.0.0",
+    "strange-sdk": "latest"
   }
 }
