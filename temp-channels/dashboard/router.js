@@ -1,5 +1,8 @@
 const router = require("express").Router();
-const dbService = require("../../db.service");
+const path = require("path");
+
+// Cargar dbService desde la carpeta padre del plugin
+const dbService = require(path.join(__dirname, "../db.service"));
 
 router.get("/settings", async (req, res) => {
     try {
@@ -7,6 +10,7 @@ router.get("/settings", async (req, res) => {
         const settings = await dbService.getSettings(guildId);
         res.json(settings);
     } catch (error) {
+        console.error("[TempChannels Router] Error en GET /settings:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -30,6 +34,7 @@ router.post("/generator", async (req, res) => {
         const settings = await dbService.addGenerator(guildId, generator);
         res.json(settings);
     } catch (error) {
+        console.error("[TempChannels Router] Error en POST /generator:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -50,6 +55,7 @@ router.patch("/generator/:sourceChannelId", async (req, res) => {
         const settings = await dbService.updateGenerator(guildId, sourceChannelId, updates);
         res.json(settings);
     } catch (error) {
+        console.error("[TempChannels Router] Error en PATCH /generator:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -61,6 +67,7 @@ router.delete("/generator/:sourceChannelId", async (req, res) => {
         const settings = await dbService.deleteGenerator(guildId, sourceChannelId);
         res.json(settings);
     } catch (error) {
+        console.error("[TempChannels Router] Error en DELETE /generator:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -71,6 +78,7 @@ router.get("/active", async (req, res) => {
         const response = await req.broadcastOne("tempchannels:getActiveChannels", { guildId });
         res.json(response?.data || []);
     } catch (error) {
+        console.error("[TempChannels Router] Error en GET /active:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -82,6 +90,7 @@ router.delete("/channel/:channelId", async (req, res) => {
         await req.broadcastOne("tempchannels:cleanupChannel", { guildId, channelId });
         res.json({ success: true });
     } catch (error) {
+        console.error("[TempChannels Router] Error en DELETE /channel:", error);
         res.status(500).json({ error: error.message });
     }
 });

@@ -1,8 +1,10 @@
 const { DBService, Schema } = require("strange-sdk");
+const path = require("path");
 
 class TempChannelsService extends DBService {
     constructor() {
-        super("temp-channels", __dirname);
+        console.log("[TempChannels DB] Inicializando DBService...");
+        super("temp-channels", path.join(__dirname));
     }
 
     defineSchemas() {

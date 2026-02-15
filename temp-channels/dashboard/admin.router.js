@@ -1,5 +1,6 @@
 const router = require("express").Router();
-const dbService = require("../db.service");
+const path = require("path");
+const dbService = require(path.join(__dirname, "../db.service"));
 
 // GET - Obtener configuración global del plugin
 router.get("/settings", async (req, res) => {
