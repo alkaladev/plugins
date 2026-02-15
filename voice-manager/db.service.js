@@ -2,17 +2,19 @@ const { DBService, Schema } = require("strange-sdk");
 
 class VoiceService extends DBService {
     constructor() {
-        super(__dirname);
+        // Pasamos el nombre del plugin y la ruta
+        super("voice-manager", __dirname);
     }
 
     defineSchemas() {
         return {
+            // El nombre de esta llave debe coincidir con getModel("settings")
             settings: new Schema({
                 guildId: { type: String, required: true, unique: true },
                 generators: [{
-                    sourceId: String,
-                    namePrefix: String,
-                    userLimit: Number,
+                    sourceId: String,   
+                    namePrefix: String, 
+                    userLimit: Number,  
                     order: { type: Number, default: 0 }
                 }]
             }),
@@ -20,9 +22,15 @@ class VoiceService extends DBService {
     }
 
     async getSettings(guildId) {
-        let settings = await this.getModel("settings").findOne({ guildId });
+        // Forzamos la inicialización si por alguna razón el SDK no lo hizo
+        const SettingsModel = this.getModel("settings");
+        
+        let settings = await SettingsModel.findOne({ guildId });
         if (!settings) {
-            settings = await this.getModel("settings").create({ guildId, generators: [] });
+            settings = await SettingsModel.create({ 
+                guildId, 
+                generators: [] 
+            });
         }
         return settings;
     }
