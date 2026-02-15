@@ -52,7 +52,8 @@
     
     async loadChannels() {
       try {
-        const res = await fetch(\`/\${window.location.pathname.split('/')[2]}/api/channels\`);
+        const guildId = window.location.pathname.split('/')[2];
+        const res = await fetch(\`/dashboard/\${guildId}/api/channels\`);
         const data = await res.json();
         this.channels = data.filter(c => c.type === 0 || c.type === 2) || [];
         this.categories = data.filter(c => c.type === 4) || [];
@@ -78,8 +79,8 @@
       try {
         const method = this.editingId ? 'PATCH' : 'POST';
         const url = this.editingId 
-          ? \`\${window.location.href}/generator/\${this.editingId}\`
-          : \`\${window.location.href}/generator\`;
+          ? window.location.href + '/generator/' + this.editingId
+          : window.location.href + '/generator';
         
         const res = await fetch(url, {
           method,
@@ -104,7 +105,7 @@
     async deleteGenerator(id) {
       if (!confirm('¿Estás seguro?')) return;
       try {
-        const res = await fetch(\`\${window.location.href}/generator/\${id}\`, { method: 'DELETE' });
+        const res = await fetch(window.location.href + '/generator/' + id, { method: 'DELETE' });
         if (res.ok) {
           Alpine.store('toast').show('Eliminado correctamente', 'success');
           await this.loadData();
@@ -117,7 +118,7 @@
     async deleteChannel(id) {
       if (!confirm('¿Estás seguro?')) return;
       try {
-        const res = await fetch(\`\${window.location.href}/channel/\${id}\`, { method: 'DELETE' });
+        const res = await fetch(window.location.href + '/channel/' + id, { method: 'DELETE' });
         if (res.ok) {
           Alpine.store('toast').show('Canal eliminado', 'success');
           await this.loadData();
@@ -221,19 +222,19 @@
             class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500">
             <option value="">Selecciona...</option>
             <template x-for="ch in channels.filter(c => c.type === 2)">
-              <option :value="ch.id" x-text="'#' + ch.name"></option>
+              <option :value="ch.id" x-text="'🎤 ' + ch.name"></option>
             </template>
           </select>
         </div>
         
         <div>
-          <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Prefijo</label>
-          <input type="text" x-model="formData.namePrefix" placeholder="Patrulla" required
+          <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Prefijo de Nombre</label>
+          <input type="text" x-model="formData.namePrefix" placeholder="ej: Patrulla" required
             class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500">
         </div>
         
         <div>
-          <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Límite de Usuarios</label>
+          <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Límite de Usuarios (0 = ilimitado)</label>
           <input type="number" x-model="formData.userLimit" min="0" max="99"
             class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500">
         </div>
