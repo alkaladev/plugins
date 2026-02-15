@@ -22,14 +22,17 @@ class TempChannelsService extends DBService {
                 ],
             }),
 
-            activeChannels: new Schema({
-                channelId: { type: String, required: true, unique: true, _id: true },
-                guildId: { type: String, required: true },
-                sourceChannelId: String,
-                namePrefix: String,
-                createdAt: { type: Date, default: Date.now },
-                createdBy: String,
-            }),
+            activeChannels: new Schema(
+                {
+                    channelId: { type: String, required: true, unique: true },
+                    guildId: { type: String, required: true },
+                    sourceChannelId: String,
+                    namePrefix: String,
+                    createdAt: { type: Date, default: Date.now },
+                    createdBy: String,
+                },
+                { _id: false }
+            ),
         };
     }
 
@@ -85,8 +88,12 @@ class TempChannelsService extends DBService {
         const ActiveChannelsModel = this.getModel("activeChannels");
         try {
             return await ActiveChannelsModel.create({
-                _id: channelData.channelId,
-                ...channelData,
+                channelId: channelData.channelId,
+                guildId: channelData.guildId,
+                sourceChannelId: channelData.sourceChannelId,
+                namePrefix: channelData.namePrefix,
+                createdBy: channelData.createdBy,
+                createdAt: new Date(),
             });
         } catch (error) {
             console.error("[TempChannels DB] Error creando canal activo:", error);

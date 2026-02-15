@@ -30,9 +30,7 @@ module.exports = new BotPlugin({
                     }
 
                     try {
-                        const count = await dbService.getActiveChannelCount(channel.id);
-                        const channelNumber = count + 1;
-                        const tempChannelName = `${generator.namePrefix} ${channelNumber}`;
+                        const tempChannelName = generator.namePrefix;
 
                         console.log("[TempChannels] Creando canal temporal:", tempChannelName);
 
@@ -54,12 +52,21 @@ module.exports = new BotPlugin({
                             createdAt: new Date(),
                         });
 
-                        console.log("[TempChannels] Moviendo usuario al canal:", tempChannel.id);
+                        console.log("[TempChannels] Datos guardados en DB");
+
+                        // Mover al usuario al canal temporal con delay pequeño
+                        setTimeout(async () => {
+                            try {
+                                console.log("[TempChannels] Intentando mover usuario a:", tempChannel.id);
+                                await member.voice.setChannel(tempChannel);
+                                console.log("[TempChannels] Usuario movido correctamente");
+                                Logger.info(`[TempChannels] Canal temporal creado: ${tempChannelName}`);
+                            } catch (moveError) {
+                                console.error("[TempChannels] Error al mover usuario:", moveError);
+                                Logger.error("[TempChannels] Error moviendo usuario:", moveError);
+                            }
+                        }, 500);
                         
-                        // Mover al usuario al canal temporal
-                        await member.voice.setChannel(tempChannel);
-                        
-                        Logger.info(`[TempChannels] Canal temporal creado: ${tempChannelName}`);
                     } catch (error) {
                         Logger.error("[TempChannels] Error creando canal temporal:", error);
                         console.error("[TempChannels] Detalles del error:", error.message);
@@ -69,14 +76,14 @@ module.exports = new BotPlugin({
                 else if (oldState.channel && (!newState.channel || oldState.channel.id !== newState.channel?.id)) {
                     console.log("[TempChannels] Usuario desconectado de:", oldState.channel.name);
                     
-                    const guild = oldState.guild;
-                    if (!guild) return;
+                    const guildToCheck = oldState.guild;
+                    if (!guildToCheck) return;
 
-                    const activeChannels = await dbService.getActiveChannels(guild.id);
+                    const activeChannels = await dbService.getActiveChannels(guildToCheck.id);
                     
                     for (const activeChannel of activeChannels) {
                         try {
-                            const channel = guild.channels.cache.get(activeChannel.channelId);
+                            const channel = guildToCheck.channels.cache.get(activeChannel.channelId);
                             
                             if (!channel) {
                                 console.log("[TempChannels] Canal no encontrado, eliminando DB:", activeChannel.channelId);
@@ -100,7 +107,7 @@ module.exports = new BotPlugin({
                                 // Crear timer de 1 minuto (60000 ms)
                                 const timer = setTimeout(async () => {
                                     try {
-                                        const channelToDelete = guild.channels.cache.get(activeChannel.channelId);
+                                        const channelToDelete = guildToCheck.channels.cache.get(activeChannel.channelId);
                                         
                                         // Verificar que siga vacío
                                         if (channelToDelete && channelToDelete.members.size === 0) {
