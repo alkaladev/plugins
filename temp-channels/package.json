@@ -2,7 +2,7 @@
     "name": "temp-channels",
     "version": "0.1.0-beta",
     "main": "index.js",
-    "author": "Jorge",
+    "author": "",
     "license": "ISC",
     "dependencies": {},
     "peerDependencies": {
