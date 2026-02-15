@@ -1,10 +1,13 @@
 {
   "name": "voice-manager",
   "version": "1.0.0",
-  "description": "Gestión de canales de voz temporales",
+  "description": "Gestión dinámica de canales de voz",
   "main": "bot/index.js",
+  "dashboard": "dashboard/index.js",
   "strange": {
     "type": "plugin",
-    "name": "Voice Manager"
+    "printableName": "Voice Manager",
+    "icon": "fa-solid fa-microphone-lines",
+    "color": "#5865F2"
   }
 }
