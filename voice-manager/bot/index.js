@@ -2,6 +2,7 @@ const { BotPlugin } = require("strange-sdk");
 const { ChannelType, Collection } = require("discord.js");
 const config = require("./config");
 
+// Gestión de borrado diferido
 const deleteQueue = new Collection();
 
 module.exports = new BotPlugin({
@@ -9,77 +10,86 @@ module.exports = new BotPlugin({
     baseDir: __dirname,
 
     async boot(client) {
-        // Log para confirmar que el plugin ha arrancado
-        client.logger.info(">>> [VOICE-DEBUG] Plugin Voice Manager iniciado correctamente.");
+        // Confirmación visual en la terminal al arrancar
+        console.log("------------------------------------------------");
+        console.log("  [VOICE-MANAGER] Sistema de Patrullas Activo   ");
+        console.log("------------------------------------------------");
 
         client.on("voiceStateUpdate", async (oldState, newState) => {
             const { guild, member } = newState;
             const newChannel = newState.channel;
-            
-            // LOG 1: Detectar cualquier movimiento
+            const oldChannel = oldState.channel;
+
+            // --- 1. DETECCIÓN Y CREACIÓN ---
             if (newChannel) {
-                client.logger.info(`>>> [VOICE-DEBUG] ${member.user.tag} entró al canal: ${newChannel.name} (ID: ${newChannel.id})`);
-            }
+                // Buscamos si el canal es un generador (por ID en config o por nombre "Battlefield")
+                const generator = config.generators.find(g => g.sourceId === newChannel.id) || 
+                                 (newChannel.name.toLowerCase() === "battlefield" ? { namePrefix: "Patrulla ", userLimit: 4 } : null);
 
-            // LOG 2: Listar los IDs que el bot tiene registrados como generadores
-            const generatorIds = config.generators.map(g => g.sourceId);
-            // client.logger.info(`>>> [VOICE-DEBUG] IDs registrados actualmente: ${generatorIds.join(", ")}`);
+                if (generator) {
+                    console.log(`[VOICE] Generando patrulla para: ${member.user.tag}`);
 
-            const generator = config.generators.find(g => g.sourceId === newChannel?.id);
+                    try {
+                        // Contamos cuántas patrullas existen ya en esa categoría
+                        const prefix = generator.namePrefix || "Patrulla ";
+                        const existingCount = guild.channels.cache.filter(c => 
+                            c.name.startsWith(prefix) && c.parentId === newChannel.parentId
+                        ).size;
 
-            if (generator) {
-                client.logger.info(`>>> [VOICE-DEBUG] ¡MATCH! El canal ${newChannel.id} es un generador.`);
+                        // Crear el nuevo canal
+                        const voiceChannel = await guild.channels.create({
+                            name: `${prefix}${existingCount + 1}`,
+                            type: ChannelType.GuildVoice,
+                            parent: newChannel.parentId,
+                            userLimit: generator.userLimit || 4,
+                            reason: 'Sistema automático de patrullas'
+                        });
 
-                try {
-                    // Contar canales existentes para el número
-                    const existingPatrols = guild.channels.cache.filter(c => 
-                        c.name.startsWith(generator.namePrefix) && 
-                        c.parentId === newChannel.parentId
-                    ).size;
+                        console.log(`[VOICE] Canal creado: ${voiceChannel.name}. Moviendo miembro...`);
+                        
+                        // Mover al miembro al nuevo canal
+                        await member.voice.setChannel(voiceChannel);
 
-                    const newName = `${generator.namePrefix}${existingPatrols + 1}`;
-                    
-                    client.logger.info(`>>> [VOICE-DEBUG] Intentando crear canal: ${newName}`);
-
-                    const newVoiceChannel = await guild.channels.create({
-                        name: newName,
-                        type: ChannelType.GuildVoice,
-                        parent: newChannel.parentId,
-                        userLimit: generator.userLimit,
-                        reason: 'Voice Manager: Patrulla automática'
-                    });
-
-                    client.logger.info(`>>> [VOICE-DEBUG] Canal creado. Moviendo a ${member.user.tag}...`);
-                    await member.voice.setChannel(newVoiceChannel);
-                    
-                } catch (error) {
-                    client.logger.error(">>> [VOICE-DEBUG] ERROR FATAL:", error);
+                    } catch (error) {
+                        console.error("[VOICE ERROR] No se pudo crear o mover:", error.message);
+                    }
                 }
             }
 
-            // --- Lógica de borrado ---
-            const oldChannel = oldState.channel;
-            if (oldChannel && oldChannel.members.size === 0) {
-                const isTemp = config.generators.some(g => oldChannel.name.startsWith(g.namePrefix));
-                if (isTemp) {
+            // --- 2. LÓGICA DE BORRADO (Si el canal se queda vacío) ---
+            if (oldChannel) {
+                // Comprobamos si el canal que abandonó era una patrulla
+                const isPatrol = oldChannel.name.includes("Patrulla");
+                
+                if (isPatrol && oldChannel.members.size === 0) {
+                    console.log(`[VOICE] Canal ${oldChannel.name} vacío. Borrado programado en 2 min.`);
+                    
                     const timeout = setTimeout(async () => {
-                        const ch = await guild.channels.fetch(oldChannel.id).catch(() => null);
-                        if (ch && ch.members.size === 0) {
-                            await ch.delete().catch(() => {});
-                            deleteQueue.delete(oldChannel.id);
+                        try {
+                            const ch = await guild.channels.fetch(oldChannel.id).catch(() => null);
+                            if (ch && ch.members.size === 0) {
+                                await ch.delete();
+                                console.log(`[VOICE] Canal ${oldChannel.name} borrado por inactividad.`);
+                                deleteQueue.delete(oldChannel.id);
+                            }
+                        } catch (e) {
+                            // Canal ya borrado o error menor
                         }
-                    }, 120000);
+                    }, 120000); // 2 minutos
+
                     deleteQueue.set(oldChannel.id, timeout);
                 }
             }
 
+            // --- 3. CANCELAR BORRADO SI ALGUIEN ENTRA ---
             if (newChannel && deleteQueue.has(newChannel.id)) {
+                console.log(`[VOICE] Borrado cancelado en ${newChannel.name} (usuario entró).`);
                 clearTimeout(deleteQueue.get(newChannel.id));
                 deleteQueue.delete(newChannel.id);
             }
         });
 
-        // Receptor para la Dashboard o comandos
+        // --- 4. ESCUCHA DE LA DASHBOARD / IPC ---
         client.on("ipc:voice:setup", (data, reply) => {
             const newGen = {
                 sourceId: data.channel_id,
@@ -87,9 +97,13 @@ module.exports = new BotPlugin({
                 userLimit: data.limit,
                 deleteDelay: 120000
             };
+            
+            // Evitar duplicados
+            config.generators = config.generators.filter(g => g.sourceId !== data.channel_id);
             config.generators.push(newGen);
-            client.logger.info(`>>> [VOICE-DEBUG] Nuevo generador añadido vía IPC: ${data.channel_id}`);
+            
+            console.log(`[VOICE-IPC] Configuración actualizada para canal ID: ${data.channel_id}`);
             if (reply) reply({ success: true });
         });
-    }
+    },
 });
