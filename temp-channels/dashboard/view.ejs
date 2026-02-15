@@ -1,174 +1,160 @@
-<style>
-  input[type="number"] {
-    appearance: textfield;
-  }
-
-  input[type="number"]::-webkit-inner-spin-button,
-  input[type="number"]::-webkit-outer-spin-button {
-    appearance: none;
-    margin: 0;
-  }
-</style>
-
-<section
-  x-data="{
-    generators: [],
-    activeChannels: [],
-    openModal: false,
-    editingId: null,
-    channels: [],
-    categories: [],
-    formData: {
-      sourceChannelId: '',
-      namePrefix: '',
-      userLimit: 0,
-      parentCategoryId: ''
-    },
-    saving: false,
-    loading: true,
-    
-    async loadData() {
-      try {
-        this.loading = true;
-        const [settingsRes, activeRes] = await Promise.all([
-          fetch(window.location.href),
-          fetch(window.location.href + '/active')
-        ]);
-        
-        if (settingsRes.ok) {
-          const data = await settingsRes.json();
-          this.generators = data.generators || [];
+<section class="border-border bg-bg-panel rounded-lg border p-4 shadow-sm">
+  <form
+    x-data="{
+      generators: [],
+      activeChannels: [],
+      openModal: false,
+      editingId: null,
+      channels: [],
+      categories: [],
+      formData: {
+        sourceChannelId: '',
+        namePrefix: '',
+        userLimit: 0,
+        parentCategoryId: ''
+      },
+      saving: false,
+      loading: true,
+      
+      async loadData() {
+        try {
+          this.loading = true;
+          const [settingsRes, activeRes] = await Promise.all([
+            fetch(window.location.href),
+            fetch(window.location.href + '/active')
+          ]);
+          
+          if (settingsRes.ok) {
+            const data = await settingsRes.json();
+            this.generators = data.generators || [];
+          }
+          if (activeRes.ok) {
+            const data = await activeRes.json();
+            this.activeChannels = data || [];
+          }
+        } catch (error) {
+          console.error('Error loading data:', error);
+        } finally {
+          this.loading = false;
         }
-        if (activeRes.ok) {
-          const data = await activeRes.json();
-          this.activeChannels = data || [];
+      },
+      
+      async loadChannels() {
+        try {
+          const guildId = window.location.pathname.split('/')[2];
+          const res = await fetch(\`/dashboard/\${guildId}/api/channels\`);
+          const data = await res.json();
+          this.channels = data.filter(c => c.type === 0 || c.type === 2) || [];
+          this.categories = data.filter(c => c.type === 4) || [];
+        } catch (error) {
+          console.error('Error loading channels:', error);
         }
-      } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        this.loading = false;
-      }
-    },
-    
-    async loadChannels() {
-      try {
-        const guildId = window.location.pathname.split('/')[2];
-        const res = await fetch(\`/dashboard/\${guildId}/api/channels\`);
-        const data = await res.json();
-        this.channels = data.filter(c => c.type === 0 || c.type === 2) || [];
-        this.categories = data.filter(c => c.type === 4) || [];
-      } catch (error) {
-        console.error('Error loading channels:', error);
-      }
-    },
-    
-    openAddModal() {
-      this.editingId = null;
-      this.formData = { sourceChannelId: '', namePrefix: '', userLimit: 0, parentCategoryId: '' };
-      this.openModal = true;
-    },
-    
-    editGenerator(gen) {
-      this.editingId = gen.sourceChannelId;
-      this.formData = { ...gen };
-      this.openModal = true;
-    },
-    
-    async submitForm() {
-      this.saving = true;
-      try {
-        const method = this.editingId ? 'PATCH' : 'POST';
-        const url = this.editingId 
-          ? window.location.href + '/generator/' + this.editingId
-          : window.location.href + '/generator';
-        
-        const res = await fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(this.formData)
-        });
-        
-        if (res.ok) {
-          Alpine.store('toast').show('Guardado correctamente', 'success');
-          this.openModal = false;
-          await this.loadData();
-        } else {
-          throw new Error();
+      },
+      
+      openAddModal() {
+        this.editingId = null;
+        this.formData = { sourceChannelId: '', namePrefix: '', userLimit: 0, parentCategoryId: '' };
+        this.openModal = true;
+      },
+      
+      editGenerator(gen) {
+        this.editingId = gen.sourceChannelId;
+        this.formData = { ...gen };
+        this.openModal = true;
+      },
+      
+      async submitForm() {
+        this.saving = true;
+        try {
+          const method = this.editingId ? 'PATCH' : 'POST';
+          const url = this.editingId 
+            ? window.location.href + '/generator/' + this.editingId
+            : window.location.href + '/generator';
+          
+          const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.formData)
+          });
+          
+          if (res.ok) {
+            Alpine.store('toast').show('Guardado correctamente', 'success');
+            this.openModal = false;
+            await this.loadData();
+          } else {
+            throw new Error();
+          }
+        } catch (error) {
+          Alpine.store('toast').show('Error al guardar', 'error');
+        } finally {
+          this.saving = false;
         }
-      } catch (error) {
-        Alpine.store('toast').show('Error al guardar', 'error');
-      } finally {
-        this.saving = false;
-      }
-    },
-    
-    async deleteGenerator(id) {
-      if (!confirm('¿Estás seguro?')) return;
-      try {
-        const res = await fetch(window.location.href + '/generator/' + id, { method: 'DELETE' });
-        if (res.ok) {
-          Alpine.store('toast').show('Eliminado correctamente', 'success');
-          await this.loadData();
+      },
+      
+      async deleteGenerator(id) {
+        if (!confirm('¿Estás seguro?')) return;
+        try {
+          const res = await fetch(window.location.href + '/generator/' + id, { method: 'DELETE' });
+          if (res.ok) {
+            Alpine.store('toast').show('Eliminado correctamente', 'success');
+            await this.loadData();
+          }
+        } catch (error) {
+          Alpine.store('toast').show('Error al eliminar', 'error');
         }
-      } catch (error) {
-        Alpine.store('toast').show('Error al eliminar', 'error');
-      }
-    },
-    
-    async deleteChannel(id) {
-      if (!confirm('¿Estás seguro?')) return;
-      try {
-        const res = await fetch(window.location.href + '/channel/' + id, { method: 'DELETE' });
-        if (res.ok) {
-          Alpine.store('toast').show('Canal eliminado', 'success');
-          await this.loadData();
+      },
+      
+      async deleteChannel(id) {
+        if (!confirm('¿Estás seguro?')) return;
+        try {
+          const res = await fetch(window.location.href + '/channel/' + id, { method: 'DELETE' });
+          if (res.ok) {
+            Alpine.store('toast').show('Canal eliminado', 'success');
+            await this.loadData();
+          }
+        } catch (error) {
+          Alpine.store('toast').show('Error al eliminar canal', 'error');
         }
-      } catch (error) {
-        Alpine.store('toast').show('Error al eliminar canal', 'error');
+      },
+      
+      init() {
+        this.loadData();
+        this.loadChannels();
       }
-    },
+    }"
+    @submit.prevent="submitForm">
     
-    init() {
-      this.loadData();
-      this.loadChannels();
-    }
-  }"
-  class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c] transition-colors duration-300">
-
-  <h3 class="mb-6 text-xl font-bold text-gray-900 dark:text-white">
-    🎤 Canales Temporales
-  </h3>
-
-  <div class="space-y-6">
     <!-- Generadores -->
-    <div>
-      <div class="flex items-center justify-between mb-4">
-        <h4 class="text-lg font-bold text-gray-900 dark:text-white">Generadores</h4>
-        <button @click="openAddModal()"
-          class="inline-flex items-center gap-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 px-4 py-2 font-bold text-blue-700 dark:text-blue-300 hover:scale-105 transition-all">
-          <i class="fa-solid fa-plus text-sm"></i>
-          Añadir
+    <div class="mb-6">
+      <div class="mb-4 flex items-center justify-between">
+        <h3 class="text-text text-lg font-bold">Generadores de Canales</h3>
+        <button type="button" @click="openAddModal()"
+          class="bg-primary hover:bg-primary-dark focus:ring-primary inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-white focus:outline-none focus:ring-4">
+          <i class="fa-solid fa-plus mr-2"></i> Añadir
         </button>
       </div>
       
-      <div class="space-y-3" x-show="!loading">
+      <div class="space-y-2" x-show="!loading">
         <template x-if="generators.length === 0">
-          <p class="text-center text-gray-500 dark:text-gray-400 py-8">No hay generadores configurados</p>
+          <p class="text-text-muted text-center py-6">No hay generadores configurados</p>
         </template>
         
         <template x-for="gen in generators" :key="gen.sourceChannelId">
-          <div class="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+          <div class="border-border bg-bg-interactive rounded-lg border p-4 flex items-center justify-between">
             <div>
-              <p class="font-bold text-gray-900 dark:text-white" x-text="gen.namePrefix"></p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">
+              <p class="text-text font-bold" x-text="gen.namePrefix"></p>
+              <p class="text-text-muted text-sm">
                 <span x-text="channels.find(c => c.id === gen.sourceChannelId)?.name || 'desconocido'"></span>
+                <template x-if="gen.userLimit > 0">
+                  | Límite: <span x-text="gen.userLimit"></span>
+                </template>
               </p>
             </div>
             <div class="flex gap-2">
-              <button @click="editGenerator(gen)" class="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors">
+              <button type="button" @click="editGenerator(gen)" class="text-primary hover:opacity-75 transition-opacity">
                 <i class="fa-solid fa-edit"></i>
               </button>
-              <button @click="deleteGenerator(gen.sourceChannelId)" class="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
+              <button type="button" @click="deleteGenerator(gen.sourceChannelId)" class="text-red-500 hover:opacity-75 transition-opacity">
                 <i class="fa-solid fa-trash"></i>
               </button>
             </div>
@@ -176,51 +162,56 @@
         </template>
       </div>
       
-      <div x-show="loading" class="text-center py-8">
-        <i class="fa-solid fa-spinner fa-spin text-gray-400"></i>
+      <div x-show="loading" class="text-center py-6">
+        <i class="fa-solid fa-spinner fa-spin text-text-muted"></i>
       </div>
     </div>
 
     <!-- Canales Activos -->
-    <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
-      <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Canales Activos</h4>
+    <div class="border-border mt-6 border-t pt-6">
+      <h3 class="text-text mb-4 text-lg font-bold">Canales Activos</h3>
       
-      <div class="space-y-3" x-show="!loading">
+      <div class="space-y-2" x-show="!loading">
         <template x-if="activeChannels.length === 0">
-          <p class="text-center text-gray-500 dark:text-gray-400 py-8">No hay canales activos</p>
+          <p class="text-text-muted text-center py-6">No hay canales activos</p>
         </template>
         
         <template x-for="ch in activeChannels" :key="ch.id">
-          <div class="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+          <div class="border-border bg-bg-interactive rounded-lg border p-4 flex items-center justify-between">
             <div>
-              <p class="font-bold text-gray-900 dark:text-white" x-text="ch.name"></p>
-              <p class="text-sm text-gray-500 dark:text-gray-400">
+              <p class="text-text font-bold" x-text="ch.name"></p>
+              <p class="text-text-muted text-sm">
                 👥 <span x-text="ch.members"></span>/<span x-text="ch.maxMembers || '∞'"></span>
               </p>
             </div>
-            <button @click="deleteChannel(ch.id)" class="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
+            <button type="button" @click="deleteChannel(ch.id)" class="text-red-500 hover:opacity-75 transition-opacity">
               <i class="fa-solid fa-trash"></i>
             </button>
           </div>
         </template>
       </div>
     </div>
-  </div>
+
+    <!-- Footer -->
+    <div class="border-border mt-6 flex items-center justify-between border-t pt-6">
+      <div></div>
+    </div>
+  </form>
 
   <!-- Modal -->
-  <div x-show="openModal" x-transition class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.away="openModal = false">
-    <div class="bg-white dark:bg-[#090e2c] rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
-      <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+  <div x-show="openModal" x-transition class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.away="openModal = false" style="display: none;">
+    <div class="bg-bg-panel rounded-lg p-6 max-w-md w-full mx-4 shadow-xl border border-border">
+      <h3 class="text-text text-xl font-bold mb-4">
         <span x-show="!editingId">Nuevo Generador</span>
         <span x-show="editingId">Editar Generador</span>
       </h3>
       
       <form @submit.prevent="submitForm" class="space-y-4">
         <div>
-          <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Canal de Voz</label>
+          <label class="text-text text-sm font-semibold mb-2 block">Canal de Voz</label>
           <select x-model="formData.sourceChannelId" required
-            class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500">
-            <option value="">Selecciona...</option>
+            class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 shadow-sm sm:text-sm">
+            <option value="">Selecciona un canal...</option>
             <template x-for="ch in channels.filter(c => c.type === 2)">
               <option :value="ch.id" x-text="'🎤 ' + ch.name"></option>
             </template>
@@ -228,21 +219,22 @@
         </div>
         
         <div>
-          <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Prefijo de Nombre</label>
+          <label class="text-text text-sm font-semibold mb-2 block">Prefijo de Nombre</label>
           <input type="text" x-model="formData.namePrefix" placeholder="ej: Patrulla" required
-            class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500">
+            class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 shadow-sm sm:text-sm">
         </div>
         
         <div>
-          <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Límite de Usuarios (0 = ilimitado)</label>
+          <label class="text-text text-sm font-semibold mb-2 block">Límite de Usuarios</label>
           <input type="number" x-model="formData.userLimit" min="0" max="99"
-            class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500">
+            class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 shadow-sm sm:text-sm">
+          <div class="text-text-muted text-xs mt-1">0 = ilimitado</div>
         </div>
         
         <div>
-          <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Categoría (Opcional)</label>
+          <label class="text-text text-sm font-semibold mb-2 block">Categoría (Opcional)</label>
           <select x-model="formData.parentCategoryId"
-            class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500">
+            class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 shadow-sm sm:text-sm">
             <option value="">Sin categoría</option>
             <template x-for="cat in categories">
               <option :value="cat.id" x-text="cat.name"></option>
@@ -250,15 +242,15 @@
           </select>
         </div>
         
-        <div class="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div class="flex gap-3 pt-4 border-border border-t">
           <button type="button" @click="openModal = false"
-            class="flex-1 rounded-xl bg-gray-200 dark:bg-gray-700 px-4 py-2.5 font-bold text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+            class="border-border bg-bg-interactive text-text hover:opacity-75 flex-1 rounded-lg border px-4 py-2.5 font-medium transition-opacity">
             Cancelar
           </button>
-          <button type="submit" :disabled="saving"
-            class="flex-1 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 px-4 py-2.5 font-bold text-blue-700 dark:text-blue-300 hover:scale-105 transition-all disabled:opacity-50">
-            <i class="fa-solid fa-floppy-disk" x-show="!saving"></i>
-            <i class="fa-solid fa-spinner fa-spin" x-show="saving"></i>
+          <button type="submit" :disabled="saving" :class="{'opacity-50': saving}"
+            class="bg-primary hover:bg-primary-dark focus:ring-primary flex-1 rounded-lg px-4 py-2.5 font-medium text-white focus:outline-none focus:ring-4 transition-opacity">
+            <i class="fa-solid fa-floppy-disk mr-2" x-show="!saving"></i>
+            <i class="fa-solid fa-spinner fa-spin mr-2" x-show="saving"></i>
             <span x-show="!saving">Guardar</span>
             <span x-show="saving">Guardando...</span>
           </button>
