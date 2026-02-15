@@ -1,8 +1,8 @@
 const { DashboardPlugin } = require("strange-sdk");
 
 module.exports = new DashboardPlugin({
+    icon: "fa-solid fa-microphone",
     baseDir: __dirname,
-    icon: "fa-solid fa-microphone-lines",
-    dashboardRouter: require("./settings.router"),
+    dashboardRouter: require("./router"),
     dbService: require("../db.service"),
 });

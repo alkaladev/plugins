@@ -5,25 +5,100 @@ class TempChannelsService extends DBService {
         super(__dirname);
     }
 
-    defineSchemas() {
+    defineSchemas(_config) {
         return {
-            "settings": new Schema({
-                _id: { type: String, required: true },
-                generators: [{
-                    sourceId: String,
-                    namePrefix: { type: String, default: "Voz" },
-                    userLimit: { type: Number, default: 0 }
-                }]
+            settings: new Schema({
+                _id: String,
+                guildId: { type: String, required: true, unique: true },
+                generators: [
+                    {
+                        sourceChannelId: String,
+                        namePrefix: String,
+                        userLimit: Number,
+                        parentCategoryId: String,
+                        order: { type: Number, default: 0 },
+                        createdAt: { type: Date, default: Date.now },
+                    },
+                ],
+            }),
+
+            activeChannels: new Schema({
+                _id: false,
+                channelId: { type: String, required: true, unique: true },
+                guildId: { type: String, required: true },
+                sourceChannelId: String,
+                namePrefix: String,
+                createdAt: { type: Date, default: Date.now },
+                createdBy: String,
             }),
         };
     }
 
-    async getSettings(guild) {
-        const guildId = typeof guild === "string" ? guild : guild.id;
-        const Model = this.getModel("settings");
-        let settings = await Model.findOne({ _id: guildId });
-        if (!settings) settings = await Model.create({ _id: guildId, generators: [] });
+    async getSettings(guildId) {
+        const SettingsModel = this.getModel("settings");
+        let settings = await SettingsModel.findOne({ _id: guildId });
+        if (!settings) {
+            settings = await SettingsModel.create({ _id: guildId, guildId, generators: [] });
+        }
         return settings;
+    }
+
+    async addGenerator(guildId, generator) {
+        const SettingsModel = this.getModel("settings");
+        const settings = await this.getSettings(guildId);
+
+        const newGenerator = {
+            ...generator,
+            order: settings.generators.length,
+            createdAt: new Date(),
+        };
+
+        settings.generators.push(newGenerator);
+        await settings.save();
+        return settings;
+    }
+
+    async updateGenerator(guildId, sourceChannelId, updates) {
+        const SettingsModel = this.getModel("settings");
+        const settings = await this.getSettings(guildId);
+
+        const generator = settings.generators.find((g) => g.sourceChannelId === sourceChannelId);
+        if (!generator) throw new Error("Generador no encontrado");
+
+        Object.assign(generator, updates);
+        await settings.save();
+        return settings;
+    }
+
+    async deleteGenerator(guildId, sourceChannelId) {
+        const SettingsModel = this.getModel("settings");
+        const settings = await this.getSettings(guildId);
+
+        settings.generators = settings.generators.filter(
+            (g) => g.sourceChannelId !== sourceChannelId,
+        );
+        await settings.save();
+        return settings;
+    }
+
+    async addActiveChannel(channelData) {
+        const ActiveChannelsModel = this.getModel("activeChannels");
+        return await ActiveChannelsModel.create(channelData);
+    }
+
+    async getActiveChannels(guildId) {
+        const ActiveChannelsModel = this.getModel("activeChannels");
+        return await ActiveChannelsModel.find({ guildId });
+    }
+
+    async removeActiveChannel(channelId) {
+        const ActiveChannelsModel = this.getModel("activeChannels");
+        return await ActiveChannelsModel.deleteOne({ channelId });
+    }
+
+    async getActiveChannelCount(sourceChannelId) {
+        const ActiveChannelsModel = this.getModel("activeChannels");
+        return await ActiveChannelsModel.countDocuments({ sourceChannelId });
     }
 }
 

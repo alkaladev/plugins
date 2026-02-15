@@ -1,15 +1,10 @@
 {
     "name": "temp-channels",
-    "version": "1.0.0",
+    "version": "0.1.0-beta",
     "main": "index.js",
-    "author": "Jorge",
+    "author": "",
     "license": "ISC",
-    "strange": {
-        "type": "plugin",
-        "printableName": "Canales Temporales",
-        "icon": "fa-solid fa-microphone-lines",
-        "color": "#5865F2"
-    },
+    "dependencies": {},
     "peerDependencies": {
         "discord.js": "^14.19.0",
         "express": "^4.21.2",
