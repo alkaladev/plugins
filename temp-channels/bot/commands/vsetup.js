@@ -13,7 +13,7 @@ module.exports = {
         minArgsCount: 3,
         subcommands: [
             {
-                trigger: "<#channel> <nombre> <numero>",
+                trigger: "<channelId> <nombre> <numero>",
                 description: "Configura un nuevo generador de canales",
             },
         ],
@@ -24,9 +24,8 @@ module.exports = {
         options: [
             {
                 name: "canal",
-                description: "Canal de voz que actuará como generador",
-                type: ApplicationCommandOptionType.Channel,
-                channelTypes: [ChannelType.GuildVoice],
+                description: "ID del canal de voz que actuará como generador",
+                type: ApplicationCommandOptionType.String,
                 required: true,
             },
             {
@@ -45,9 +44,8 @@ module.exports = {
             },
             {
                 name: "categoria",
-                description: "Categoría donde crear los canales (opcional)",
-                type: ApplicationCommandOptionType.Channel,
-                channelTypes: [ChannelType.GuildCategory],
+                description: "ID de la categoría donde crear los canales (opcional)",
+                type: ApplicationCommandOptionType.String,
                 required: false,
             },
         ],
@@ -55,24 +53,38 @@ module.exports = {
 
     async messageRun({ message, args }) {
         try {
-            const channel = message.mentions.channels.first();
-            if (!channel || channel.type !== ChannelType.GuildVoice) {
-                return message.reply("❌ Debes mencionar un canal de voz válido");
+            const channelId = args[0];
+            const namePrefix = args[1];
+            const userLimit = parseInt(args[2]);
+
+            // Validar que sea un ID válido
+            if (!channelId || !/^\d+$/.test(channelId)) {
+                return message.reply("❌ Debes proporcionar una ID de canal válida\n`/vsetup <channelId> <nombre> <limite>`");
             }
 
-            const namePrefix = args[1];
+            // Validar que el canal exista y sea de voz
+            const channel = message.guild.channels.cache.get(channelId);
+            if (!channel) {
+                return message.reply("❌ No encontré un canal con esa ID");
+            }
+
+            if (channel.type !== ChannelType.GuildVoice) {
+                return message.reply("❌ El canal debe ser un canal de voz");
+            }
+
+            // Validar nombre
             if (!namePrefix || namePrefix.length > 20) {
                 return message.reply("❌ El nombre debe tener entre 1 y 20 caracteres");
             }
 
-            const userLimit = parseInt(args[2]);
+            // Validar límite
             if (isNaN(userLimit) || userLimit < 0 || userLimit > 99) {
                 return message.reply("❌ El límite debe ser un número entre 0 y 99");
             }
 
             const response = await addGenerator(
                 message.guild.id,
-                channel.id,
+                channelId,
                 namePrefix,
                 userLimit,
                 null,
@@ -87,17 +99,50 @@ module.exports = {
 
     async interactionRun({ interaction }) {
         try {
-            const channel = interaction.options.getChannel("canal");
+            const channelId = interaction.options.getString("canal");
             const namePrefix = interaction.options.getString("nombre");
             const userLimit = interaction.options.getInteger("limite");
-            const categoryChannel = interaction.options.getChannel("categoria");
+            const categoryId = interaction.options.getString("categoria");
+
+            // Validar que sea un ID válido
+            if (!channelId || !/^\d+$/.test(channelId)) {
+                return interaction.followUp("❌ Debes proporcionar una ID de canal válida");
+            }
+
+            // Validar que el canal exista y sea de voz
+            const channel = interaction.guild.channels.cache.get(channelId);
+            if (!channel) {
+                return interaction.followUp("❌ No encontré un canal con esa ID");
+            }
+
+            if (channel.type !== ChannelType.GuildVoice) {
+                return interaction.followUp("❌ El canal debe ser un canal de voz");
+            }
+
+            // Validar nombre
+            if (!namePrefix || namePrefix.length > 20) {
+                return interaction.followUp("❌ El nombre debe tener entre 1 y 20 caracteres");
+            }
+
+            // Validar límite
+            if (userLimit < 0 || userLimit > 99) {
+                return interaction.followUp("❌ El límite debe ser un número entre 0 y 99");
+            }
+
+            // Validar categoría si se proporciona
+            if (categoryId) {
+                const category = interaction.guild.channels.cache.get(categoryId);
+                if (!category || category.type !== ChannelType.GuildCategory) {
+                    return interaction.followUp("❌ La categoría no existe o es inválida");
+                }
+            }
 
             const response = await addGenerator(
                 interaction.guild.id,
-                channel.id,
+                channelId,
                 namePrefix,
                 userLimit,
-                categoryChannel?.id || null,
+                categoryId || null,
             );
 
             return interaction.followUp(response);
