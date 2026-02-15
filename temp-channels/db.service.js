@@ -1,10 +1,10 @@
 const { DBService, Schema } = require("strange-sdk");
-const path = require("path");
 
 class TempChannelsService extends DBService {
     constructor() {
-        console.log("[TempChannels DB] Inicializando DBService...");
-        super("temp-channels", path.join(__dirname));
+        console.log("[TempChannels DB] Inicializando DBService con nombre: temp-channels");
+        // Solo pasamos el nombre del plugin, DBService se encarga de encontrarlo
+        super("temp-channels");
     }
 
     defineSchemas() {
