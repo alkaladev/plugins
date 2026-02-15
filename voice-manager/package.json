@@ -1,0 +1,10 @@
+{
+  "name": "voice-manager",
+  "version": "1.0.0",
+  "description": "Gestión de canales de voz temporales",
+  "main": "bot/index.js",
+  "strange": {
+    "type": "plugin",
+    "name": "Voice Manager"
+  }
+}
