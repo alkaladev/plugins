@@ -1,5 +1,5 @@
 <section class="border-border bg-bg-panel rounded-lg border p-4 shadow-sm">
-  <form
+  <div
     x-data="{
       generators: [],
       activeChannels: [],
@@ -54,9 +54,11 @@
       },
       
       openAddModal() {
+        console.log('Abriendo modal...');
         this.editingId = null;
         this.formData = { sourceChannelId: '', namePrefix: '', userLimit: 0, parentCategoryId: '' };
         this.openModal = true;
+        console.log('Modal abierto:', this.openModal);
       },
       
       editGenerator(gen) {
@@ -129,8 +131,7 @@
         this.loadData();
         this.loadChannels();
       }
-    }"
-    @submit.prevent="submitForm">
+    }">
     
     <!-- Generadores -->
     <div class="mb-6">
@@ -204,66 +205,66 @@
     <div class="border-border mt-6 flex items-center justify-between border-t pt-6">
       <div></div>
     </div>
-  </form>
 
-  <!-- Modal -->
-  <div x-show="openModal" x-transition class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.away="openModal = false" style="display: none;">
-    <div class="bg-bg-panel rounded-lg p-6 max-w-md w-full mx-4 shadow-xl border border-border">
-      <h3 class="text-text text-xl font-bold mb-4">
-        <span x-show="!editingId">Nuevo Generador</span>
-        <span x-show="editingId">Editar Generador</span>
-      </h3>
-      
-      <form @submit.prevent="submitForm" class="space-y-4">
-        <div>
-          <label class="text-text text-sm font-semibold mb-2 block">Canal de Voz</label>
-          <select x-model="formData.sourceChannelId" required
-            class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 shadow-sm sm:text-sm">
-            <option value="">Selecciona un canal...</option>
-            <template x-for="ch in channels.filter(c => c.type === 2)">
-              <option :value="ch.id" x-text="'🎤 ' + ch.name"></option>
-            </template>
-          </select>
-        </div>
+    <!-- Modal -->
+    <div x-show="openModal" @click.outside="openModal = false" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div @click.stop class="bg-bg-panel rounded-lg p-6 max-w-md w-full mx-4 shadow-xl border border-border">
+        <h3 class="text-text text-xl font-bold mb-4">
+          <span x-show="!editingId">Nuevo Generador</span>
+          <span x-show="editingId">Editar Generador</span>
+        </h3>
         
-        <div>
-          <label class="text-text text-sm font-semibold mb-2 block">Prefijo de Nombre</label>
-          <input type="text" x-model="formData.namePrefix" placeholder="ej: Patrulla" required
-            class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 shadow-sm sm:text-sm">
-        </div>
-        
-        <div>
-          <label class="text-text text-sm font-semibold mb-2 block">Límite de Usuarios</label>
-          <input type="number" x-model="formData.userLimit" min="0" max="99"
-            class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 shadow-sm sm:text-sm">
-          <div class="text-text-muted text-xs mt-1">0 = ilimitado</div>
-        </div>
-        
-        <div>
-          <label class="text-text text-sm font-semibold mb-2 block">Categoría (Opcional)</label>
-          <select x-model="formData.parentCategoryId"
-            class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 shadow-sm sm:text-sm">
-            <option value="">Sin categoría</option>
-            <template x-for="cat in categories">
-              <option :value="cat.id" x-text="cat.name"></option>
-            </template>
-          </select>
-        </div>
-        
-        <div class="flex gap-3 pt-4 border-border border-t">
-          <button type="button" @click="openModal = false"
-            class="border-border bg-bg-interactive text-text hover:opacity-75 flex-1 rounded-lg border px-4 py-2.5 font-medium transition-opacity">
-            Cancelar
-          </button>
-          <button type="submit" :disabled="saving" :class="{'opacity-50': saving}"
-            class="bg-primary hover:bg-primary-dark focus:ring-primary flex-1 rounded-lg px-4 py-2.5 font-medium text-white focus:outline-none focus:ring-4 transition-opacity">
-            <i class="fa-solid fa-floppy-disk mr-2" x-show="!saving"></i>
-            <i class="fa-solid fa-spinner fa-spin mr-2" x-show="saving"></i>
-            <span x-show="!saving">Guardar</span>
-            <span x-show="saving">Guardando...</span>
-          </button>
-        </div>
-      </form>
+        <form @submit.prevent="submitForm" class="space-y-4">
+          <div>
+            <label class="text-text text-sm font-semibold mb-2 block">Canal de Voz</label>
+            <select x-model="formData.sourceChannelId" required
+              class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 shadow-sm sm:text-sm">
+              <option value="">Selecciona un canal...</option>
+              <template x-for="ch in channels.filter(c => c.type === 2)">
+                <option :value="ch.id" x-text="'🎤 ' + ch.name"></option>
+              </template>
+            </select>
+          </div>
+          
+          <div>
+            <label class="text-text text-sm font-semibold mb-2 block">Prefijo de Nombre</label>
+            <input type="text" x-model="formData.namePrefix" placeholder="ej: Patrulla" required
+              class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 shadow-sm sm:text-sm">
+          </div>
+          
+          <div>
+            <label class="text-text text-sm font-semibold mb-2 block">Límite de Usuarios</label>
+            <input type="number" x-model="formData.userLimit" min="0" max="99"
+              class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 shadow-sm sm:text-sm">
+            <div class="text-text-muted text-xs mt-1">0 = ilimitado</div>
+          </div>
+          
+          <div>
+            <label class="text-text text-sm font-semibold mb-2 block">Categoría (Opcional)</label>
+            <select x-model="formData.parentCategoryId"
+              class="focus:border-primary focus:ring-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 shadow-sm sm:text-sm">
+              <option value="">Sin categoría</option>
+              <template x-for="cat in categories">
+                <option :value="cat.id" x-text="cat.name"></option>
+              </template>
+            </select>
+          </div>
+          
+          <div class="flex gap-3 pt-4 border-border border-t">
+            <button type="button" @click="openModal = false"
+              class="border-border bg-bg-interactive text-text hover:opacity-75 flex-1 rounded-lg border px-4 py-2.5 font-medium transition-opacity">
+              Cancelar
+            </button>
+            <button type="submit" :disabled="saving" :class="{'opacity-50': saving}"
+              class="bg-primary hover:bg-primary-dark focus:ring-primary flex-1 rounded-lg px-4 py-2.5 font-medium text-white focus:outline-none focus:ring-4 transition-opacity">
+              <i class="fa-solid fa-floppy-disk mr-2" x-show="!saving"></i>
+              <i class="fa-solid fa-spinner fa-spin mr-2" x-show="saving"></i>
+              <span x-show="!saving">Guardar</span>
+              <span x-show="saving">Guardando...</span>
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </section>
