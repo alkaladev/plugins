@@ -73,10 +73,23 @@ module.exports = new BotPlugin({
                 return { success: false, error: error.message };
             }
         });
+
+        return true;
     },
 
     async disable() {
         Logger.info("[TempChannels] Plugin deshabilitado");
+        return true;
+    },
+
+    async onGuildEnable(guild) {
+        Logger.info(`[TempChannels] Habilitado en guild: ${guild.name}`);
+        return true;
+    },
+
+    async onGuildDisable(guild) {
+        Logger.info(`[TempChannels] Deshabilitado en guild: ${guild.name}`);
+        return true;
     },
 });
 

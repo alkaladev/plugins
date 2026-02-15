@@ -7,11 +7,23 @@ module.exports = new DashboardPlugin({
     baseDir: __dirname,
     dbService,
 
-    async enable() {
+    async enable(dbClient) {
         Logger.info("[TempChannels-Dashboard] Plugin habilitado");
+        return true;
     },
 
     async disable() {
         Logger.info("[TempChannels-Dashboard] Plugin deshabilitado");
+        return true;
+    },
+
+    async onGuildEnable(guildId) {
+        Logger.info(`[TempChannels-Dashboard] Habilitado en guild: ${guildId}`);
+        return true;
+    },
+
+    async onGuildDisable(guildId) {
+        Logger.info(`[TempChannels-Dashboard] Deshabilitado en guild: ${guildId}`);
+        return true;
     },
 });
