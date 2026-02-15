@@ -1,289 +1,268 @@
-<div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
-    <div class="max-w-6xl mx-auto">
-        <!-- Header -->
-        <div class="mb-8">
-            <div class="flex items-center gap-3 mb-2">
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                    <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
-                        <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 1 1 0 000 2H3a1 1 0 00-1 1v10a1 1 0 001 1h14a1 1 0 001-1V6a1 1 0 00-1-1h-3a1 1 0 000-2 2 2 0 00-2 2v3H4V5zm12 5a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path>
-                    </svg>
-                </div>
-                <div>
-                    <h1 class="text-3xl font-bold text-white">Canales Temporales</h1>
-                    <p class="text-slate-400">Crea canales de voz dinámicos automáticamente</p>
-                </div>
-            </div>
-        </div>
+<style>
+  input[type="number"] {
+    appearance: textfield;
+  }
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Panel Principal -->
-            <div class="lg:col-span-2">
-                <!-- Generadores -->
-                <div class="bg-slate-800 border border-slate-700 rounded-lg p-6 mb-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-xl font-bold text-white">Generadores</h2>
-                        <button id="addGeneratorBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">
-                            + Añadir
-                        </button>
-                    </div>
-                    <div id="generatorsList" class="space-y-4">
-                        <div class="text-center py-8 text-slate-400">Cargando...</div>
-                    </div>
-                </div>
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+</style>
 
-                <!-- Canales Activos -->
-                <div class="bg-slate-800 border border-slate-700 rounded-lg p-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-xl font-bold text-white">Canales Activos</h2>
-                        <button id="refreshBtn" class="text-slate-400 hover:text-white">🔄</button>
-                    </div>
-                    <div id="activeChannelsList" class="space-y-3">
-                        <div class="text-center py-8 text-slate-400">Cargando...</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Panel de Info -->
-            <div class="lg:col-span-1">
-                <div class="bg-slate-800 border border-slate-700 rounded-lg p-6 sticky top-6">
-                    <h3 class="text-lg font-bold text-white mb-4">ℹ️ Información</h3>
-                    <div class="space-y-4 text-sm text-slate-300">
-                        <div>
-                            <p class="font-bold mb-2">¿Cómo funciona?</p>
-                            <ul class="space-y-1 text-xs">
-                                <li>• Configura un canal generador</li>
-                                <li>• Se crea un canal temporal al conectarse</li>
-                                <li>• Se elimina cuando se vacía</li>
-                            </ul>
-                        </div>
-                        <div class="border-t border-slate-700 pt-4">
-                            <p class="font-bold mb-2">Opciones</p>
-                            <ul class="space-y-1 text-xs">
-                                <li><strong>Prefijo:</strong> "Patrulla", "Squad", etc</li>
-                                <li><strong>Límite:</strong> Máximo de usuarios</li>
-                                <li><strong>Categoría:</strong> Dónde crearlos</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal -->
-<div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full">
-        <h3 id="modalTitle" class="text-xl font-bold text-white mb-4">Nuevo Generador</h3>
-        <form id="generatorForm" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-2">Canal de Voz</label>
-                <select id="sourceChannelSelect" class="w-full bg-slate-700 border border-slate-600 rounded text-white px-3 py-2" required>
-                    <option value="">Selecciona...</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-2">Prefijo</label>
-                <input type="text" id="namePrefix" class="w-full bg-slate-700 border border-slate-600 rounded text-white px-3 py-2" placeholder="Patrulla" required>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-2">Límite Usuarios</label>
-                <input type="number" id="userLimit" class="w-full bg-slate-700 border border-slate-600 rounded text-white px-3 py-2" placeholder="0 = sin límite" min="0">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-2">Categoría</label>
-                <select id="categorySelect" class="w-full bg-slate-700 border border-slate-600 rounded text-white px-3 py-2">
-                    <option value="">Sin categoría</option>
-                </select>
-            </div>
-            <div class="flex gap-3 pt-4">
-                <button type="button" onclick="closeModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded">Cancelar</button>
-                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Guardar</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<script>
-    let editingId = null;
-    let channels = [];
-    let categories = [];
-
-    document.addEventListener("DOMContentLoaded", () => {
-        loadChannels();
-        loadGenerators();
-        loadActiveChannels();
+<section
+  x-data="{
+    generators: [],
+    activeChannels: [],
+    openModal: false,
+    editingId: null,
+    channels: [],
+    categories: [],
+    formData: {
+      sourceChannelId: '',
+      namePrefix: '',
+      userLimit: 0,
+      parentCategoryId: ''
+    },
+    saving: false,
+    loading: true,
+    
+    async loadData() {
+      try {
+        this.loading = true;
+        const [settingsRes, activeRes] = await Promise.all([
+          fetch(window.location.href),
+          fetch(window.location.href + '/active')
+        ]);
         
-        document.getElementById("addGeneratorBtn").addEventListener("click", openModal);
-        document.getElementById("generatorForm").addEventListener("submit", handleSubmit);
-        document.getElementById("refreshBtn").addEventListener("click", loadActiveChannels);
-    });
-
-    async function loadChannels() {
-        try {
-            const res = await fetch(`/api/guilds/${guildId}/channels`);
-            const { data } = await res.json();
-            channels = data.filter(c => c.type === 2);
-            categories = data.filter(c => c.type === 4);
-            updateSelects();
-        } catch (error) {
-            console.error(error);
+        if (settingsRes.ok) {
+          const data = await settingsRes.json();
+          this.generators = data.generators || [];
         }
-    }
-
-    function updateSelects() {
-        const select = document.getElementById("sourceChannelSelect");
-        const catSelect = document.getElementById("categorySelect");
+        if (activeRes.ok) {
+          const data = await activeRes.json();
+          this.activeChannels = data || [];
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        this.loading = false;
+      }
+    },
+    
+    async loadChannels() {
+      try {
+        const res = await fetch(\`/\${window.location.pathname.split('/')[2]}/api/channels\`);
+        const data = await res.json();
+        this.channels = data.filter(c => c.type === 0 || c.type === 2) || [];
+        this.categories = data.filter(c => c.type === 4) || [];
+      } catch (error) {
+        console.error('Error loading channels:', error);
+      }
+    },
+    
+    openAddModal() {
+      this.editingId = null;
+      this.formData = { sourceChannelId: '', namePrefix: '', userLimit: 0, parentCategoryId: '' };
+      this.openModal = true;
+    },
+    
+    editGenerator(gen) {
+      this.editingId = gen.sourceChannelId;
+      this.formData = { ...gen };
+      this.openModal = true;
+    },
+    
+    async submitForm() {
+      this.saving = true;
+      try {
+        const method = this.editingId ? 'PATCH' : 'POST';
+        const url = this.editingId 
+          ? \`\${window.location.href}/generator/\${this.editingId}\`
+          : \`\${window.location.href}/generator\`;
         
-        select.innerHTML = '<option value="">Selecciona...</option>';
-        channels.forEach(ch => {
-            const opt = document.createElement("option");
-            opt.value = ch.id;
-            opt.textContent = `#${ch.name}`;
-            select.appendChild(opt);
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.formData)
         });
-
-        catSelect.innerHTML = '<option value="">Sin categoría</option>';
-        categories.forEach(cat => {
-            const opt = document.createElement("option");
-            opt.value = cat.id;
-            opt.textContent = cat.name;
-            catSelect.appendChild(opt);
-        });
-    }
-
-    async function loadGenerators() {
-        try {
-            const res = await fetch("/api/guild-plugin/temp-channels/settings");
-            const { data } = await res.json();
-
-            const list = document.getElementById("generatorsList");
-            if (data.generators.length === 0) {
-                list.innerHTML = '<div class="text-center py-8 text-slate-400">No hay generadores</div>';
-                return;
-            }
-
-            list.innerHTML = data.generators.map(gen => {
-                const ch = channels.find(c => c.id === gen.sourceChannelId);
-                return `
-                    <div class="bg-slate-700 border border-slate-600 rounded-lg p-4 flex justify-between items-center">
-                        <div>
-                            <p class="font-bold text-white">${gen.namePrefix}</p>
-                            <p class="text-sm text-slate-400">#${ch?.name || "desconocido"}</p>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="editGenerator('${JSON.stringify(gen).replace(/'/g, "&apos;")}' )" class="text-blue-400">✏️</button>
-                            <button onclick="deleteGenerator('${gen.sourceChannelId}')" class="text-red-400">🗑️</button>
-                        </div>
-                    </div>
-                `;
-            }).join("");
-        } catch (error) {
-            console.error(error);
+        
+        if (res.ok) {
+          Alpine.store('toast').show('Guardado correctamente', 'success');
+          this.openModal = false;
+          await this.loadData();
+        } else {
+          throw new Error();
         }
-    }
-
-    async function loadActiveChannels() {
-        try {
-            const res = await fetch("/api/guild-plugin/temp-channels/active");
-            const { data } = await res.json();
-
-            const list = document.getElementById("activeChannelsList");
-            if (data.length === 0) {
-                list.innerHTML = '<div class="text-center py-8 text-slate-400">No hay canales activos</div>';
-                return;
-            }
-
-            list.innerHTML = data.map(ch => `
-                <div class="bg-slate-700 border border-slate-600 rounded-lg p-3 flex justify-between items-center">
-                    <div>
-                        <p class="font-medium text-white">${ch.name}</p>
-                        <p class="text-xs text-slate-400">👥 ${ch.members}/${ch.maxMembers || "∞"}</p>
-                    </div>
-                    <button onclick="deleteChannel('${ch.id}')" class="text-red-400">🗑️</button>
-                </div>
-            `).join("");
-        } catch (error) {
-            console.error(error);
+      } catch (error) {
+        Alpine.store('toast').show('Error al guardar', 'error');
+      } finally {
+        this.saving = false;
+      }
+    },
+    
+    async deleteGenerator(id) {
+      if (!confirm('¿Estás seguro?')) return;
+      try {
+        const res = await fetch(\`\${window.location.href}/generator/\${id}\`, { method: 'DELETE' });
+        if (res.ok) {
+          Alpine.store('toast').show('Eliminado correctamente', 'success');
+          await this.loadData();
         }
-    }
-
-    function openModal() {
-        editingId = null;
-        document.getElementById("modalTitle").textContent = "Nuevo Generador";
-        document.getElementById("generatorForm").reset();
-        document.getElementById("modal").classList.remove("hidden");
-    }
-
-    function editGenerator(genStr) {
-        const gen = JSON.parse(genStr);
-        editingId = gen.sourceChannelId;
-        document.getElementById("modalTitle").textContent = "Editar Generador";
-        document.getElementById("sourceChannelSelect").value = gen.sourceChannelId;
-        document.getElementById("namePrefix").value = gen.namePrefix;
-        document.getElementById("userLimit").value = gen.userLimit || 0;
-        document.getElementById("categorySelect").value = gen.parentCategoryId || "";
-        document.getElementById("modal").classList.remove("hidden");
-    }
-
-    function closeModal() {
-        document.getElementById("modal").classList.add("hidden");
-    }
-
-    async function handleSubmit(e) {
-        e.preventDefault();
-        const sourceChannelId = document.getElementById("sourceChannelSelect").value;
-        const namePrefix = document.getElementById("namePrefix").value;
-        const userLimit = parseInt(document.getElementById("userLimit").value) || 0;
-        const parentCategoryId = document.getElementById("categorySelect").value;
-
-        try {
-            let res;
-            if (editingId) {
-                res = await fetch(`/api/guild-plugin/temp-channels/generator/${editingId}`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ namePrefix, userLimit, parentCategoryId }),
-                });
-            } else {
-                res = await fetch("/api/guild-plugin/temp-channels/generator", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ sourceChannelId, namePrefix, userLimit, parentCategoryId }),
-                });
-            }
-
-            if (res.ok) {
-                closeModal();
-                loadGenerators();
-            }
-        } catch (error) {
-            console.error(error);
+      } catch (error) {
+        Alpine.store('toast').show('Error al eliminar', 'error');
+      }
+    },
+    
+    async deleteChannel(id) {
+      if (!confirm('¿Estás seguro?')) return;
+      try {
+        const res = await fetch(\`\${window.location.href}/channel/\${id}\`, { method: 'DELETE' });
+        if (res.ok) {
+          Alpine.store('toast').show('Canal eliminado', 'success');
+          await this.loadData();
         }
+      } catch (error) {
+        Alpine.store('toast').show('Error al eliminar canal', 'error');
+      }
+    },
+    
+    init() {
+      this.loadData();
+      this.loadChannels();
     }
+  }"
+  class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c] transition-colors duration-300">
 
-    async function deleteGenerator(id) {
-        if (!confirm("¿Eliminar?")) return;
-        try {
-            await fetch(`/api/guild-plugin/temp-channels/generator/${id}`, { method: "DELETE" });
-            loadGenerators();
-        } catch (error) {
-            console.error(error);
-        }
-    }
+  <h3 class="mb-6 text-xl font-bold text-gray-900 dark:text-white">
+    🎤 Canales Temporales
+  </h3>
 
-    async function deleteChannel(id) {
-        if (!confirm("¿Eliminar?")) return;
-        try {
-            await fetch(`/api/guild-plugin/temp-channels/channel/${id}`, { method: "DELETE" });
-            loadActiveChannels();
-        } catch (error) {
-            console.error(error);
-        }
-    }
+  <div class="space-y-6">
+    <!-- Generadores -->
+    <div>
+      <div class="flex items-center justify-between mb-4">
+        <h4 class="text-lg font-bold text-gray-900 dark:text-white">Generadores</h4>
+        <button @click="openAddModal()"
+          class="inline-flex items-center gap-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 px-4 py-2 font-bold text-blue-700 dark:text-blue-300 hover:scale-105 transition-all">
+          <i class="fa-solid fa-plus text-sm"></i>
+          Añadir
+        </button>
+      </div>
+      
+      <div class="space-y-3" x-show="!loading">
+        <template x-if="generators.length === 0">
+          <p class="text-center text-gray-500 dark:text-gray-400 py-8">No hay generadores configurados</p>
+        </template>
+        
+        <template x-for="gen in generators" :key="gen.sourceChannelId">
+          <div class="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+            <div>
+              <p class="font-bold text-gray-900 dark:text-white" x-text="gen.namePrefix"></p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                <span x-text="channels.find(c => c.id === gen.sourceChannelId)?.name || 'desconocido'"></span>
+              </p>
+            </div>
+            <div class="flex gap-2">
+              <button @click="editGenerator(gen)" class="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors">
+                <i class="fa-solid fa-edit"></i>
+              </button>
+              <button @click="deleteGenerator(gen.sourceChannelId)" class="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        </template>
+      </div>
+      
+      <div x-show="loading" class="text-center py-8">
+        <i class="fa-solid fa-spinner fa-spin text-gray-400"></i>
+      </div>
+    </div>
 
-    document.getElementById("modal").addEventListener("click", (e) => {
-        if (e.target.id === "modal") closeModal();
-    });
-</script>
+    <!-- Canales Activos -->
+    <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+      <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Canales Activos</h4>
+      
+      <div class="space-y-3" x-show="!loading">
+        <template x-if="activeChannels.length === 0">
+          <p class="text-center text-gray-500 dark:text-gray-400 py-8">No hay canales activos</p>
+        </template>
+        
+        <template x-for="ch in activeChannels" :key="ch.id">
+          <div class="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+            <div>
+              <p class="font-bold text-gray-900 dark:text-white" x-text="ch.name"></p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                👥 <span x-text="ch.members"></span>/<span x-text="ch.maxMembers || '∞'"></span>
+              </p>
+            </div>
+            <button @click="deleteChannel(ch.id)" class="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div x-show="openModal" x-transition class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.away="openModal = false">
+    <div class="bg-white dark:bg-[#090e2c] rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+      <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+        <span x-show="!editingId">Nuevo Generador</span>
+        <span x-show="editingId">Editar Generador</span>
+      </h3>
+      
+      <form @submit.prevent="submitForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Canal de Voz</label>
+          <select x-model="formData.sourceChannelId" required
+            class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500">
+            <option value="">Selecciona...</option>
+            <template x-for="ch in channels.filter(c => c.type === 2)">
+              <option :value="ch.id" x-text="'#' + ch.name"></option>
+            </template>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Prefijo</label>
+          <input type="text" x-model="formData.namePrefix" placeholder="Patrulla" required
+            class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Límite de Usuarios</label>
+          <input type="number" x-model="formData.userLimit" min="0" max="99"
+            class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Categoría (Opcional)</label>
+          <select x-model="formData.parentCategoryId"
+            class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-blue-500">
+            <option value="">Sin categoría</option>
+            <template x-for="cat in categories">
+              <option :value="cat.id" x-text="cat.name"></option>
+            </template>
+          </select>
+        </div>
+        
+        <div class="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <button type="button" @click="openModal = false"
+            class="flex-1 rounded-xl bg-gray-200 dark:bg-gray-700 px-4 py-2.5 font-bold text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+            Cancelar
+          </button>
+          <button type="submit" :disabled="saving"
+            class="flex-1 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 px-4 py-2.5 font-bold text-blue-700 dark:text-blue-300 hover:scale-105 transition-all disabled:opacity-50">
+            <i class="fa-solid fa-floppy-disk" x-show="!saving"></i>
+            <i class="fa-solid fa-spinner fa-spin" x-show="saving"></i>
+            <span x-show="!saving">Guardar</span>
+            <span x-show="saving">Guardando...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>

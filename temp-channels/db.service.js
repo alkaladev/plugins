@@ -36,10 +36,11 @@ class TempChannelsService extends DBService {
 
     async getSettings(guildId) {
         const SettingsModel = this.getModel("settings");
-        let settings = await SettingsModel.findOne({ _id: guildId });
-        if (!settings) {
-            settings = await SettingsModel.create({ _id: guildId, guildId, generators: [] });
-        }
+        let settings = await SettingsModel.findOneAndUpdate(
+            { _id: guildId },
+            { $setOnInsert: { _id: guildId, guildId, generators: [] } },
+            { upsert: true, new: true }
+        );
         return settings;
     }
 
