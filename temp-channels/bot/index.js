@@ -74,67 +74,42 @@ module.exports = new BotPlugin({
         this.ipcEvents = new Map();
 
         this.ipcEvents.set("getSettings", async (payload) => {
-            try {
-                const { guildId } = payload;
-                return await dbService.getSettings(guildId);
-            } catch (error) {
-                Logger.error("[TempChannels IPC] Error:", error);
-                throw error;
-            }
+            const { guildId } = payload;
+            return await dbService.getSettings(guildId);
         });
 
         this.ipcEvents.set("addGenerator", async (payload) => {
-            try {
-                const { guildId, generator } = payload;
-                return await dbService.addGenerator(guildId, generator);
-            } catch (error) {
-                Logger.error("[TempChannels IPC] Error:", error);
-                throw error;
-            }
+            const { guildId, generator } = payload;
+            return await dbService.addGenerator(guildId, generator);
         });
 
         this.ipcEvents.set("updateGenerator", async (payload) => {
-            try {
-                const { guildId, sourceChannelId, updates } = payload;
-                return await dbService.updateGenerator(guildId, sourceChannelId, updates);
-            } catch (error) {
-                Logger.error("[TempChannels IPC] Error:", error);
-                throw error;
-            }
+            const { guildId, sourceChannelId, updates } = payload;
+            return await dbService.updateGenerator(guildId, sourceChannelId, updates);
         });
 
         this.ipcEvents.set("deleteGenerator", async (payload) => {
-            try {
-                const { guildId, sourceChannelId } = payload;
-                return await dbService.deleteGenerator(guildId, sourceChannelId);
-            } catch (error) {
-                Logger.error("[TempChannels IPC] Error:", error);
-                throw error;
-            }
+            const { guildId, sourceChannelId } = payload;
+            return await dbService.deleteGenerator(guildId, sourceChannelId);
         });
 
         this.ipcEvents.set("getActiveChannels", async (payload) => {
-            try {
-                const { guildId } = payload;
-                const guild = client.guilds.cache.get(guildId);
-                if (!guild) return [];
+            const { guildId } = payload;
+            const guild = client.guilds.cache.get(guildId);
+            if (!guild) return [];
 
-                const activeChannels = await dbService.getActiveChannels(guildId);
-                return activeChannels.map((ac) => {
-                    const channel = guild.channels.cache.get(ac.channelId);
-                    return {
-                        id: ac.channelId,
-                        name: channel?.name || "Desconocido",
-                        members: channel?.members.size || 0,
-                        maxMembers: channel?.userLimit || 0,
-                        createdAt: ac.createdAt,
-                        isAlive: !!channel,
-                    };
-                });
-            } catch (error) {
-                Logger.error("[TempChannels IPC] Error:", error);
-                throw error;
-            }
+            const activeChannels = await dbService.getActiveChannels(guildId);
+            return activeChannels.map((ac) => {
+                const channel = guild.channels.cache.get(ac.channelId);
+                return {
+                    id: ac.channelId,
+                    name: channel?.name || "Desconocido",
+                    members: channel?.members.size || 0,
+                    maxMembers: channel?.userLimit || 0,
+                    createdAt: ac.createdAt,
+                    isAlive: !!channel,
+                };
+            });
         });
 
         this.ipcEvents.set("cleanupChannel", async (payload) => {
@@ -154,22 +129,9 @@ module.exports = new BotPlugin({
                 return { success: false, error: error.message };
             }
         });
-
-        return true;
     },
 
     async disable(client) {
         Logger.info("[TempChannels] Plugin deshabilitado");
-        return true;
-    },
-
-    async onGuildEnable(guild) {
-        Logger.info(`[TempChannels] Habilitado en guild: ${guild.name}`);
-        return true;
-    },
-
-    async onGuildDisable(guild) {
-        Logger.info(`[TempChannels] Deshabilitado en guild: ${guild.name}`);
-        return true;
     },
 });
