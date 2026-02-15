@@ -1,21 +1,23 @@
 const router = require("express").Router();
-const path = require("path");
+const path = require("path"); // Aquí NO debería salir apagado
 const db = require("../db.service");
 
 router.get("/", async (req, res) => {
-    const guildId = res.locals.guild.id;
-    
-    // Obtenemos canales de voz del servidor mediante IPC
-    const ipcResp = await req.broadcastOne("dashboard:getChannelsOf", { guildId });
-    const settings = await db.getSettings(guildId);
+    try {
+        const guildId = res.locals.guild.id;
+        const ipcResp = await req.broadcastOne("dashboard:getChannelsOf", { guildId });
+        const settings = await db.getSettings(guildId);
+        const sortedGenerators = settings.generators.sort((a, b) => a.order - b.order);
 
-    // Ordenamos por el campo 'order'
-    const sortedGenerators = settings.generators.sort((a, b) => a.order - b.order);
-
-    res.render(path.join(__dirname, "view.ejs"), {
-        channels: ipcResp.success ? ipcResp.data.filter(c => c.type === 2) : [],
-        generators: sortedGenerators
-    });
+        // Aquí se USA path, por lo que no debería estar apagado
+        res.render(path.join(__dirname, "view.ejs"), {
+            channels: ipcResp.success ? ipcResp.data.filter(c => c.type === 2) : [],
+            generators: sortedGenerators
+        });
+    } catch (error) {
+        console.error("Error en router voice-manager:", error);
+        res.status(500).send("Error interno");
+    }
 });
 
 router.post("/save", async (req, res) => {

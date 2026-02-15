@@ -1,10 +1,10 @@
 const { DashboardPlugin } = require("strange-sdk");
-const path = require("path");
+// Eliminamos path de aquí si no se usa para evitar que salga "apagado"
 
 module.exports = new DashboardPlugin({
-    name: "Voice Manager",
+    name: "voice-manager", // Nombre en minúsculas para la URL
     icon: "fa-solid fa-microphone-lines",
     dependencies: [],
     baseDir: __dirname,
-    dashboardRouter: require("./router"), // Asegúrate de que router.js exista al lado
+    handler: require("./router"), // Cambiado de dashboardRouter a handler
 });

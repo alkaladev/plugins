@@ -1,7 +1,6 @@
 {
   "name": "voice-manager",
   "version": "1.0.0",
-  "description": "Gestión dinámica de canales de voz",
   "main": "bot/index.js",
   "dashboard": "dashboard/index.js",
   "strange": {
