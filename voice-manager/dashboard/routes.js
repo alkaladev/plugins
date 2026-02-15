@@ -4,7 +4,6 @@ const { Logger } = require("strange-sdk/utils");
 
 /**
  * GET /temp-channels/settings
- * Obtiene la configuración de canales temporales del guild
  */
 router.get("/settings", async (req, res) => {
     try {
@@ -19,14 +18,12 @@ router.get("/settings", async (req, res) => {
 
 /**
  * POST /temp-channels/generator
- * Añade un nuevo generador de canales temporales
  */
 router.post("/generator", async (req, res) => {
     try {
         const guildId = res.locals.guild.id;
         const { sourceChannelId, namePrefix, userLimit, parentCategoryId } = req.body;
 
-        // Validaciones
         if (!sourceChannelId || !namePrefix) {
             return res.status(400).json({
                 success: false,
@@ -51,7 +48,6 @@ router.post("/generator", async (req, res) => {
 
 /**
  * PATCH /temp-channels/generator/:sourceChannelId
- * Actualiza un generador existente
  */
 router.patch("/generator/:sourceChannelId", async (req, res) => {
     try {
@@ -59,7 +55,6 @@ router.patch("/generator/:sourceChannelId", async (req, res) => {
         const { sourceChannelId } = req.params;
         const updates = req.body;
 
-        // Validaciones
         if (updates.namePrefix) {
             updates.namePrefix = updates.namePrefix.trim();
         }
@@ -77,7 +72,6 @@ router.patch("/generator/:sourceChannelId", async (req, res) => {
 
 /**
  * DELETE /temp-channels/generator/:sourceChannelId
- * Elimina un generador
  */
 router.delete("/generator/:sourceChannelId", async (req, res) => {
     try {
@@ -94,13 +88,11 @@ router.delete("/generator/:sourceChannelId", async (req, res) => {
 
 /**
  * GET /temp-channels/active
- * Obtiene los canales temporales activos
  */
 router.get("/active", async (req, res) => {
     try {
         const guildId = res.locals.guild.id;
 
-        // Hacer una solicitud al bot para obtener la información actualizada
         const response = await req.broadcastOne("tempchannels:getActiveChannels", {
             guildId,
         });
@@ -118,14 +110,12 @@ router.get("/active", async (req, res) => {
 
 /**
  * DELETE /temp-channels/channel/:channelId
- * Elimina un canal temporal específico
  */
 router.delete("/channel/:channelId", async (req, res) => {
     try {
         const guildId = res.locals.guild.id;
         const { channelId } = req.params;
 
-        // Enviar solicitud al bot para eliminar el canal
         const response = await req.broadcastOne("tempchannels:cleanupChannel", {
             guildId,
             channelId,

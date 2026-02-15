@@ -1,38 +1,37 @@
 const { BotPlugin } = require("strange-sdk");
 const { Logger } = require("strange-sdk/utils");
-const TempChannelsManager = require("../TempChannelsManager");
-const dbService = require("../db.service");
 
 module.exports = new BotPlugin({
     dependencies: [],
     baseDir: __dirname,
-    dbService,
 
     async enable(client) {
         Logger.info("[TempChannels] Plugin habilitado");
 
-        // Instanciar el manejador
-        const tempChannelsManager = new TempChannelsManager(client, dbService);
-        client.tempChannelsManager = tempChannelsManager;
+        // Obtener el servicio de BD (se cargar automáticamente)
+        const dbService = require("../db.service");
 
-        // Evento: Usuario se conecta a un canal de voz
+        // Escuchar cambios en canales de voz
         client.on("voiceStateUpdate", async (oldState, newState) => {
             try {
-                // Si se conectó a un canal
-                if (!oldState.channel && newState.channel) {
-                    await tempChannelsManager.createTempChannel(newState);
+                const { channel, member, guild } = newState;
+
+                // Usuario se conectó a un canal
+                if (!oldState.channel && channel) {
+                    await handleUserConnect(client, member, channel, guild, dbService);
                 }
-                // Si se desconectó o cambió de canal
-                else if (oldState.channel && (!newState.channel || oldState.channel.id !== newState.channel.id)) {
-                    await tempChannelsManager.cleanupEmptyChannels(oldState);
+                // Usuario se desconectó o cambió de canal
+                else if (oldState.channel && (!channel || oldState.channel.id !== channel?.id)) {
+                    await cleanupEmptyChannels(oldState.guild, oldState.channel, dbService);
                 }
             } catch (error) {
                 Logger.error("[TempChannels] Error en voiceStateUpdate:", error);
             }
         });
 
-        // Eventos para IPC (comunicación con el dashboard)
+        // Registrar eventos IPC para el dashboard
         this.ipcEvents = new Map();
+
         this.ipcEvents.set("getSettings", async (payload) => {
             const { guildId } = payload;
             return await dbService.getSettings(guildId);
@@ -55,7 +54,7 @@ module.exports = new BotPlugin({
 
         this.ipcEvents.set("getActiveChannels", async (payload) => {
             const { guildId } = payload;
-            return await tempChannelsManager.getChannelInfo(guildId);
+            return await getChannelInfo(client, guildId, dbService);
         });
 
         this.ipcEvents.set("cleanupChannel", async (payload) => {
@@ -80,3 +79,100 @@ module.exports = new BotPlugin({
         Logger.info("[TempChannels] Plugin deshabilitado");
     },
 });
+
+/**
+ * Manejar cuando un usuario se conecta
+ */
+async function handleUserConnect(client, member, channel, guild, dbService) {
+    const settings = await dbService.getSettings(guild.id);
+    
+    // Buscar si este canal es un generador
+    const generator = settings.generators.find((g) => g.sourceChannelId === channel.id);
+    if (!generator) return;
+
+    try {
+        // Contar canales activos para este generador
+        const count = await dbService.getActiveChannelCount(channel.id);
+        const channelNumber = count + 1;
+        const tempChannelName = `${generator.namePrefix} ${channelNumber}`;
+
+        // Crear el canal temporal
+        const tempChannel = await guild.channels.create({
+            name: tempChannelName,
+            type: 2, // GUILD_VOICE
+            parent: generator.parentCategoryId || channel.parentId,
+            userLimit: generator.userLimit || 0,
+        });
+
+        // Registrar en la BD
+        await dbService.addActiveChannel({
+            channelId: tempChannel.id,
+            guildId: guild.id,
+            sourceChannelId: channel.id,
+            namePrefix: generator.namePrefix,
+            createdBy: member.id,
+        });
+
+        // Mover al usuario al nuevo canal
+        await member.voice.setChannel(tempChannel);
+
+        Logger.info(`[TempChannels] Canal temporal creado: ${tempChannelName} en ${guild.name}`);
+    } catch (error) {
+        Logger.error(`[TempChannels] Error creando canal temporal:`, error);
+    }
+}
+
+/**
+ * Limpiar canales vacíos
+ */
+async function cleanupEmptyChannels(guild, oldChannel, dbService) {
+    if (!guild) return;
+
+    try {
+        const activeChannels = await dbService.getActiveChannels(guild.id);
+
+        for (const activeChannel of activeChannels) {
+            try {
+                const channel = guild.channels.cache.get(activeChannel.channelId);
+
+                if (!channel) {
+                    await dbService.removeActiveChannel(activeChannel.channelId);
+                    continue;
+                }
+
+                // Si el canal está vacío, eliminarlo
+                if (channel.members.size === 0) {
+                    await channel.delete();
+                    await dbService.removeActiveChannel(activeChannel.channelId);
+                    Logger.info(`[TempChannels] Canal temporal eliminado: ${channel.name}`);
+                }
+            } catch (error) {
+                Logger.error(`[TempChannels] Error limpiando canal:`, error);
+            }
+        }
+    } catch (error) {
+        Logger.error(`[TempChannels] Error en cleanupEmptyChannels:`, error);
+    }
+}
+
+/**
+ * Obtener información de canales activos
+ */
+async function getChannelInfo(client, guildId, dbService) {
+    const guild = client.guilds.cache.get(guildId);
+    if (!guild) return [];
+
+    const activeChannels = await dbService.getActiveChannels(guildId);
+
+    return activeChannels.map((ac) => {
+        const channel = guild.channels.cache.get(ac.channelId);
+        return {
+            id: ac.channelId,
+            name: channel?.name || "Desconocido",
+            members: channel?.members.size || 0,
+            maxMembers: channel?.userLimit || 0,
+            createdAt: ac.createdAt,
+            isAlive: !!channel,
+        };
+    });
+}
