@@ -2,33 +2,22 @@ const router = require("express").Router();
 const path = require("path");
 const dbService = require(path.join(__dirname, "../db.service"));
 
-console.log("[TempChannels Router] Router iniciado");
-
-// GET - Obtener configuración del plugin para el servidor
+// GET - Renderizar la vista del plugin
 router.get("/", async (req, res) => {
     try {
-        console.log("[TempChannels Router] GET / llamado");
-        const guildId = res.locals.guild.id;
-        console.log("[TempChannels Router] Guild ID:", guildId);
-        
-        const settings = await dbService.getSettings(guildId);
-        console.log("[TempChannels Router] Configuración obtenida:", settings);
-        
-        res.json(settings);
+        res.render(path.join(__dirname, "view.ejs"));
     } catch (error) {
-        console.error("[TempChannels Router] Error en GET /:", error);
-        res.status(500).json({ error: error.message });
+        console.error("[TempChannels Router] Error renderizando vista:", error);
+        res.status(500).send("Error renderizando vista");
     }
 });
 
 // POST - Crear nuevo generador
 router.post("/generator", async (req, res) => {
     try {
-        console.log("[TempChannels Router] POST /generator llamado");
+        console.log("[TempChannels Router] POST /generator");
         const guildId = res.locals.guild.id;
         const { sourceChannelId, namePrefix, userLimit, parentCategoryId } = req.body;
-
-        console.log("[TempChannels Router] Datos recibidos:", req.body);
 
         if (!sourceChannelId || !namePrefix) {
             return res.status(400).json({ error: "sourceChannelId y namePrefix requeridos" });
@@ -42,11 +31,9 @@ router.post("/generator", async (req, res) => {
         };
 
         const settings = await dbService.addGenerator(guildId, generator);
-        console.log("[TempChannels Router] Generador añadido");
-        
         res.json(settings);
     } catch (error) {
-        console.error("[TempChannels Router] Error en POST /generator:", error);
+        console.error("[TempChannels Router] Error POST /generator:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -54,12 +41,10 @@ router.post("/generator", async (req, res) => {
 // PATCH - Editar generador
 router.patch("/generator/:sourceChannelId", async (req, res) => {
     try {
-        console.log("[TempChannels Router] PATCH /generator/:sourceChannelId llamado");
+        console.log("[TempChannels Router] PATCH /generator/:sourceChannelId");
         const guildId = res.locals.guild.id;
         const { sourceChannelId } = req.params;
         const updates = req.body;
-
-        console.log("[TempChannels Router] Editando generador:", sourceChannelId);
 
         if (updates.namePrefix) {
             updates.namePrefix = updates.namePrefix.trim();
@@ -69,11 +54,9 @@ router.patch("/generator/:sourceChannelId", async (req, res) => {
         }
 
         const settings = await dbService.updateGenerator(guildId, sourceChannelId, updates);
-        console.log("[TempChannels Router] Generador actualizado");
-        
         res.json(settings);
     } catch (error) {
-        console.error("[TempChannels Router] Error en PATCH /generator:", error);
+        console.error("[TempChannels Router] Error PATCH /generator:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -81,18 +64,14 @@ router.patch("/generator/:sourceChannelId", async (req, res) => {
 // DELETE - Eliminar generador
 router.delete("/generator/:sourceChannelId", async (req, res) => {
     try {
-        console.log("[TempChannels Router] DELETE /generator/:sourceChannelId llamado");
+        console.log("[TempChannels Router] DELETE /generator/:sourceChannelId");
         const guildId = res.locals.guild.id;
         const { sourceChannelId } = req.params;
 
-        console.log("[TempChannels Router] Eliminando generador:", sourceChannelId);
-
         const settings = await dbService.deleteGenerator(guildId, sourceChannelId);
-        console.log("[TempChannels Router] Generador eliminado");
-        
         res.json(settings);
     } catch (error) {
-        console.error("[TempChannels Router] Error en DELETE /generator:", error);
+        console.error("[TempChannels Router] Error DELETE /generator:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -100,15 +79,13 @@ router.delete("/generator/:sourceChannelId", async (req, res) => {
 // GET - Obtener canales activos
 router.get("/active", async (req, res) => {
     try {
-        console.log("[TempChannels Router] GET /active llamado");
+        console.log("[TempChannels Router] GET /active");
         const guildId = res.locals.guild.id;
         
         const response = await req.broadcastOne("tempchannels:getActiveChannels", { guildId });
-        console.log("[TempChannels Router] Canales activos obtenidos");
-        
         res.json(response?.data || []);
     } catch (error) {
-        console.error("[TempChannels Router] Error en GET /active:", error);
+        console.error("[TempChannels Router] Error GET /active:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -116,18 +93,14 @@ router.get("/active", async (req, res) => {
 // DELETE - Eliminar canal activo
 router.delete("/channel/:channelId", async (req, res) => {
     try {
-        console.log("[TempChannels Router] DELETE /channel/:channelId llamado");
+        console.log("[TempChannels Router] DELETE /channel/:channelId");
         const guildId = res.locals.guild.id;
         const { channelId } = req.params;
 
-        console.log("[TempChannels Router] Eliminando canal:", channelId);
-
         await req.broadcastOne("tempchannels:cleanupChannel", { guildId, channelId });
-        console.log("[TempChannels Router] Canal eliminado");
-        
         res.json({ success: true });
     } catch (error) {
-        console.error("[TempChannels Router] Error en DELETE /channel:", error);
+        console.error("[TempChannels Router] Error DELETE /channel:", error);
         res.status(500).json({ error: error.message });
     }
 });
