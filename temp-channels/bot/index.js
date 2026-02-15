@@ -1,14 +1,18 @@
 const { BotPlugin } = require("strange-sdk");
 const { Logger } = require("strange-sdk/utils");
 
+console.log("[TempChannels] Bot plugin cargando...");
+
 module.exports = new BotPlugin({
     dependencies: [],
     baseDir: __dirname,
 
     onEnable: (client) => {
-        Logger.info("[TempChannels] Plugin habilitado");
+        console.log("[TempChannels] onEnable LLAMADO");
+        Logger.info("[TempChannels] Plugin habilitado - onEnable");
 
         const dbService = require("../db.service");
+        console.log("[TempChannels] dbService cargado");
 
         // Escuchar cambios en canales de voz
         client.on("voiceStateUpdate", async (oldState, newState) => {
@@ -16,6 +20,7 @@ module.exports = new BotPlugin({
                 const { channel, member, guild } = newState;
 
                 if (!oldState.channel && channel) {
+                    console.log("[TempChannels] Usuario conectado a canal:", channel.name);
                     const settings = await dbService.getSettings(guild.id);
                     const generator = settings.generators.find((g) => g.sourceChannelId === channel.id);
                     if (!generator) return;
@@ -43,6 +48,7 @@ module.exports = new BotPlugin({
                     Logger.info(`[TempChannels] Canal temporal creado: ${tempChannelName}`);
                 }
                 else if (oldState.channel && (!newState.channel || oldState.channel.id !== newState.channel?.id)) {
+                    console.log("[TempChannels] Usuario desconectado de canal:", oldState.channel.name);
                     const guild = oldState.guild;
                     if (!guild) return;
 
@@ -69,7 +75,11 @@ module.exports = new BotPlugin({
                 Logger.error("[TempChannels] Error en voiceStateUpdate:", error);
             }
         });
+
+        console.log("[TempChannels] Event listener de voiceStateUpdate registrado");
     },
 
     dbService: require("../db.service"),
 });
+
+console.log("[TempChannels] Bot plugin exportado");

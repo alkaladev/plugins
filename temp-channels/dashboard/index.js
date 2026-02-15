@@ -1,5 +1,7 @@
 const { DashboardPlugin } = require("strange-sdk");
 
+console.log("[TempChannels] Dashboard plugin cargando...");
+
 module.exports = new DashboardPlugin({
     icon: "fa-solid fa-microphone",
     baseDir: __dirname,
@@ -7,3 +9,5 @@ module.exports = new DashboardPlugin({
     adminRouter: require("./admin.router"),
     dbService: require("../db.service"),
 });
+
+console.log("[TempChannels] Dashboard plugin exportado");
