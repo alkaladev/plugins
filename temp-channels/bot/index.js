@@ -2,8 +2,8 @@ const { BotPlugin } = require("strange-sdk");
 const { Logger } = require("strange-sdk/utils");
 
 module.exports = new BotPlugin({
+    dependencies: [],
     baseDir: __dirname,
-    dbService: require("../db.service"),
 
     onEnable: (client) => {
         Logger.info("[TempChannels] Plugin habilitado");
@@ -70,4 +70,6 @@ module.exports = new BotPlugin({
             }
         });
     },
+
+    dbService: require("../db.service"),
 });
