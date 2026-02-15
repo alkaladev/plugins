@@ -19,9 +19,11 @@
       async loadData() {
         try {
           this.loading = true;
+          const baseUrl = window.location.href;
+          
           const [settingsRes, activeRes] = await Promise.all([
-            fetch(window.location.href),
-            fetch(window.location.href + '/active')
+            fetch(baseUrl + '/api/settings'),
+            fetch(baseUrl + '/api/active')
           ]);
           
           if (settingsRes.ok) {
@@ -66,10 +68,11 @@
       async submitForm() {
         this.saving = true;
         try {
+          const baseUrl = window.location.href;
           const method = this.editingId ? 'PATCH' : 'POST';
           const url = this.editingId 
-            ? window.location.href + '/generator/' + this.editingId
-            : window.location.href + '/generator';
+            ? baseUrl + '/api/generator/' + this.editingId
+            : baseUrl + '/api/generator';
           
           const res = await fetch(url, {
             method,
@@ -82,9 +85,10 @@
             this.openModal = false;
             await this.loadData();
           } else {
-            throw new Error();
+            throw new Error('Error: ' + res.status);
           }
         } catch (error) {
+          console.error('Error:', error);
           Alpine.store('toast').show('Error al guardar', 'error');
         } finally {
           this.saving = false;
@@ -94,12 +98,14 @@
       async deleteGenerator(id) {
         if (!confirm('¿Estás seguro?')) return;
         try {
-          const res = await fetch(window.location.href + '/generator/' + id, { method: 'DELETE' });
+          const baseUrl = window.location.href;
+          const res = await fetch(baseUrl + '/api/generator/' + id, { method: 'DELETE' });
           if (res.ok) {
             Alpine.store('toast').show('Eliminado correctamente', 'success');
             await this.loadData();
           }
         } catch (error) {
+          console.error('Error:', error);
           Alpine.store('toast').show('Error al eliminar', 'error');
         }
       },
@@ -107,12 +113,14 @@
       async deleteChannel(id) {
         if (!confirm('¿Estás seguro?')) return;
         try {
-          const res = await fetch(window.location.href + '/channel/' + id, { method: 'DELETE' });
+          const baseUrl = window.location.href;
+          const res = await fetch(baseUrl + '/api/channel/' + id, { method: 'DELETE' });
           if (res.ok) {
             Alpine.store('toast').show('Canal eliminado', 'success');
             await this.loadData();
           }
         } catch (error) {
+          console.error('Error:', error);
           Alpine.store('toast').show('Error al eliminar canal', 'error');
         }
       },
