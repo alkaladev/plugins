@@ -1,12 +1,19 @@
 {
   "name": "voice-manager",
   "version": "1.0.0",
-  "main": "bot/index.js",
-  "dashboard": "dashboard/index.js",
+  "description": "Gestión dinámica de canales de voz",
+  "main": "index.js",
+  "author": "Jorge",
+  "license": "ISC",
   "strange": {
     "type": "plugin",
     "printableName": "Voice Manager",
     "icon": "fa-solid fa-microphone-lines",
     "color": "#5865F2"
+  },
+  "peerDependencies": {
+    "discord.js": "^14.19.0",
+    "express": "^4.21.2",
+    "strange-sdk": "workspace:*"
   }
 }
