@@ -13,7 +13,8 @@ class TempChannelsService extends DBService {
                 generators: [
                     {
                         sourceChannelId: String,
-                        namePrefix: String,
+                        namesList: [String],
+                        currentNameIndex: { type: Number, default: 0 },
                         userLimit: Number,
                         parentCategoryId: String,
                         order: { type: Number, default: 0 },
@@ -27,7 +28,7 @@ class TempChannelsService extends DBService {
                     channelId: { type: String, required: true, unique: true },
                     guildId: { type: String, required: true },
                     sourceChannelId: String,
-                    namePrefix: String,
+                    channelName: String,
                     createdAt: { type: Date, default: Date.now },
                     createdBy: String,
                 },
@@ -91,7 +92,7 @@ class TempChannelsService extends DBService {
                 channelId: channelData.channelId,
                 guildId: channelData.guildId,
                 sourceChannelId: channelData.sourceChannelId,
-                namePrefix: channelData.namePrefix,
+                channelName: channelData.channelName,
                 createdBy: channelData.createdBy,
                 createdAt: new Date(),
             });

@@ -10,9 +10,8 @@ module.exports = new BotPlugin({
         Logger.info("[TempChannels] Plugin habilitado");
 
         const dbService = require("../db.service");
-        const deleteTimers = new Map(); // Map para rastrear timers de eliminación
+        const deleteTimers = new Map();
 
-        // Escuchar cambios en canales de voz
         client.on("voiceStateUpdate", async (oldState, newState) => {
             try {
                 const { channel, member, guild } = newState;
@@ -30,40 +29,44 @@ module.exports = new BotPlugin({
                     }
 
                     try {
-                        const tempChannelName = generator.namePrefix;
+                        // Obtener el nombre actual de la lista
+                        const currentName = generator.namesList[generator.currentNameIndex];
+                        console.log("[TempChannels] Usando nombre:", currentName);
 
-                        console.log("[TempChannels] Creando canal temporal:", tempChannelName);
-
+                        // Crear el canal con el nombre actual
                         const tempChannel = await guild.channels.create({
-                            name: tempChannelName,
+                            name: currentName,
                             type: 2,
                             parent: generator.parentCategoryId || channel.parentId,
                             userLimit: generator.userLimit || 0,
                         });
 
-                        console.log("[TempChannels] Canal creado:", tempChannel.id);
+                        console.log("[TempChannels] Canal creado:", tempChannel.id, "con nombre:", currentName);
 
+                        // Guardar en BD
                         await dbService.addActiveChannel({
                             channelId: tempChannel.id,
                             guildId: guild.id,
                             sourceChannelId: channel.id,
-                            namePrefix: generator.namePrefix,
+                            channelName: currentName,
                             createdBy: member.id,
                             createdAt: new Date(),
                         });
 
-                        console.log("[TempChannels] Datos guardados en DB");
+                        // Incrementar el índice para el siguiente canal (rotatorio)
+                        generator.currentNameIndex = (generator.currentNameIndex + 1) % generator.namesList.length;
+                        await settings.save();
 
-                        // Mover al usuario al canal temporal con delay pequeño
+                        console.log("[TempChannels] Índice actualizado a:", generator.currentNameIndex);
+
+                        // Mover al usuario con delay
                         setTimeout(async () => {
                             try {
-                                console.log("[TempChannels] Intentando mover usuario a:", tempChannel.id);
+                                console.log("[TempChannels] Moviendo usuario a:", tempChannel.id);
                                 await member.voice.setChannel(tempChannel);
-                                console.log("[TempChannels] Usuario movido correctamente");
-                                Logger.info(`[TempChannels] Canal temporal creado: ${tempChannelName}`);
+                                Logger.info(`[TempChannels] Canal temporal creado: ${currentName}`);
                             } catch (moveError) {
                                 console.error("[TempChannels] Error al mover usuario:", moveError);
-                                Logger.error("[TempChannels] Error moviendo usuario:", moveError);
                             }
                         }, 500);
                         
@@ -72,7 +75,7 @@ module.exports = new BotPlugin({
                         console.error("[TempChannels] Detalles del error:", error.message);
                     }
                 }
-                // Usuario se desconecta o se mueve
+                // Usuario se desconecta
                 else if (oldState.channel && (!newState.channel || oldState.channel.id !== newState.channel?.id)) {
                     console.log("[TempChannels] Usuario desconectado de:", oldState.channel.name);
                     
@@ -96,7 +99,6 @@ module.exports = new BotPlugin({
                             if (channel.members.size === 0) {
                                 console.log("[TempChannels] Canal vacío detectado:", channel.name);
                                 
-                                // Si ya existe un timer, no crear otro
                                 if (deleteTimers.has(activeChannel.channelId)) {
                                     console.log("[TempChannels] Timer ya existe para:", activeChannel.channelId);
                                     continue;
@@ -104,33 +106,28 @@ module.exports = new BotPlugin({
 
                                 console.log("[TempChannels] Iniciando timer de 1 minuto para:", channel.name);
                                 
-                                // Crear timer de 1 minuto (60000 ms)
                                 const timer = setTimeout(async () => {
                                     try {
                                         const channelToDelete = guildToCheck.channels.cache.get(activeChannel.channelId);
                                         
-                                        // Verificar que siga vacío
                                         if (channelToDelete && channelToDelete.members.size === 0) {
-                                            console.log("[TempChannels] Eliminando canal vacío después de 1 minuto:", channelToDelete.name);
+                                            console.log("[TempChannels] Eliminando canal vacío:", channelToDelete.name);
                                             await channelToDelete.delete();
                                             await dbService.removeActiveChannel(activeChannel.channelId);
-                                            Logger.info(`[TempChannels] Canal temporal eliminado automáticamente: ${channelToDelete.name}`);
-                                        } else {
-                                            console.log("[TempChannels] Canal ya tiene usuarios, no se elimina:", activeChannel.channelId);
+                                            Logger.info(`[TempChannels] Canal temporal eliminado: ${channelToDelete.name}`);
                                         }
                                     } catch (error) {
-                                        Logger.error("[TempChannels] Error eliminando canal después de timer:", error);
+                                        Logger.error("[TempChannels] Error eliminando canal:", error);
                                     } finally {
                                         deleteTimers.delete(activeChannel.channelId);
                                     }
-                                }, 60000); // 1 minuto = 60000 ms
+                                }, 60000);
 
                                 deleteTimers.set(activeChannel.channelId, timer);
                             }
-                            // Si el canal no está vacío, limpiar timer si existe
                             else if (channel.members.size > 0) {
                                 if (deleteTimers.has(activeChannel.channelId)) {
-                                    console.log("[TempChannels] Cancelando timer, canal tiene usuarios:", channel.name);
+                                    console.log("[TempChannels] Cancelando timer:", channel.name);
                                     clearTimeout(deleteTimers.get(activeChannel.channelId));
                                     deleteTimers.delete(activeChannel.channelId);
                                 }

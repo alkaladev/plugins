@@ -13,7 +13,7 @@ module.exports = {
         minArgsCount: 3,
         subcommands: [
             {
-                trigger: "<channelId> <nombre> <numero>",
+                trigger: "<channelId> <nombre1> <nombre2> ... <numeroLimite>",
                 description: "Configura un nuevo generador de canales",
             },
         ],
@@ -29,8 +29,8 @@ module.exports = {
                 required: true,
             },
             {
-                name: "nombre",
-                description: "Prefijo para los canales temporales (ej: Patrulla)",
+                name: "nombres",
+                description: "Nombres separados por comas (ej: Alpha,Beta,Gamma)",
                 type: ApplicationCommandOptionType.String,
                 required: true,
             },
@@ -54,12 +54,10 @@ module.exports = {
     async messageRun({ message, args }) {
         try {
             const channelId = args[0];
-            const namePrefix = args[1];
-            const userLimit = parseInt(args[2]);
 
             // Validar que sea un ID válido
             if (!channelId || !/^\d+$/.test(channelId)) {
-                return message.reply("❌ Debes proporcionar una ID de canal válida\n`/vsetup <channelId> <nombre> <limite>`");
+                return message.reply("❌ Debes proporcionar una ID de canal válida\n`/vsetup <channelId> <nombre1> <nombre2> ... <limite>`");
             }
 
             // Validar que el canal exista y sea de voz
@@ -72,20 +70,22 @@ module.exports = {
                 return message.reply("❌ El canal debe ser un canal de voz");
             }
 
-            // Validar nombre
-            if (!namePrefix || namePrefix.length > 20) {
-                return message.reply("❌ El nombre debe tener entre 1 y 20 caracteres");
-            }
-
-            // Validar límite
+            // El último argumento debe ser el límite
+            const userLimit = parseInt(args[args.length - 1]);
             if (isNaN(userLimit) || userLimit < 0 || userLimit > 99) {
                 return message.reply("❌ El límite debe ser un número entre 0 y 99");
+            }
+
+            // Los nombres son todos los args entre el canal y el límite
+            const names = args.slice(1, args.length - 1);
+            if (names.length === 0) {
+                return message.reply("❌ Debes proporcionar al menos un nombre");
             }
 
             const response = await addGenerator(
                 message.guild.id,
                 channelId,
-                namePrefix,
+                names,
                 userLimit,
                 null,
             );
@@ -100,7 +100,7 @@ module.exports = {
     async interactionRun({ interaction }) {
         try {
             const channelId = interaction.options.getString("canal");
-            const namePrefix = interaction.options.getString("nombre");
+            const namesString = interaction.options.getString("nombres");
             const userLimit = interaction.options.getInteger("limite");
             const categoryId = interaction.options.getString("categoria");
 
@@ -119,9 +119,10 @@ module.exports = {
                 return interaction.followUp("❌ El canal debe ser un canal de voz");
             }
 
-            // Validar nombre
-            if (!namePrefix || namePrefix.length > 20) {
-                return interaction.followUp("❌ El nombre debe tener entre 1 y 20 caracteres");
+            // Parsear los nombres separados por comas
+            const names = namesString.split(",").map(n => n.trim()).filter(n => n.length > 0);
+            if (names.length === 0) {
+                return interaction.followUp("❌ Debes proporcionar al menos un nombre");
             }
 
             // Validar límite
@@ -140,7 +141,7 @@ module.exports = {
             const response = await addGenerator(
                 interaction.guild.id,
                 channelId,
-                namePrefix,
+                names,
                 userLimit,
                 categoryId || null,
             );
@@ -153,7 +154,7 @@ module.exports = {
     },
 };
 
-async function addGenerator(guildId, channelId, namePrefix, userLimit, parentCategoryId) {
+async function addGenerator(guildId, channelId, names, userLimit, parentCategoryId) {
     try {
         const settings = await db.getSettings(guildId);
 
@@ -166,7 +167,8 @@ async function addGenerator(guildId, channelId, namePrefix, userLimit, parentCat
         // Crear el generador
         const generator = {
             sourceChannelId: channelId,
-            namePrefix: namePrefix.trim(),
+            namesList: names,
+            currentNameIndex: 0,
             userLimit: parseInt(userLimit) || 0,
             parentCategoryId: parentCategoryId || null,
             createdAt: new Date(),
@@ -175,10 +177,15 @@ async function addGenerator(guildId, channelId, namePrefix, userLimit, parentCat
         settings.generators.push(generator);
         await settings.save();
 
+        let namesDisplay = names.join(", ");
+        if (names.length > 5) {
+            namesDisplay = names.slice(0, 5).join(", ") + ` +${names.length - 5} más`;
+        }
+
         return `✅ Generador configurado correctamente\n
 📌 **Detalles:**
 • Canal: <#${channelId}>
-• Prefijo: ${namePrefix}
+• Nombres: ${namesDisplay}
 • Límite de usuarios: ${userLimit === 0 ? "Ilimitado" : userLimit}
 • Los canales temporales se crearán cuando alguien se conecte al canal de voz`;
     } catch (error) {
