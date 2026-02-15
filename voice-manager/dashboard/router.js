@@ -1,37 +1,33 @@
+const path = require("path");
 const router = require("express").Router();
-const path = require("path"); // Aquí NO debería salir apagado
 const db = require("../db.service");
 
 router.get("/", async (req, res) => {
-    try {
-        const guildId = res.locals.guild.id;
-        const ipcResp = await req.broadcastOne("dashboard:getChannelsOf", { guildId });
-        const settings = await db.getSettings(guildId);
-        const sortedGenerators = settings.generators.sort((a, b) => a.order - b.order);
+    const guildId = res.locals.guild.id;
+    const [ipcResp, settings] = await Promise.all([
+        req.broadcastOne("dashboard:getChannelsOf", { guildId }),
+        db.getSettings(guildId),
+    ]);
 
-        // Aquí se USA path, por lo que no debería estar apagado
-        res.render(path.join(__dirname, "view.ejs"), {
-            channels: ipcResp.success ? ipcResp.data.filter(c => c.type === 2) : [],
-            generators: sortedGenerators
-        });
-    } catch (error) {
-        console.error("Error en router voice-manager:", error);
-        res.status(500).send("Error interno");
-    }
+    // Ordenamos los generadores según el campo 'order' antes de renderizar
+    const sortedGenerators = settings.generators.sort((a, b) => a.order - b.order);
+
+    res.render(path.join(__dirname, "view.ejs"), { 
+        channels: ipcResp.success ? ipcResp.data.filter(c => c.type === 2) : [], 
+        generators: sortedGenerators 
+    });
 });
 
+// Para guardar/actualizar la lista completa (incluyendo el orden)
 router.post("/save", async (req, res) => {
-    const guildId = res.locals.guild.id;
-    const { generators } = req.body; // Recibimos el array ordenado
-
-    const settings = await db.getSettings(guildId);
+    const { generators } = req.body; // Esperamos un array de generadores
+    const settings = await db.getSettings(res.locals.guild.id);
     
-    // Mapeamos los datos asegurando el orden por el índice del array
-    settings.generators = (generators || []).map((g, index) => ({
+    settings.generators = generators.map((g, index) => ({
         sourceId: g.sourceId,
-        namePrefix: g.namePrefix,
+        namePrefix: g.namePrefix || "Patrulla ",
         userLimit: parseInt(g.userLimit) || 0,
-        order: index
+        order: index // El orden se define por su posición en el array enviado
     }));
 
     await settings.save();
