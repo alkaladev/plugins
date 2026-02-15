@@ -1,10 +1,108 @@
-<div class="container mt-4">
-    <div class="card bg-dark text-white">
-        <div class="card-header">
-            <h3>Voice Manager</h3>
-        </div>
-        <div class="card-body">
-            <p>Configuración de canales temporales activa.</p>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark text-white shadow">
+                <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fa-solid fa-tower-broadcast me-2"></i>Configuración de Canales Dinámicos</h5>
+                    <button class="btn btn-success btn-sm" onclick="addRow()">
+                        <i class="fa-solid fa-plus me-1"></i> Añadir Generador
+                    </button>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">Configura los canales que, al entrar, crearán una patrulla y moverán al usuario. El orden en la lista define la prioridad de creación.</p>
+                    
+                    <form id="voiceForm">
+                        <div id="generatorsList">
+                            <% generators.forEach((gen, index) => { %>
+                                <div class="row g-3 mb-3 align-items-end generator-row border-bottom border-secondary pb-3" data-index="<%= index %>">
+                                    <div class="col-md-4">
+                                        <label class="form-label small">Canal de Origen</label>
+                                        <select class="form-select bg-secondary text-white border-0 sourceId">
+                                            <% channels.forEach(ch => { %>
+                                                <option value="<%= ch.id %>" <%= gen.sourceId === ch.id ? 'selected' : '' %>><%= ch.name %></option>
+                                            <% }) %>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small">Prefijo del nombre</label>
+                                        <input type="text" class="form-control bg-secondary text-white border-0 namePrefix" value="<%= gen.namePrefix %>" placeholder="Ej: Patrulla #">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label small">Límite de usuarios</label>
+                                        <input type="number" class="form-control bg-secondary text-white border-0 userLimit" value="<%= gen.userLimit %>" min="0" max="99">
+                                    </div>
+                                    <div class="col-md-3 d-flex gap-2">
+                                        <button type="button" class="btn btn-outline-danger" onclick="removeRow(this)">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-outline-light" onclick="moveUp(this)"><i class="fa-solid fa-arrow-up"></i></button>
+                                            <button type="button" class="btn btn-outline-light" onclick="moveDown(this)"><i class="fa-solid fa-arrow-down"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="button" class="btn btn-primary w-100" onclick="saveConfig()">
+                                <i class="fa-solid fa-floppy-disk me-2"></i> Guardar Configuración
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+function addRow() {
+    const list = document.getElementById('generatorsList');
+    const firstRow = document.querySelector('.generator-row');
+    let newRow;
+
+    if (firstRow) {
+        newRow = firstRow.cloneNode(true);
+        newRow.querySelectorAll('input').forEach(i => i.value = '');
+    } else {
+        // Fallback si no hay filas previas (puedes expandir este HTML)
+        location.reload(); // Simplificado para este ejemplo
+        return;
+    }
+    list.appendChild(newRow);
+}
+
+function removeRow(btn) {
+    btn.closest('.generator-row').remove();
+}
+
+function moveUp(btn) {
+    const row = btn.closest('.generator-row');
+    if (row.previousElementSibling) row.parentNode.insertBefore(row, row.previousElementSibling);
+}
+
+function moveDown(btn) {
+    const row = btn.closest('.generator-row');
+    if (row.nextElementSibling) row.parentNode.insertBefore(row.nextElementSibling, row);
+}
+
+async function saveConfig() {
+    const rows = document.querySelectorAll('.generator-row');
+    const generators = Array.from(rows).map(row => ({
+        sourceId: row.querySelector('.sourceId').value,
+        namePrefix: row.querySelector('.namePrefix').value,
+        userLimit: row.querySelector('.userLimit').value
+    }));
+
+    const resp = await fetch(window.location.href + '/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ generators })
+    });
+
+    if (resp.ok) {
+        Swal.fire({ icon: 'success', title: 'Guardado', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+    }
+}
+</script>

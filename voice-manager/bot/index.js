@@ -1,64 +1,62 @@
 const { BotPlugin } = require("strange-sdk");
 const { ChannelType } = require("discord.js");
-const config = require("./config");
+const db = require("../db.service");
 
-const voiceManagerPlugin = new BotPlugin({
+const voicePlugin = new BotPlugin({
     name: "voice-manager",
     baseDir: __dirname,
 });
 
-// En tu core, los eventos se registran así para que el PluginManager los vea:
-voiceManagerPlugin.eventHandlers.set("voiceStateUpdate", async (oldState, newState, plugin) => {
-    // IMPORTANTE: En este sistema, el 'client' suele venir en newState.client
-    const client = newState.client;
+voicePlugin.eventHandlers.set("voiceStateUpdate", async (oldState, newState) => {
     const { guild, member } = newState;
     const newChannel = newState.channel;
+    const oldChannel = oldState.channel;
 
-    // Log para confirmar que el evento entra al sistema centralizado
-    console.log(`[VOICE-SYSTEM] Evento captado para ${member?.user?.tag}`);
+    // Solo actuar si cambia de canal
+    if (oldChannel?.id === newChannel?.id) return;
 
+    // --- LÓGICA DE CREACIÓN ---
     if (newChannel) {
-        // Lógica de detección (Nombre o ID)
-        const isGenerator = config.generators.some(g => g.sourceId === newChannel.id) || 
-                           newChannel.name.toLowerCase() === "battlefield";
+        const settings = await db.getSettings(guild.id);
+        // Buscamos si el canal actual es un generador configurado
+        const generator = settings.generators.find(g => g.sourceId === newChannel.id);
 
-        if (isGenerator) {
+        if (generator) {
             try {
-                const prefix = "Patrulla ";
-                const voiceChannel = await guild.channels.create({
-                    name: `${prefix}${guild.channels.cache.filter(c => c.name.startsWith(prefix)).size + 1}`,
+                const prefix = generator.namePrefix || "Patrulla ";
+                // Contamos canales que empiecen por el prefijo en esa categoría
+                const count = guild.channels.cache.filter(c => 
+                    c.name.startsWith(prefix) && c.parentId === newChannel.parentId
+                ).size;
+
+                const newVoiceChannel = await guild.channels.create({
+                    name: `${prefix}${count + 1}`,
                     type: ChannelType.GuildVoice,
                     parent: newChannel.parentId,
-                    userLimit: 4,
-                    reason: 'Sistema de Patrullas Akira'
+                    userLimit: generator.userLimit || 0,
+                    reason: 'Akira Voice Manager'
                 });
 
-                await member.voice.setChannel(voiceChannel);
-                console.log(`[VOICE] Canal creado y usuario movido.`);
+                await member.voice.setChannel(newVoiceChannel);
             } catch (err) {
                 console.error("[VOICE ERROR]", err.message);
             }
         }
     }
 
-    // Lógica de borrado simple
-    const oldChannel = oldState.channel;
-    if (oldChannel && oldChannel.name.includes("Patrulla") && oldChannel.members.size === 0) {
-        setTimeout(() => {
-            oldChannel.delete().catch(() => {});
-        }, 5000);
+    // --- LÓGICA DE BORRADO ---
+    if (oldChannel && oldChannel.members.size === 0) {
+        const settings = await db.getSettings(guild.id);
+        // Borrar si el nombre del canal coincide con algún prefijo configurado
+        const isPatrol = settings.generators.some(g => oldChannel.name.startsWith(g.namePrefix));
+        
+        if (isPatrol) {
+            // Pequeño delay para evitar bugs de Discord
+            setTimeout(() => {
+                oldChannel.delete().catch(() => {});
+            }, 2000);
+        }
     }
 });
 
-// Handler para la Dashboard (IPC)
-voiceManagerPlugin.ipcEvents.set("setup", async (data, client) => {
-    const newGen = {
-        sourceId: data.channel_id,
-        namePrefix: data.prefix,
-        userLimit: data.limit
-    };
-    config.generators.push(newGen);
-    return { success: true };
-});
-
-module.exports = voiceManagerPlugin;
+module.exports = voicePlugin;
