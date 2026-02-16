@@ -55,9 +55,13 @@ async function listGenerators(guildId, guild) {
             const channel = guild.channels.cache.get(gen.sourceChannelId);
             const channelName = channel ? channel.name : "Canal no encontrado";
             const limit = gen.userLimit === 0 ? "Ilimitado" : gen.userLimit;
+            const namesList = gen.namesList ? gen.namesList.join(", ") : "Sin nombres";
+            const currentIndex = gen.currentNameIndex || 0;
+            const nextName = gen.namesList ? gen.namesList[currentIndex] : "N/A";
 
-            response += `**${index + 1}. ${gen.namePrefix}**\n`;
+            response += `**${index + 1}. ${namesList}**\n`;
             response += `└─ Canal: <#${gen.sourceChannelId}> (\`${gen.sourceChannelId}\`)\n`;
+            response += `└─ Próximo nombre: ${nextName}\n`;
             response += `└─ Límite: ${limit} usuarios\n`;
             
             if (gen.parentCategoryId) {
