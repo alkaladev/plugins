@@ -36,7 +36,15 @@ router.get("/api/channels", async (req, res) => {
         const guildId = req.params.guildId;
         console.log("[TempChannels Router] GET /api/channels - GuildId:", guildId);
         
-        const guild = req.client.guilds.cache.get(guildId);
+        // Obtener el cliente de Discord desde req
+        const client = req.client || (req.app.get && req.app.get('client'));
+        
+        if (!client) {
+            console.error("[TempChannels Router] Client not available");
+            return res.status(500).json({ error: "Client not available" });
+        }
+
+        const guild = client.guilds.cache.get(guildId);
         if (!guild) {
             console.error("[TempChannels Router] Guild not found:", guildId);
             return res.status(404).json({ error: "Guild not found" });
@@ -182,13 +190,18 @@ router.delete("/api/channel/:id", async (req, res) => {
 
         console.log("[TempChannels Router] DELETE /api/channel/:id - GuildId:", guildId, "ChannelId:", id);
 
-        const guild = req.client.guilds.cache.get(guildId);
+        // Obtener el cliente de Discord desde req
+        const client = req.client || (req.app.get && req.app.get('client'));
+        
+        if (client) {
+            const guild = client.guilds.cache.get(guildId);
 
-        if (guild) {
-            const channel = guild.channels.cache.get(id);
-            if (channel) {
-                await channel.delete();
-                console.log("[TempChannels Router] Canal de Discord eliminado:", id);
+            if (guild) {
+                const channel = guild.channels.cache.get(id);
+                if (channel) {
+                    await channel.delete();
+                    console.log("[TempChannels Router] Canal de Discord eliminado:", id);
+                }
             }
         }
 
