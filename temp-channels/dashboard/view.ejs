@@ -44,14 +44,18 @@
         async loadData() {
           try {
             this.loading = true;
-            const baseUrl = window.location.href;
-            const res = await fetch(baseUrl + '/api/settings');
+            const baseUrl = window.location.pathname.split('/dashboard')[0];
+            const guildId = window.location.pathname.split('/')[3];
+            const res = await fetch(\`\${baseUrl}/dashboard/\${guildId}/temp-channels/api/settings\`);
             if (res.ok) {
               const data = await res.json();
+              console.log('[Dashboard] Generadores obtenidos:', data);
               this.generators = data.generators || [];
+            } else {
+              console.error('[Dashboard] Error:', res.status);
             }
           } catch (error) {
-            console.error('Error loading generators:', error);
+            console.error('[Dashboard] Error loading generators:', error);
           } finally {
             this.loading = false;
           }
@@ -59,15 +63,17 @@
         
         async loadChannels() {
           try {
-            const baseUrl = window.location.href;
-            const res = await fetch(baseUrl + '/api/channels');
+            const baseUrl = window.location.pathname.split('/dashboard')[0];
+            const guildId = window.location.pathname.split('/')[3];
+            const res = await fetch(\`\${baseUrl}/dashboard/\${guildId}/temp-channels/api/channels\`);
             if (res.ok) {
               const data = await res.json();
+              console.log('[Dashboard] Canales obtenidos:', data);
               this.channels = data.filter(c => c.type === 2) || [];
               this.categories = data.filter(c => c.type === 4) || [];
             }
           } catch (error) {
-            console.error('Error loading channels:', error);
+            console.error('[Dashboard] Error loading channels:', error);
           }
         },
         
@@ -91,11 +97,12 @@
         async submitForm() {
           this.saving = true;
           try {
-            const baseUrl = window.location.href;
+            const baseUrl = window.location.pathname.split('/dashboard')[0];
+            const guildId = window.location.pathname.split('/')[3];
             const method = this.editingId ? 'PATCH' : 'POST';
             const url = this.editingId 
-              ? baseUrl + '/api/generator/' + this.editingId
-              : baseUrl + '/api/generator';
+              ? \`\${baseUrl}/dashboard/\${guildId}/temp-channels/api/generator/\${this.editingId}\`
+              : \`\${baseUrl}/dashboard/\${guildId}/temp-channels/api/generator\`;
             
             const res = await fetch(url, {
               method,
@@ -111,6 +118,7 @@
               throw new Error();
             }
           } catch (error) {
+            console.error('Error:', error);
             Alpine.store('toast').show('Error al guardar', 'error');
           } finally {
             this.saving = false;
@@ -120,8 +128,9 @@
         async deleteGenerator(id) {
           if (!confirm('¿Estás seguro de que quieres eliminar este generador?')) return;
           try {
-            const baseUrl = window.location.href;
-            const res = await fetch(baseUrl + '/api/generator/' + id, { method: 'DELETE' });
+            const baseUrl = window.location.pathname.split('/dashboard')[0];
+            const guildId = window.location.pathname.split('/')[3];
+            const res = await fetch(\`\${baseUrl}/dashboard/\${guildId}/temp-channels/api/generator/\${id}\`, { method: 'DELETE' });
             if (res.ok) {
               Alpine.store('toast').show('Generador eliminado', 'success');
               await this.loadData();
@@ -132,15 +141,15 @@
         },
         
         init() {
-          this.loadData();
           this.loadChannels();
+          this.loadData();
         }
       }"
       class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c] transition-colors duration-300">
       
       <div class="mb-6 flex items-center justify-between">
         <h3 class="text-xl font-bold text-gray-900 dark:text-white">
-          🎤 Generadores de Canales
+          Generadores de Canales
         </h3>
         <button @click="openAddModal()"
           class="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-500/10 dark:bg-purple-500/20 px-4 py-2.5 font-bold text-purple-700 dark:text-purple-300 transition-all hover:scale-105 active:scale-95 shadow-[0_10px_40px_-10px_rgba(168,85,247,0.3)]">
@@ -151,14 +160,14 @@
 
       <div x-show="!loading" class="space-y-3 divide-y divide-gray-100 dark:divide-white/5">
         <template x-if="generators.length === 0">
-          <p class="py-8 text-center text-gray-500 dark:text-gray-400">📭 No hay generadores configurados</p>
+          <p class="py-8 text-center text-gray-500 dark:text-gray-400">No hay generadores configurados</p>
         </template>
         
         <template x-for="gen in generators" :key="gen.sourceChannelId">
           <div class="flex items-start justify-between py-3 px-1 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg transition-colors">
             <div class="flex-1">
               <p class="font-bold text-gray-900 dark:text-white">
-                <i class="fa-solid fa-microphone mr-2 text-purple-500"></i><span x-text="channels.find(c => c.id === gen.sourceChannelId)?.name || 'Desconocido'"></span>
+                <i class="fa-solid fa-microphone mr-2 text-purple-500"></i><span x-text="channels.find(c => c.id === gen.sourceChannelId)?.name || gen.sourceChannelId"></span>
               </p>
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-6">
                 <i class="fa-solid fa-list mr-1"></i><span x-text="gen.namesList.join(', ')"></span>
@@ -192,8 +201,8 @@
         class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" style="display: none;">
         <div @click.stop class="bg-white dark:bg-[#090e2c] rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl border border-gray-200 dark:border-gray-700">
           <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-6">
-            <span x-show="!editingId">➕ Nuevo Generador</span>
-            <span x-show="editingId">✏️ Editar Generador</span>
+            <span x-show="!editingId">Nuevo Generador</span>
+            <span x-show="editingId">Editar Generador</span>
           </h3>
           
           <form @submit.prevent="submitForm" class="space-y-5">
@@ -267,14 +276,16 @@
         async loadData() {
           try {
             this.loading = true;
-            const baseUrl = window.location.href;
+            const baseUrl = window.location.pathname.split('/dashboard')[0];
+            const guildId = window.location.pathname.split('/')[3];
             const [resActive, resGen] = await Promise.all([
-              fetch(baseUrl + '/api/active'),
-              fetch(baseUrl + '/api/settings')
+              fetch(\`\${baseUrl}/dashboard/\${guildId}/temp-channels/api/active\`),
+              fetch(\`\${baseUrl}/dashboard/\${guildId}/temp-channels/api/settings\`)
             ]);
             
             if (resActive.ok) {
               const data = await resActive.json();
+              console.log('[Dashboard] Canales activos obtenidos:', data);
               this.activeChannels = data || [];
             }
             
@@ -283,7 +294,7 @@
               this.generators = data.generators || [];
             }
           } catch (error) {
-            console.error('Error loading data:', error);
+            console.error('[Dashboard] Error loading data:', error);
           } finally {
             this.loading = false;
           }
@@ -297,8 +308,9 @@
         async deleteChannel(id) {
           if (!confirm('¿Estás seguro de que quieres eliminar este canal?')) return;
           try {
-            const baseUrl = window.location.href;
-            const res = await fetch(baseUrl + '/api/channel/' + id, { method: 'DELETE' });
+            const baseUrl = window.location.pathname.split('/dashboard')[0];
+            const guildId = window.location.pathname.split('/')[3];
+            const res = await fetch(\`\${baseUrl}/dashboard/\${guildId}/temp-channels/api/channel/\${id}\`, { method: 'DELETE' });
             if (res.ok) {
               Alpine.store('toast').show('Canal eliminado', 'success');
               await this.loadData();
@@ -316,12 +328,12 @@
       class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c] transition-colors duration-300">
       
       <h3 class="mb-6 text-xl font-bold text-gray-900 dark:text-white">
-        📊 Canales Activos
+        Canales Activos
       </h3>
 
       <div x-show="!loading" class="space-y-3 divide-y divide-gray-100 dark:divide-white/5">
         <template x-if="activeChannels.length === 0">
-          <p class="py-8 text-center text-gray-500 dark:text-gray-400">📭 No hay canales temporales activos</p>
+          <p class="py-8 text-center text-gray-500 dark:text-gray-400">No hay canales temporales activos</p>
         </template>
         
         <template x-for="ch in activeChannels" :key="ch.channelId">
