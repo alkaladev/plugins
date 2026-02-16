@@ -1,4 +1,4 @@
-const { ApplicationCommandOptionType } = require("discord.js");
+const { ApplicationCommandOptionType, EmbedBuilder } = require("discord.js");
 const db = require("../../db.service");
 
 /**
@@ -6,7 +6,7 @@ const db = require("../../db.service");
  */
 module.exports = {
     name: "vquitar",
-    description: "Elimina un generador de canales",
+    description: "tempchannels:VQUITAR.DESCRIPTION",
     userPermissions: ["ManageGuild"],
     command: {
         enabled: true,
@@ -35,16 +35,21 @@ module.exports = {
         try {
             const channelId = args[0];
 
-            // Validar que sea un ID válido
             if (!channelId || !/^\d+$/.test(channelId)) {
-                return message.reply("❌ Debes proporcionar una ID de canal válida\n`/vquitar <channelId>`");
+                const embed = new EmbedBuilder()
+                    .setColor("#fd3b02")
+                    .setDescription("❌ Debes proporcionar una ID de canal válida");
+                return message.reply({ embeds: [embed] });
             }
 
             const response = await removeGenerator(message.guild.id, channelId, message.guild);
             return message.reply(response);
         } catch (error) {
             console.error("[TempChannels] Error en messageRun:", error);
-            return message.reply("❌ Ocurrió un error eliminando el generador");
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("❌ Ocurrió un error eliminando el generador");
+            return message.reply({ embeds: [embed] });
         }
     },
 
@@ -52,16 +57,21 @@ module.exports = {
         try {
             const channelId = interaction.options.getString("canal");
 
-            // Validar que sea un ID válido
             if (!channelId || !/^\d+$/.test(channelId)) {
-                return interaction.followUp("❌ Debes proporcionar una ID de canal válida");
+                const embed = new EmbedBuilder()
+                    .setColor("#fd3b02")
+                    .setDescription("❌ Debes proporcionar una ID de canal válida");
+                return interaction.followUp({ embeds: [embed] });
             }
 
             const response = await removeGenerator(interaction.guild.id, channelId, interaction.guild);
             return interaction.followUp(response);
         } catch (error) {
             console.error("[TempChannels] Error en interactionRun:", error);
-            return interaction.followUp("❌ Ocurrió un error eliminando el generador");
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("❌ Ocurrió un error eliminando el generador");
+            return interaction.followUp({ embeds: [embed] });
         }
     },
 };
@@ -70,26 +80,28 @@ async function removeGenerator(guildId, channelId, guild) {
     try {
         const settings = await db.getSettings(guildId);
 
-        // Buscar el generador
         const generatorIndex = settings.generators.findIndex((g) => g.sourceChannelId === channelId);
         
         if (generatorIndex === -1) {
-            return "❌ No hay un generador configurado en ese canal";
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("❌ No hay un generador configurado en ese canal");
+            return { embeds: [embed] };
         }
 
         const generator = settings.generators[generatorIndex];
         const channel = guild.channels.cache.get(channelId);
         const channelName = channel ? channel.name : `Canal \`${channelId}\``;
 
-        // Eliminar el generador
         settings.generators.splice(generatorIndex, 1);
         await settings.save();
 
-        return `✅ Generador eliminado correctamente\n
-📌 **Detalles:**
-• Canal: ${channelName}
-• Prefijo: ${generator.namePrefix}
-• Los nuevos usuarios que se conecten al canal no crearán canales temporales`;
+        const embed = new EmbedBuilder()
+            .setColor("#fd3b02")
+            .setTitle("✅ Generador eliminado correctamente")
+            .setDescription(`**Canal:** ${channelName}\n**Nombres:** ${generator.namesList.join(", ")}\n\nLos nuevos usuarios que se conecten al canal no crearán canales temporales`);
+
+        return { embeds: [embed] };
     } catch (error) {
         console.error("[TempChannels] Error en removeGenerator:", error);
         throw error;

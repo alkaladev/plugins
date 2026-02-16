@@ -23,7 +23,6 @@ module.exports = new BotPlugin({
                     const generator = settings.generators.find((g) => g.sourceChannelId === channel.id);
                     
                     if (!generator) {
-                        console.log("[TempChannels] El canal no es un generador");
                         return;
                     }
 
@@ -31,13 +30,9 @@ module.exports = new BotPlugin({
                         // Obtener canales activos para este generador
                         const activeChannels = await dbService.getActiveChannels(guild.id);
                         const generatorActiveChannels = activeChannels.filter(ac => ac.sourceChannelId === channel.id);
-                        
-                        console.log("[TempChannels] Canales activos para este generador:", generatorActiveChannels.length);
-                        console.log("[TempChannels] NamesList:", generator.namesList);
 
                         // Obtener los nombres ya usados (activos)
                         const usedNames = generatorActiveChannels.map(ac => ac.channelName);
-                        console.log("[TempChannels] Nombres ya usados:", usedNames);
 
                         // Buscar el PRIMER nombre disponible en la lista
                         let currentName = null;
@@ -50,8 +45,6 @@ module.exports = new BotPlugin({
                                 break;
                             }
                         }
-
-                        console.log("[TempChannels] Nombre disponible encontrado:", currentName, "en índice:", foundIndex);
 
                         if (!currentName) {
                             console.error("[TempChannels] Error: No hay nombres disponibles");
@@ -66,8 +59,6 @@ module.exports = new BotPlugin({
                             userLimit: generator.userLimit || 0,
                         });
 
-                        console.log("[TempChannels] Canal creado:", tempChannel.id, "con nombre:", currentName);
-
                         // Guardar en BD
                         await dbService.addActiveChannel({
                             channelId: tempChannel.id,
@@ -78,13 +69,9 @@ module.exports = new BotPlugin({
                             createdAt: new Date(),
                         });
 
-                        console.log("[TempChannels] Canal guardado en BD");
-
                         // Mover al usuario
                         try {
-                            console.log("[TempChannels] Moviendo usuario a:", tempChannel.id);
                             await member.voice.setChannel(tempChannel);
-                            console.log("[TempChannels] Usuario movido correctamente");
                             Logger.success(`[TempChannels] Canal temporal creado: ${currentName}`);
                         } catch (moveError) {
                             console.error("[TempChannels] Error al mover usuario:", moveError.message);
@@ -104,16 +91,12 @@ module.exports = new BotPlugin({
                     if (!guildToCheck) return;
 
                     const activeChannels = await dbService.getActiveChannels(guildToCheck.id);
-                    console.log("[TempChannels] Canales activos encontrados:", activeChannels.length);
                     
                     for (const activeChannel of activeChannels) {
                         try {
                             const channel = guildToCheck.channels.cache.get(activeChannel.channelId);
                             
-                            console.log("[TempChannels] Revisando canal:", activeChannel.channelId, "Miembros:", channel?.members.size);
-                            
                             if (!channel) {
-                                console.log("[TempChannels] Canal no encontrado, eliminando DB:", activeChannel.channelId);
                                 await dbService.removeActiveChannel(activeChannel.channelId);
                                 continue;
                             }

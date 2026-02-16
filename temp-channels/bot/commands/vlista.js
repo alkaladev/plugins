@@ -1,4 +1,4 @@
-const { ApplicationCommandOptionType } = require("discord.js");
+const { EmbedBuilder } = require("discord.js");
 const db = require("../../db.service");
 
 /**
@@ -6,7 +6,7 @@ const db = require("../../db.service");
  */
 module.exports = {
     name: "vlista",
-    description: "Muestra la lista de canales generadores configurados",
+    description: "tempchannels:VLISTA.DESCRIPTION",
     userPermissions: ["ManageGuild"],
     command: {
         enabled: true,
@@ -23,7 +23,10 @@ module.exports = {
             return message.reply(response);
         } catch (error) {
             console.error("[TempChannels] Error en messageRun:", error);
-            return message.reply("❌ Ocurrió un error listando los generadores");
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("❌ Ocurrió un error listando los generadores");
+            return message.reply({ embeds: [embed] });
         }
     },
 
@@ -33,7 +36,10 @@ module.exports = {
             return interaction.followUp(response);
         } catch (error) {
             console.error("[TempChannels] Error en interactionRun:", error);
-            return interaction.followUp("❌ Ocurrió un error listando los generadores");
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("❌ Ocurrió un error listando los generadores");
+            return interaction.followUp({ embeds: [embed] });
         }
     },
 };
@@ -43,42 +49,43 @@ async function listGenerators(guildId, guild) {
         const settings = await db.getSettings(guildId);
 
         if (!settings.generators || settings.generators.length === 0) {
-            return {
-                content: "📭 No hay canales configurados como generadores",
-                ephemeral: true,
-            };
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("📭 No hay canales configurados como generadores");
+            return { embeds: [embed] };
         }
 
-        let response = "🎤 **Generadores de Canales Configurados:**\n\n";
+        const embed = new EmbedBuilder()
+            .setColor("#fd3b02")
+            .setTitle("🎤 Generadores de Canales Configurados");
 
         settings.generators.forEach((gen, index) => {
             const channel = guild.channels.cache.get(gen.sourceChannelId);
             const channelName = channel ? channel.name : "Canal no encontrado";
             const limit = gen.userLimit === 0 ? "Ilimitado" : gen.userLimit;
             const namesList = gen.namesList ? gen.namesList.join(", ") : "Sin nombres";
-            const currentIndex = gen.currentNameIndex || 0;
-            const nextName = gen.namesList ? gen.namesList[currentIndex] : "N/A";
+            const nextName = gen.namesList ? gen.namesList[0] : "N/A";
 
-            response += `**${index + 1}. ${namesList}**\n`;
-            response += `└─ Canal: <#${gen.sourceChannelId}> (\`${gen.sourceChannelId}\`)\n`;
-            response += `└─ Próximo nombre: ${nextName}\n`;
-            response += `└─ Límite: ${limit} usuarios\n`;
-            
+            let value = `📝 **Nombres:** ${namesList}\n`;
+            value += `🎯 **Próximo:** ${nextName}\n`;
+            value += `👥 **Límite:** ${limit}`;
+
             if (gen.parentCategoryId) {
                 const category = guild.channels.cache.get(gen.parentCategoryId);
-                const categoryName = category ? category.name : "Categoría no encontrada";
-                response += `└─ Categoría: ${categoryName}\n`;
+                const categoryName = category ? category.name : "No encontrada";
+                value += `\n📁 **Categoría:** ${categoryName}`;
             }
-            
-            response += "\n";
+
+            embed.addFields({
+                name: `${index + 1}. ${channelName}`,
+                value: value,
+                inline: false
+            });
         });
 
-        response += `**Total:** ${settings.generators.length} generador${settings.generators.length !== 1 ? "es" : ""}`;
+        embed.setFooter({ text: `Total: ${settings.generators.length} generador${settings.generators.length !== 1 ? "es" : ""}` });
 
-        return {
-            content: response,
-            ephemeral: true,
-        };
+        return { embeds: [embed] };
     } catch (error) {
         console.error("[TempChannels] Error en listGenerators:", error);
         throw error;

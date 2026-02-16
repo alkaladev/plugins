@@ -1,3 +1,4 @@
+const { EmbedBuilder } = require("discord.js");
 const db = require("../../db.service");
 const { Logger } = require("strange-sdk/utils");
 
@@ -6,7 +7,7 @@ const { Logger } = require("strange-sdk/utils");
  */
 module.exports = {
     name: "vborrar",
-    description: "Elimina todos los canales temporales activos",
+    description: "tempchannels:VBORRAR.DESCRIPTION",
     userPermissions: ["ManageGuild"],
     command: {
         enabled: true,
@@ -23,7 +24,10 @@ module.exports = {
             return message.reply(response);
         } catch (error) {
             console.error("[TempChannels] Error en messageRun:", error);
-            return message.reply("❌ Ocurrió un error eliminando los canales");
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("❌ Ocurrió un error eliminando los canales");
+            return message.reply({ embeds: [embed] });
         }
     },
 
@@ -33,7 +37,10 @@ module.exports = {
             return interaction.followUp(response);
         } catch (error) {
             console.error("[TempChannels] Error en interactionRun:", error);
-            return interaction.followUp("❌ Ocurrió un error eliminando los canales");
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("❌ Ocurrió un error eliminando los canales");
+            return interaction.followUp({ embeds: [embed] });
         }
     },
 };
@@ -43,10 +50,10 @@ async function deleteAllChannels(guildId, guild) {
         const activeChannels = await db.getActiveChannels(guildId);
 
         if (activeChannels.length === 0) {
-            return {
-                content: "📭 No hay canales temporales para eliminar",
-                ephemeral: true,
-            };
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("📭 No hay canales temporales para eliminar");
+            return { embeds: [embed] };
         }
 
         let deletedCount = 0;
@@ -70,17 +77,17 @@ async function deleteAllChannels(guildId, guild) {
             }
         }
 
-        let response = `✅ **Limpieza Completada**\n\n`;
-        response += `✓ Eliminados: ${deletedCount}\n`;
-        
+        const embed = new EmbedBuilder()
+            .setColor("#fd3b02")
+            .setTitle("✅ Limpieza Completada");
+
         if (failedCount > 0) {
-            response += `✗ Fallidos: ${failedCount}`;
+            embed.setDescription(`✓ Eliminados: ${deletedCount}\n✗ Fallidos: ${failedCount}`);
+        } else {
+            embed.setDescription(`✓ Eliminados: ${deletedCount}`);
         }
 
-        return {
-            content: response,
-            ephemeral: true,
-        };
+        return { embeds: [embed] };
     } catch (error) {
         console.error("[TempChannels] Error en deleteAllChannels:", error);
         throw error;

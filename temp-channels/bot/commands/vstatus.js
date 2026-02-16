@@ -1,3 +1,4 @@
+const { EmbedBuilder } = require("discord.js");
 const db = require("../../db.service");
 
 /**
@@ -5,7 +6,7 @@ const db = require("../../db.service");
  */
 module.exports = {
     name: "vstatus",
-    description: "Muestra el estado actual de los canales temporales",
+    description: "tempchannels:VSTATUS.DESCRIPTION",
     userPermissions: ["ManageGuild"],
     command: {
         enabled: true,
@@ -22,7 +23,10 @@ module.exports = {
             return message.reply(response);
         } catch (error) {
             console.error("[TempChannels] Error en messageRun:", error);
-            return message.reply("❌ Ocurrió un error obteniendo el estado");
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("❌ Ocurrió un error obteniendo el estado");
+            return message.reply({ embeds: [embed] });
         }
     },
 
@@ -32,7 +36,10 @@ module.exports = {
             return interaction.followUp(response);
         } catch (error) {
             console.error("[TempChannels] Error en interactionRun:", error);
-            return interaction.followUp("❌ Ocurrió un error obteniendo el estado");
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("❌ Ocurrió un error obteniendo el estado");
+            return interaction.followUp({ embeds: [embed] });
         }
     },
 };
@@ -42,13 +49,15 @@ async function getStatus(guildId, guild) {
         const activeChannels = await db.getActiveChannels(guildId);
 
         if (activeChannels.length === 0) {
-            return {
-                content: "📭 No hay canales temporales activos en este momento",
-                ephemeral: true,
-            };
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("📭 No hay canales temporales activos en este momento");
+            return { embeds: [embed] };
         }
 
-        let response = "📊 **Estado de Canales Temporales:**\n\n";
+        const embed = new EmbedBuilder()
+            .setColor("#fd3b02")
+            .setTitle("📊 Estado de Canales Temporales");
 
         for (const activeChannel of activeChannels) {
             const channel = guild.channels.cache.get(activeChannel.channelId);
@@ -56,20 +65,19 @@ async function getStatus(guildId, guild) {
                 const creator = await guild.members.fetch(activeChannel.createdBy).catch(() => null);
                 const creatorName = creator ? creator.user.username : "Usuario desconocido";
                 const memberCount = channel.members.size;
+                const secondsAgo = Math.floor((Date.now() - activeChannel.createdAt) / 1000);
 
-                response += `🎤 **${activeChannel.channelName}**\n`;
-                response += `└─ Miembros: ${memberCount}/${channel.userLimit || "∞"}\n`;
-                response += `└─ Creado por: ${creatorName}\n`;
-                response += `└─ Creado hace: ${Math.floor((Date.now() - activeChannel.createdAt) / 1000)}s\n\n`;
+                embed.addFields({
+                    name: `🎤 ${activeChannel.channelName}`,
+                    value: `👥 **Miembros:** ${memberCount}/${channel.userLimit || "∞"}\n👤 **Creado por:** ${creatorName}\n⏱️ **Hace:** ${secondsAgo}s`,
+                    inline: false
+                });
             }
         }
 
-        response += `**Total:** ${activeChannels.length} canal${activeChannels.length !== 1 ? "es" : ""} activo${activeChannels.length !== 1 ? "s" : ""}`;
+        embed.setFooter({ text: `Total: ${activeChannels.length} canal${activeChannels.length !== 1 ? "es" : ""} activo${activeChannels.length !== 1 ? "s" : ""}` });
 
-        return {
-            content: response,
-            ephemeral: true,
-        };
+        return { embeds: [embed] };
     } catch (error) {
         console.error("[TempChannels] Error en getStatus:", error);
         throw error;

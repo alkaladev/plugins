@@ -1,4 +1,4 @@
-const { ApplicationCommandOptionType, ChannelType } = require("discord.js");
+const { ApplicationCommandOptionType, EmbedBuilder } = require("discord.js");
 const db = require("../../db.service");
 
 /**
@@ -6,11 +6,11 @@ const db = require("../../db.service");
  */
 module.exports = {
     name: "veditar",
-    description: "Edita un generador de canales existente",
+    description: "tempchannels:VEDITAR.DESCRIPTION",
     userPermissions: ["ManageGuild"],
     command: {
         enabled: true,
-        minArgsCount: 1,
+        minArgsCount: 2,
     },
     slashCommand: {
         enabled: true,
@@ -44,19 +44,41 @@ module.exports = {
             const channelId = args[0];
 
             if (!channelId || !/^\d+$/.test(channelId)) {
-                return message.reply("❌ ID de canal inválida");
+                const embed = new EmbedBuilder()
+                    .setColor("#fd3b02")
+                    .setDescription("❌ ID de canal inválida");
+                return message.reply({ embeds: [embed] });
             }
 
             const channel = message.guild.channels.cache.get(channelId);
             if (!channel) {
-                return message.reply("❌ Canal no encontrado");
+                const embed = new EmbedBuilder()
+                    .setColor("#fd3b02")
+                    .setDescription("❌ Canal no encontrado");
+                return message.reply({ embeds: [embed] });
             }
 
-            const response = await editGenerator(message.guild.id, channelId, message.guild);
+            // Parsear nombres y límite del mensaje
+            let namesString = null;
+            let newLimit = null;
+
+            for (let i = 1; i < args.length; i++) {
+                if (!isNaN(args[i])) {
+                    newLimit = parseInt(args[i]);
+                } else {
+                    namesString = args.slice(1).join(" ");
+                    break;
+                }
+            }
+
+            const response = await editGenerator(message.guild.id, channelId, message.guild, namesString, newLimit);
             return message.reply(response);
         } catch (error) {
             console.error("[TempChannels] Error:", error);
-            return message.reply("❌ Ocurrió un error editando el generador");
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("❌ Ocurrió un error editando el generador");
+            return message.reply({ embeds: [embed] });
         }
     },
 
@@ -67,12 +89,18 @@ module.exports = {
             const newLimit = interaction.options.getInteger("limite");
 
             if (!channelId || !/^\d+$/.test(channelId)) {
-                return interaction.followUp("❌ ID de canal inválida");
+                const embed = new EmbedBuilder()
+                    .setColor("#fd3b02")
+                    .setDescription("❌ ID de canal inválida");
+                return interaction.followUp({ embeds: [embed] });
             }
 
             const channel = interaction.guild.channels.cache.get(channelId);
             if (!channel) {
-                return interaction.followUp("❌ Canal no encontrado");
+                const embed = new EmbedBuilder()
+                    .setColor("#fd3b02")
+                    .setDescription("❌ Canal no encontrado");
+                return interaction.followUp({ embeds: [embed] });
             }
 
             const response = await editGenerator(
@@ -85,7 +113,10 @@ module.exports = {
             return interaction.followUp(response);
         } catch (error) {
             console.error("[TempChannels] Error:", error);
-            return interaction.followUp("❌ Ocurrió un error editando el generador");
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("❌ Ocurrió un error editando el generador");
+            return interaction.followUp({ embeds: [embed] });
         }
     },
 };
@@ -96,7 +127,10 @@ async function editGenerator(guildId, channelId, guild, namesString, newLimit) {
         const generatorIndex = settings.generators.findIndex((g) => g.sourceChannelId === channelId);
 
         if (generatorIndex === -1) {
-            return "❌ No hay un generador configurado en ese canal";
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("❌ No hay un generador configurado en ese canal");
+            return { embeds: [embed] };
         }
 
         const generator = settings.generators[generatorIndex];
@@ -120,18 +154,20 @@ async function editGenerator(guildId, channelId, guild, namesString, newLimit) {
         }
 
         if (!updated) {
-            return "⚠️ No se especificaron cambios";
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("⚠️ Debes especificar al menos un cambio (nombres o límite)");
+            return { embeds: [embed] };
         }
 
         await settings.save();
 
-        let response = `✅ Generador editado correctamente\n\n`;
-        response += `📌 **Cambios realizados:**\n`;
-        changes.forEach(change => {
-            response += `• ${change}\n`;
-        });
+        const embed = new EmbedBuilder()
+            .setColor("#fd3b02")
+            .setTitle("✅ Generador editado correctamente")
+            .setDescription(changes.join("\n"));
 
-        return response;
+        return { embeds: [embed] };
     } catch (error) {
         console.error("[TempChannels] Error en editGenerator:", error);
         throw error;
