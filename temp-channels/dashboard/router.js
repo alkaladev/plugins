@@ -20,7 +20,7 @@ router.use((req, res, next) => {
 router.get("/", async (req, res) => {
     try {
         const guildId = res.locals.guildId;
-        console.log("[TempChannels] GET / - GuildId:", guildId);
+        ///console.log("[TempChannels] GET / - GuildId:", guildId);
         
         if (!guildId) {
             return res.status(400).send("GuildId not found");
@@ -33,7 +33,7 @@ router.get("/", async (req, res) => {
 
         // El broadcast devuelve { success: true, data: [...] }
         const channels = (channelsResponse && channelsResponse.data) || [];
-        console.log("[TempChannels] Canales recibidos:", channels.length);
+        ///console.log("[TempChannels] Canales recibidos:", channels.length);
         
         // Filtrar canales en el servidor
         let voiceChannels = [];
@@ -42,8 +42,8 @@ router.get("/", async (req, res) => {
         if (Array.isArray(channels)) {
             voiceChannels = channels.filter(c => c.type === 2);
             categories = channels.filter(c => c.type === 4);
-            console.log("[TempChannels] Canales de voz encontrados:", voiceChannels.length);
-            console.log("[TempChannels] Categorías encontradas:", categories.length);
+            ///console.log("[TempChannels] Canales de voz encontrados:", voiceChannels.length);
+            ///console.log("[TempChannels] Categorías encontradas:", categories.length);
         }
 
         res.render(path.join(__dirname, "view.ejs"), {
