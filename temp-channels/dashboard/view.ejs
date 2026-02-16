@@ -8,6 +8,35 @@
     -moz-appearance: textfield !important;
     appearance: textfield !important;
   }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .badge-active {
+    background-color: rgb(16, 185, 129);
+    color: white;
+  }
+
+  .badge-offline {
+    background-color: rgb(107, 114, 128);
+    color: white;
+  }
 </style>
 
 <section>
@@ -162,42 +191,67 @@
       class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c] transition-colors duration-300">
       
       <div class="mb-6 flex items-center justify-between">
-        <h3 class="text-xl font-bold text-gray-900 dark:text-white">
-          Generadores de Canales
-        </h3>
+        <div>
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white">Generadores de Canales</h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Configura cómo se crean los canales temporales</p>
+        </div>
         <button @click="openAddModal()"
           class="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-500/10 dark:bg-purple-500/20 px-4 py-2.5 font-bold text-purple-700 dark:text-purple-300 transition-all hover:scale-105 active:scale-95 shadow-[0_10px_40px_-10px_rgba(168,85,247,0.3)]">
           <i class="fa-solid fa-plus text-sm"></i>
-          Añadir
+          Nuevo
         </button>
       </div>
 
-      <div x-show="!loading" class="space-y-3 divide-y divide-gray-100 dark:divide-white/5">
+      <div x-show="!loading" class="space-y-3">
         <template x-if="generators.length === 0">
-          <p class="py-8 text-center text-gray-500 dark:text-gray-400">No hay generadores configurados</p>
+          <div class="py-8 px-4 text-center bg-gray-50 dark:bg-white/5 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+            <i class="fa-solid fa-inbox text-3xl text-gray-300 dark:text-gray-600 mb-2"></i>
+            <p class="text-gray-500 dark:text-gray-400">No hay generadores configurados</p>
+          </div>
         </template>
         
         <template x-for="gen in generators" :key="gen.sourceChannelId">
-          <div class="flex items-start justify-between py-3 px-1 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg transition-colors">
-            <div class="flex-1">
-              <p class="font-bold text-gray-900 dark:text-white">
-                <i class="fa-solid fa-microphone mr-2 text-purple-500"></i><span x-text="channels.find(c => c.id === gen.sourceChannelId)?.name || gen.sourceChannelId"></span>
-              </p>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-6">
-                <i class="fa-solid fa-list mr-1"></i><span x-text="gen.namesList.join(', ')"></span>
-              </p>
-              <div class="flex gap-4 mt-2 ml-6 text-xs text-gray-500 dark:text-gray-400">
-                <span><i class="fa-solid fa-users mr-1"></i>Límite: <strong x-text="gen.userLimit === 0 ? 'Ilimitado' : gen.userLimit"></strong></span>
-                <span x-show="gen.parentCategoryId"><i class="fa-solid fa-folder mr-1"></i><strong x-text="categories.find(c => c.id === gen.parentCategoryId)?.name || 'Desconocida'"></strong></span>
+          <div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/20 dark:to-transparent border border-purple-200 dark:border-purple-900/50 p-4 hover:shadow-lg transition-all duration-300 group">
+            <div class="absolute right-0 top-0 h-20 w-20 translate-x-8 translate-y-[-8px] rounded-full bg-purple-500/10 blur-xl group-hover:bg-purple-500/20 transition-all"></div>
+            
+            <div class="relative z-10">
+              <div class="flex items-start justify-between mb-3">
+                <div class="flex-1">
+                  <h4 class="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-microphone text-purple-500"></i>
+                    <span x-text="channels.find(c => c.id === gen.sourceChannelId)?.name || gen.sourceChannelId"></span>
+                    <span class="badge badge-active">
+                      <i class="fa-solid fa-circle text-[6px]"></i>
+                      Activo
+                    </span>
+                  </h4>
+                </div>
+                <div class="flex gap-1">
+                  <button @click="editGenerator(gen)" class="p-2 text-purple-500 hover:bg-purple-500/10 rounded-lg transition-colors">
+                    <i class="fa-solid fa-edit text-sm"></i>
+                  </button>
+                  <button @click="deleteGenerator(gen.sourceChannelId)" class="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
+                    <i class="fa-solid fa-trash text-sm"></i>
+                  </button>
+                </div>
               </div>
-            </div>
-            <div class="flex gap-2 ml-4">
-              <button @click="editGenerator(gen)" class="p-2 text-purple-500 hover:bg-purple-500/10 rounded-lg transition-colors">
-                <i class="fa-solid fa-edit text-sm"></i>
-              </button>
-              <button @click="deleteGenerator(gen.sourceChannelId)" class="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
-                <i class="fa-solid fa-trash text-sm"></i>
-              </button>
+
+              <div class="space-y-2 ml-7">
+                <div class="flex items-center gap-2 text-sm">
+                  <i class="fa-solid fa-list text-gray-400 w-4"></i>
+                  <span class="text-gray-700 dark:text-gray-300"><strong>Nombres:</strong> <span x-text="gen.namesList.join(', ')"></span></span>
+                </div>
+                
+                <div class="flex items-center gap-2 text-sm">
+                  <i class="fa-solid fa-users text-gray-400 w-4"></i>
+                  <span class="text-gray-700 dark:text-gray-300"><strong>Límite:</strong> <span x-text="gen.userLimit === 0 ? 'Ilimitado' : gen.userLimit + ' usuarios'"></span></span>
+                </div>
+
+                <div x-show="gen.parentCategoryId" class="flex items-center gap-2 text-sm">
+                  <i class="fa-solid fa-folder text-gray-400 w-4"></i>
+                  <span class="text-gray-700 dark:text-gray-300"><strong>Categoría:</strong> <span x-text="categories.find(c => c.id === gen.parentCategoryId)?.name || 'Desconocida'"></span></span>
+                </div>
+              </div>
             </div>
           </div>
         </template>
@@ -416,30 +470,57 @@
       }"
       class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c] transition-colors duration-300">
       
-      <h3 class="mb-6 text-xl font-bold text-gray-900 dark:text-white">
-        Canales Activos
-      </h3>
+      <div class="mb-6">
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Canales Activos</h3>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Canales temporales en uso actualmente</p>
+      </div>
 
-      <div x-show="!loading" class="space-y-3 divide-y divide-gray-100 dark:divide-white/5">
+      <div x-show="!loading" class="space-y-3">
         <template x-if="activeChannels.length === 0">
-          <p class="py-8 text-center text-gray-500 dark:text-gray-400">No hay canales temporales activos</p>
+          <div class="py-8 px-4 text-center bg-gray-50 dark:bg-white/5 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+            <i class="fa-solid fa-inbox text-3xl text-gray-300 dark:text-gray-600 mb-2"></i>
+            <p class="text-gray-500 dark:text-gray-400">No hay canales temporales activos</p>
+          </div>
         </template>
         
         <template x-for="ch in activeChannels" :key="ch.channelId">
-          <div class="flex items-start justify-between py-3 px-1 hover:bg-gray-50 dark:hover:bg-white/5 rounded-lg transition-colors">
-            <div class="flex-1">
-              <p class="font-bold text-gray-900 dark:text-white">
-                <i class="fa-solid fa-microphone mr-2 text-blue-500"></i><span x-text="ch.channelName"></span>
-              </p>
-              <div class="flex gap-4 mt-2 ml-6 text-xs text-gray-500 dark:text-gray-400">
-                <span><i class="fa-solid fa-clock mr-1"></i><span x-text="Math.floor((Date.now() - new Date(ch.createdAt)) / 1000)"></span>s</span>
-                <span><i class="fa-solid fa-tag mr-1"></i><span x-text="getGeneratorName(ch.sourceChannelId)"></span></span>
-                <span x-show="ch.createdBy"><i class="fa-solid fa-user mr-1"></i><span x-text="'Usuario: ' + ch.createdBy"></span></span>
+          <div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-transparent border border-blue-200 dark:border-blue-900/50 p-4 hover:shadow-lg transition-all duration-300 group">
+            <div class="absolute right-0 top-0 h-20 w-20 translate-x-8 translate-y-[-8px] rounded-full bg-blue-500/10 blur-xl group-hover:bg-blue-500/20 transition-all"></div>
+            
+            <div class="relative z-10">
+              <div class="flex items-start justify-between mb-3">
+                <div class="flex-1">
+                  <h4 class="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-microphone text-blue-500"></i>
+                    <span x-text="ch.channelName"></span>
+                    <span class="badge badge-active">
+                      <i class="fa-solid fa-circle text-[6px]"></i>
+                      EN VIVO
+                    </span>
+                  </h4>
+                </div>
+                <button @click="deleteChannel(ch.channelId)" class="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
+                  <i class="fa-solid fa-trash text-sm"></i>
+                </button>
+              </div>
+
+              <div class="space-y-2 ml-7">
+                <div class="flex items-center gap-2 text-sm">
+                  <i class="fa-solid fa-clock text-gray-400 w-4"></i>
+                  <span class="text-gray-700 dark:text-gray-300"><strong>Antigüedad:</strong> <span x-text="Math.floor((Date.now() - new Date(ch.createdAt)) / 1000) + 's'"></span></span>
+                </div>
+
+                <div class="flex items-center gap-2 text-sm">
+                  <i class="fa-solid fa-list text-gray-400 w-4"></i>
+                  <span class="text-gray-700 dark:text-gray-300"><strong>Generador:</strong> <span x-text="getGeneratorName(ch.sourceChannelId)"></span></span>
+                </div>
+
+                <div class="flex items-center gap-2 text-sm">
+                  <i class="fa-solid fa-user text-gray-400 w-4"></i>
+                  <span class="text-gray-700 dark:text-gray-300"><strong>Creado por:</strong> <span x-text="ch.createdByName || ch.createdBy"></span></span>
+                </div>
               </div>
             </div>
-            <button @click="deleteChannel(ch.channelId)" class="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
-              <i class="fa-solid fa-trash text-sm"></i>
-            </button>
           </div>
         </template>
       </div>

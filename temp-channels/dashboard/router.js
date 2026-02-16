@@ -29,6 +29,7 @@ router.get("/", async (req, res) => {
         // Obtener canales usando broadcast
         const channelsResponse = await req.broadcastOne("getChannelsOf", guildId, { guildId });
         const settings = await db.getSettings(guildId);
+        const activeChannels = await db.getActiveChannels(guildId);
 
         // El broadcast devuelve { success: true, data: [...] }
         const channels = (channelsResponse && channelsResponse.data) || [];
@@ -43,14 +44,13 @@ router.get("/", async (req, res) => {
             categories = channels.filter(c => c.type === 4);
             console.log("[TempChannels] Canales de voz encontrados:", voiceChannels.length);
             console.log("[TempChannels] Categorías encontradas:", categories.length);
-        } else {
-            console.warn("[TempChannels] Channels no es un array");
         }
 
         res.render(path.join(__dirname, "view.ejs"), {
             voiceChannels: voiceChannels,
             categories: categories,
-            settings: settings || {}
+            settings: settings || {},
+            activeChannels: activeChannels || []
         });
     } catch (error) {
         console.error("[TempChannels Router] Error renderizando vista:", error);
@@ -104,6 +104,24 @@ router.get("/api/active", async (req, res) => {
         }
         
         const activeChannels = await db.getActiveChannels(guildId);
+        
+        // Obtener información del cliente para resolver nombres de usuario
+        const client = req.app.get('client');
+        if (client) {
+            const guild = client.guilds.cache.get(guildId);
+            if (guild) {
+                // Resolver los nombres de usuario
+                for (const channel of activeChannels) {
+                    try {
+                        const user = await client.users.fetch(channel.createdBy);
+                        channel.createdByName = user.username;
+                    } catch (e) {
+                        channel.createdByName = "Usuario desconocido";
+                    }
+                }
+            }
+        }
+        
         res.json(activeChannels);
     } catch (error) {
         console.error("[TempChannels Router] Error obteniendo canales activos:", error);
