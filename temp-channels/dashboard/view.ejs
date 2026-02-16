@@ -32,7 +32,6 @@
         openChannelDropdown: false,
         openCategoryDropdown: false,
         editingId: null,
-        enabledGenerators: {},
         formData: {
           sourceChannelId: '',
           nombres: '',
@@ -58,10 +57,6 @@
             if (res.ok) {
               const data = await res.json();
               this.generators = data.generators || [];
-              // Todos los generadores están habilitados por defecto
-              this.generators.forEach(gen => {
-                this.enabledGenerators[gen.sourceChannelId] = true;
-              });
             }
           } catch (error) {
             console.error('[Dashboard] Error loading generators:', error);
@@ -152,6 +147,28 @@
           }
         },
         
+        async toggleGenerator(id, event) {
+          try {
+            const guildId = this.getGuildId();
+            if (!guildId) return;
+            const baseUrl = '/dashboard/' + guildId + '/temp-channels';
+            const res = await fetch(baseUrl + '/api/generator/' + id + '/toggle', { 
+              method: 'PATCH'
+            });
+            if (res.ok) {
+              const data = await res.json();
+              this.generators = data.settings.generators || [];
+              const status = data.settings.generators.find(g => g.sourceChannelId === id)?.enabled 
+                ? 'habilitado' 
+                : 'deshabilitado';
+              Alpine.store('toast').show('Generador ' + status, 'success');
+            }
+          } catch (error) {
+            console.error('Error:', error);
+            Alpine.store('toast').show('Error al cambiar estado', 'error');
+          }
+        },
+        
         async deleteGenerator(id) {
           if (!confirm('¿Estás seguro de que quieres eliminar este generador?')) return;
           try {
@@ -166,12 +183,6 @@
           } catch (error) {
             Alpine.store('toast').show('Error al eliminar', 'error');
           }
-        },
-        
-        toggleGenerator(id) {
-          this.enabledGenerators[id] = !this.enabledGenerators[id];
-          const status = this.enabledGenerators[id] ? 'habilitado' : 'deshabilitado';
-          Alpine.store('toast').show('Generador ' + status, 'success');
         },
         
         init() {
@@ -202,7 +213,7 @@
         </template>
         
         <template x-for="gen in generators" :key="gen.sourceChannelId">
-          <div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-transparent border border-blue-200 dark:border-blue-900/50 p-4 hover:shadow-lg transition-all duration-300 group" :class="!enabledGenerators[gen.sourceChannelId] ? 'opacity-60' : ''">
+          <div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-transparent border border-blue-200 dark:border-blue-900/50 p-4 hover:shadow-lg transition-all duration-300 group" :class="!gen.enabled ? 'opacity-60 grayscale' : ''">
             <div class="absolute right-0 top-0 h-20 w-20 translate-x-8 translate-y-[-8px] rounded-full bg-blue-500/10 blur-xl group-hover:bg-blue-500/20 transition-all"></div>
             
             <div class="relative z-10">
@@ -213,7 +224,7 @@
                       <i class="fa-solid fa-microphone text-blue-500"></i>
                       <span x-text="channels.find(c => c.id === gen.sourceChannelId)?.name || gen.sourceChannelId"></span>
                     </h4>
-                    <span x-show="enabledGenerators[gen.sourceChannelId]" x-transition class="flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-0.5 text-[10px] font-bold text-green-500 ring-1 ring-inset ring-green-500/20">
+                    <span x-show="gen.enabled" x-transition class="flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-0.5 text-[10px] font-bold text-green-500 ring-1 ring-inset ring-green-500/20">
                       <i class="fa-solid fa-circle text-[6px]"></i>
                       ACTIVO
                     </span>
@@ -222,12 +233,12 @@
                 <div class="flex gap-1">
                   <label class="relative inline-flex cursor-pointer items-center">
                     <input 
-                      type="checkbox" 
-                      @change="toggleGenerator(gen.sourceChannelId)"
-                      :checked="enabledGenerators[gen.sourceChannelId]"
+                      type="checkbox"
                       class="peer sr-only"
+                      @change="toggleGenerator(gen.sourceChannelId, $event)"
+                      :checked="gen.enabled"
                     />
-                    <div class="peer h-6 w-11 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-600/50"></div>
+                    <div class="peer h-6 w-11 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-purple-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-600/50"></div>
                   </label>
                   <button @click="editGenerator(gen)" class="p-2 text-purple-500 hover:bg-purple-500/10 rounded-lg transition-colors">
                     <i class="fa-solid fa-edit text-sm"></i>

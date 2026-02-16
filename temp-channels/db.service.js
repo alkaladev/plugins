@@ -18,6 +18,7 @@ class TempChannelsService extends DBService {
                         userLimit: Number,
                         parentCategoryId: String,
                         order: { type: Number, default: 0 },
+                        enabled: { type: Boolean, default: true },
                         createdAt: { type: Date, default: Date.now },
                     },
                 ],
@@ -53,6 +54,7 @@ class TempChannelsService extends DBService {
 
         const newGenerator = {
             ...generator,
+            enabled: true,
             order: settings.generators.length,
             createdAt: new Date(),
         };
@@ -85,10 +87,21 @@ class TempChannelsService extends DBService {
         return settings;
     }
 
+    async toggleGenerator(guildId, sourceChannelId) {
+        const SettingsModel = this.getModel("settings");
+        const settings = await this.getSettings(guildId);
+
+        const generator = settings.generators.find((g) => g.sourceChannelId === sourceChannelId);
+        if (!generator) throw new Error("Generador no encontrado");
+
+        generator.enabled = !generator.enabled;
+        await settings.save();
+        return settings;
+    }
+
     async addActiveChannel(channelData) {
         const ActiveChannelsModel = this.getModel("activeChannels");
         try {
-            // Usar insertOne en lugar de create para evitar el _id automático
             const result = await ActiveChannelsModel.collection.insertOne({
                 channelId: channelData.channelId,
                 guildId: channelData.guildId,

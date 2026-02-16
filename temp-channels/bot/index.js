@@ -25,7 +25,7 @@ module.exports = new BotPlugin({
                     const settings = await dbService.getSettings(guild.id);
                     const generator = settings.generators.find((g) => g.sourceChannelId === channel.id);
                     
-                    if (!generator) {
+                    if (!generator || !generator.enabled) {
                         return;
                     }
 

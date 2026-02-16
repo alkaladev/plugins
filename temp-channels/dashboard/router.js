@@ -233,6 +233,24 @@ router.delete("/api/generator/:id", async (req, res) => {
     }
 });
 
+// PATCH /api/generator/:id/toggle - Toggle generador
+router.patch("/api/generator/:id/toggle", async (req, res) => {
+    try {
+        const guildId = res.locals.guildId;
+        const { id } = req.params;
+
+        if (!guildId) {
+            return res.status(400).json({ error: "GuildId not found" });
+        }
+
+        const settings = await db.toggleGenerator(guildId, id);
+        res.json({ success: true, settings });
+    } catch (error) {
+        console.error("[TempChannels Router] Error toggling generador:", error);
+        res.status(500).json({ error: "Error toggling generador" });
+    }
+});
+
 // DELETE /api/channel/:id - Eliminar canal activo
 router.delete("/api/channel/:id", async (req, res) => {
     try {
