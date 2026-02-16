@@ -1,33 +1,14 @@
 <style>
   input[type='number']::-webkit-inner-spin-button,
   input[type='number']::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    appearance: none;
-    margin: 0;
+    -webkit-appearance: none !important;
+    margin: 0 !important;
   }
-  
   input[type='number'] {
-    -moz-appearance: textfield;
-    appearance: textfield;
-  }
-
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+    -moz-appearance: textfield !important;
+    appearance: textfield !important;
   }
 </style>
-
-<script>
-  window.initialVoiceChannels = <%- JSON.stringify(voiceChannels || []) %>;
-  window.initialCategories = <%- JSON.stringify(categories || []) %>;
-  console.log('[Dashboard EJS] Voice Channels:', window.initialVoiceChannels.length);
-  console.log('[Dashboard EJS] Categories:', window.initialCategories.length);
-  console.log('[Dashboard EJS] Voice Channels Data:', window.initialVoiceChannels);
-</script>
 
 <section>
   <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -39,6 +20,8 @@
         channels: window.initialVoiceChannels || [],
         categories: window.initialCategories || [],
         openModal: false,
+        openChannelDropdown: false,
+        openCategoryDropdown: false,
         editingId: null,
         formData: {
           sourceChannelId: '',
@@ -59,17 +42,12 @@
           try {
             this.loading = true;
             const guildId = this.getGuildId();
-            if (!guildId) {
-              console.error('[Dashboard] No guildId found');
-              return;
-            }
+            if (!guildId) return;
             const baseUrl = '/dashboard/' + guildId + '/temp-channels';
             const res = await fetch(baseUrl + '/api/settings');
             if (res.ok) {
               const data = await res.json();
               this.generators = data.generators || [];
-            } else {
-              console.error('[Dashboard] Error:', res.status);
             }
           } catch (error) {
             console.error('[Dashboard] Error loading generators:', error);
@@ -89,7 +67,6 @@
               const allChannels = Array.isArray(data) ? data : [];
               this.channels = allChannels.filter(c => c.type === 2) || [];
               this.categories = allChannels.filter(c => c.type === 4) || [];
-              console.log('[Dashboard] Canales actualizados desde API:', this.channels.length);
             }
           } catch (error) {
             console.error('[Dashboard] Error loading channels:', error);
@@ -100,8 +77,6 @@
           this.editingId = null;
           this.formData = { sourceChannelId: '', nombres: '', limite: 0, categoriaId: '' };
           this.openModal = true;
-          console.log('[Dashboard] Modal abierto. Canales disponibles:', this.channels.length);
-          console.log('[Dashboard] Canales array:', this.channels);
         },
         
         editGenerator(gen) {
@@ -116,11 +91,21 @@
         },
         
         async submitForm() {
+          if (!this.formData.sourceChannelId) {
+            Alpine.store('toast').show('Selecciona un canal', 'error');
+            return;
+          }
+          if (!this.formData.nombres.trim()) {
+            Alpine.store('toast').show('Ingresa los nombres', 'error');
+            return;
+          }
+          
           this.saving = true;
           try {
             const guildId = this.getGuildId();
             if (!guildId) {
               Alpine.store('toast').show('Guild no encontrado', 'error');
+              this.saving = false;
               return;
             }
             const baseUrl = '/dashboard/' + guildId + '/temp-channels';
@@ -128,6 +113,8 @@
             const url = this.editingId 
               ? baseUrl + '/api/generator/' + this.editingId
               : baseUrl + '/api/generator';
+            
+            console.log('[Dashboard] Guardando:', this.formData);
             
             const res = await fetch(url, {
               method,
@@ -138,9 +125,12 @@
             if (res.ok) {
               Alpine.store('toast').show('Configuración guardada', 'success');
               this.openModal = false;
+              this.openChannelDropdown = false;
+              this.openCategoryDropdown = false;
               await this.loadData();
             } else {
-              throw new Error();
+              const error = await res.json();
+              Alpine.store('toast').show(error.error || 'Error al guardar', 'error');
             }
           } catch (error) {
             console.error('Error:', error);
@@ -167,7 +157,6 @@
         },
         
         init() {
-          console.log('[Dashboard] Inicializando. Canales iniciales:', this.channels.length);
           this.loadData();
           this.loadChannels();
         }
@@ -234,45 +223,100 @@
           
           <form @submit.prevent="submitForm" class="space-y-5">
             <div>
-              <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Canal de Voz <span class="text-red-500">*</span></label>
-              <select x-model="formData.sourceChannelId" required
-                class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-purple-500 outline-none transition-all">
-                <option value="">Selecciona un canal...</option>
-                <template x-for="ch in channels" :key="ch.id">
-                  <option :value="ch.id" x-text="'🎤 ' + ch.name"></option>
-                </template>
-              </select>
+              <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-3">Canal de Voz <span class="text-red-500">*</span></label>
+              <div class="relative">
+                <button type="button" @click="openChannelDropdown = !openChannelDropdown" @click.away="openChannelDropdown = false"
+                  class="flex w-full items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-left dark:bg-white/5 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all outline-none border-none ring-0"
+                  style="border: none !important;">
+                  <span class="truncate font-medium text-sm" 
+                        x-text="formData.sourceChannelId ? channels.find(c => c.id === formData.sourceChannelId)?.name : 'Selecciona un canal...'">
+                  </span>
+                  <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300" :class="openChannelDropdown ? 'rotate-180' : ''"></i>
+                </button>
+                
+                <div x-show="openChannelDropdown" 
+                  x-transition:enter="transition ease-out duration-200"
+                  x-transition:enter-start="opacity-0 translate-y-[-10px]"
+                  x-transition:enter-end="opacity-100 translate-y-0"
+                  class="absolute z-50 mt-2 max-h-48 w-full overflow-auto rounded-xl bg-white p-1.5 shadow-2xl ring-1 ring-black/5 dark:bg-[#0d123d] dark:ring-white/10 scrollbar-hide" 
+                  style="display: none;">
+                  
+                  <div @click="formData.sourceChannelId = ''; openChannelDropdown = false" 
+                       class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-white/10 dark:text-gray-400 italic">
+                    Selecciona un canal...
+                  </div>
+                  
+                  <template x-for="ch in channels" :key="ch.id">
+                    <div @click="formData.sourceChannelId = ch.id; openChannelDropdown = false" 
+                         class="group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-purple-500/10 transition-colors">
+                      <span class="text-gray-700 dark:text-gray-300 group-hover:text-purple-500" x-text="'🎤 ' + ch.name"></span>
+                      <i class="fa-solid fa-check text-[10px] text-purple-500" x-show="formData.sourceChannelId === ch.id"></i>
+                    </div>
+                  </template>
+                </div>
+              </div>
             </div>
             
             <div>
-              <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Nombres <span class="text-red-500">*</span></label>
-              <input type="text" x-model="formData.nombres" placeholder="Alpha, Beta, Gamma" required
-                class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-purple-500 outline-none transition-all">
+              <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-3">Nombres <span class="text-red-500">*</span></label>
+              <div class="rounded-xl bg-gray-50 dark:bg-white/5 transition-all hover:bg-gray-100 dark:hover:bg-white/10">
+                <input type="text" x-model="formData.nombres" placeholder="Alpha, Beta, Gamma" required
+                  class="w-full bg-transparent px-4 py-3 text-sm font-medium text-gray-900 dark:text-white focus:ring-0 outline-none" 
+                  style="border: none !important; box-shadow: none !important;">
+              </div>
             </div>
             
             <div>
-              <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Límite de Usuarios</label>
-              <div class="flex items-center rounded-xl bg-gray-50 dark:bg-white/5 p-1 overflow-hidden">
-                <button type="button" @click="if(formData.limite > 0) formData.limite--" class="flex h-9 w-9 items-center justify-center text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-white/10 transition-colors">
+              <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-3">Límite de Usuarios</label>
+              <div class="flex max-w-[160px] items-center rounded-xl bg-gray-50 p-1 dark:bg-white/5 overflow-hidden border-none">
+                <button type="button" @click="if(formData.limite > 0) formData.limite--" 
+                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-white/10 transition-colors outline-none border-none">
                   <i class="fa-solid fa-minus text-xs"></i>
                 </button>
-                <input type="number" x-model.number="formData.limite" class="w-full bg-transparent border-none text-center font-bold text-gray-900 dark:text-white focus:ring-0 outline-none" />
-                <button type="button" @click="if(formData.limite < 99) formData.limite++" class="flex h-9 w-9 items-center justify-center text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-white/10 transition-colors">
+                <input type="number" x-model.number="formData.limite" 
+                       class="w-full bg-transparent border-none text-center font-bold text-gray-900 dark:text-white focus:ring-0 outline-none" 
+                       style="border: none !important; box-shadow: none !important; -moz-appearance: textfield;" />
+                <button type="button" @click="formData.limite++" 
+                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-white/10 transition-colors outline-none border-none">
                   <i class="fa-solid fa-plus text-xs"></i>
                 </button>
               </div>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">0 = Ilimitado</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">0 = Ilimitado</p>
             </div>
 
             <div>
-              <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Categoría (Opcional)</label>
-              <select x-model="formData.categoriaId"
-                class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-purple-500 outline-none transition-all">
-                <option value="">Sin categoría</option>
-                <template x-for="cat in categories" :key="cat.id">
-                  <option :value="cat.id" x-text="'📁 ' + cat.name"></option>
-                </template>
-              </select>
+              <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-3">Categoría (Opcional)</label>
+              <div class="relative">
+                <button type="button" @click="openCategoryDropdown = !openCategoryDropdown" @click.away="openCategoryDropdown = false"
+                  class="flex w-full items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-left dark:bg-white/5 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all outline-none border-none ring-0"
+                  style="border: none !important;">
+                  <span class="truncate font-medium text-sm" 
+                        x-text="formData.categoriaId ? categories.find(c => c.id === formData.categoriaId)?.name : 'Sin categoría'">
+                  </span>
+                  <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300" :class="openCategoryDropdown ? 'rotate-180' : ''"></i>
+                </button>
+                
+                <div x-show="openCategoryDropdown" 
+                  x-transition:enter="transition ease-out duration-200"
+                  x-transition:enter-start="opacity-0 translate-y-[-10px]"
+                  x-transition:enter-end="opacity-100 translate-y-0"
+                  class="absolute z-50 mt-2 max-h-48 w-full overflow-auto rounded-xl bg-white p-1.5 shadow-2xl ring-1 ring-black/5 dark:bg-[#0d123d] dark:ring-white/10 scrollbar-hide" 
+                  style="display: none;">
+                  
+                  <div @click="formData.categoriaId = ''; openCategoryDropdown = false" 
+                       class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-white/10 dark:text-gray-400 italic">
+                    Sin categoría
+                  </div>
+                  
+                  <template x-for="cat in categories" :key="cat.id">
+                    <div @click="formData.categoriaId = cat.id; openCategoryDropdown = false" 
+                         class="group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-purple-500/10 transition-colors">
+                      <span class="text-gray-700 dark:text-gray-300 group-hover:text-purple-500" x-text="'📁 ' + cat.name"></span>
+                      <i class="fa-solid fa-check text-[10px] text-purple-500" x-show="formData.categoriaId === cat.id"></i>
+                    </div>
+                  </template>
+                </div>
+              </div>
             </div>
             
             <div class="flex items-center gap-3 border-t border-gray-200 dark:border-gray-700 pt-6">
@@ -310,10 +354,7 @@
           try {
             this.loading = true;
             const guildId = this.getGuildId();
-            if (!guildId) {
-              console.error('[Dashboard] No guildId found');
-              return;
-            }
+            if (!guildId) return;
             const baseUrl = '/dashboard/' + guildId + '/temp-channels';
             const [resActive, resGen] = await Promise.all([
               fetch(baseUrl + '/api/active'),
