@@ -4,6 +4,17 @@ const db = require("../db.service");
 
 const router = express.Router();
 
+// Middleware para extraer guildId
+router.use((req, res, next) => {
+    // Extraer guildId de la URL si no está en params
+    if (!req.params.guildId) {
+        const guildId = req.baseUrl.split('/')[2];
+        req.params.guildId = guildId;
+    }
+    console.log("[TempChannels Router] GuildId en middleware:", req.params.guildId);
+    next();
+});
+
 // Renderizar vista
 router.get("/", async (req, res) => {
     try {
@@ -21,7 +32,7 @@ router.get("/api/settings", async (req, res) => {
         console.log("[TempChannels Router] GET /api/settings - GuildId:", guildId);
         
         const settings = await db.getSettings(guildId);
-        console.log("[TempChannels Router] Settings obtenidos:", JSON.stringify(settings.generators, null, 2));
+        console.log("[TempChannels Router] Settings obtenidos:", settings.generators.length, "generadores");
         
         res.json(settings);
     } catch (error) {
@@ -36,8 +47,8 @@ router.get("/api/channels", async (req, res) => {
         const guildId = req.params.guildId;
         console.log("[TempChannels Router] GET /api/channels - GuildId:", guildId);
         
-        // Obtener el cliente de Discord desde req
-        const client = req.client || (req.app.get && req.app.get('client'));
+        // Obtener el cliente de Discord desde req.app
+        const client = req.app.get('client');
         
         if (!client) {
             console.error("[TempChannels Router] Client not available");
@@ -87,7 +98,6 @@ router.post("/api/generator", async (req, res) => {
         const { sourceChannelId, nombres, limite, categoriaId } = req.body;
 
         console.log("[TempChannels Router] POST /api/generator - GuildId:", guildId);
-        console.log("[TempChannels Router] Datos:", { sourceChannelId, nombres, limite, categoriaId });
 
         const names = nombres.split(",").map(n => n.trim()).filter(n => n.length > 0);
         if (names.length === 0) {
@@ -190,8 +200,8 @@ router.delete("/api/channel/:id", async (req, res) => {
 
         console.log("[TempChannels Router] DELETE /api/channel/:id - GuildId:", guildId, "ChannelId:", id);
 
-        // Obtener el cliente de Discord desde req
-        const client = req.client || (req.app.get && req.app.get('client'));
+        // Obtener el cliente de Discord desde req.app
+        const client = req.app.get('client');
         
         if (client) {
             const guild = client.guilds.cache.get(guildId);
