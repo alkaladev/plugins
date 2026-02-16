@@ -1,8 +1,10 @@
-const router = require("express").Router();
+const express = require("express");
 const path = require("path");
-const dbService = require(path.join(__dirname, "../db.service"));
+const db = require("../db.service");
 
-// GET - Renderizar la vista del plugin
+const router = express.Router();
+
+// Renderizar vista
 router.get("/", async (req, res) => {
     try {
         res.render(path.join(__dirname, "view.ejs"));
@@ -12,109 +14,157 @@ router.get("/", async (req, res) => {
     }
 });
 
-// GET API - Obtener configuración en JSON
+// GET /api/settings - Obtener configuración
 router.get("/api/settings", async (req, res) => {
     try {
-        console.log("[TempChannels Router] GET /api/settings");
-        const guildId = res.locals.guild.id;
-        const settings = await dbService.getSettings(guildId);
+        const { guildId } = req.params;
+        const settings = await db.getSettings(req.params.guildId || req.query.guildId);
         res.json(settings);
     } catch (error) {
-        console.error("[TempChannels Router] Error GET /api/settings:", error);
-        res.status(500).json({ error: error.message });
+        console.error("[TempChannels Router] Error obteniendo settings:", error);
+        res.status(500).json({ error: "Error obteniendo settings" });
     }
 });
 
-// POST - Crear nuevo generador
+// GET /api/channels - Obtener canales del servidor
+router.get("/api/channels", async (req, res) => {
+    try {
+        const guild = req.client.guilds.cache.get(req.guildId);
+        if (!guild) {
+            return res.status(404).json({ error: "Guild not found" });
+        }
+
+        const channels = guild.channels.cache.map(ch => ({
+            id: ch.id,
+            name: ch.name,
+            type: ch.type
+        }));
+
+        res.json(channels);
+    } catch (error) {
+        console.error("[TempChannels Router] Error obteniendo canales:", error);
+        res.status(500).json({ error: "Error obteniendo canales" });
+    }
+});
+
+// GET /api/active - Obtener canales activos
+router.get("/api/active", async (req, res) => {
+    try {
+        const activeChannels = await db.getActiveChannels(req.guildId);
+        res.json(activeChannels);
+    } catch (error) {
+        console.error("[TempChannels Router] Error obteniendo canales activos:", error);
+        res.status(500).json({ error: "Error obteniendo canales activos" });
+    }
+});
+
+// POST /api/generator - Crear generador
 router.post("/api/generator", async (req, res) => {
     try {
-        console.log("[TempChannels Router] POST /api/generator");
-        const guildId = res.locals.guild.id;
-        const { sourceChannelId, namePrefix, userLimit, parentCategoryId } = req.body;
+        const { sourceChannelId, nombres, limite, categoriaId } = req.body;
 
-        if (!sourceChannelId || !namePrefix) {
-            return res.status(400).json({ error: "sourceChannelId y namePrefix requeridos" });
+        const names = nombres.split(",").map(n => n.trim()).filter(n => n.length > 0);
+        if (names.length === 0) {
+            return res.status(400).json({ error: "No names provided" });
+        }
+
+        const settings = await db.getSettings(req.guildId);
+        
+        const exists = settings.generators.some(g => g.sourceChannelId === sourceChannelId);
+        if (exists) {
+            return res.status(400).json({ error: "Generator already exists" });
         }
 
         const generator = {
             sourceChannelId,
-            namePrefix: namePrefix.trim(),
-            userLimit: parseInt(userLimit) || 0,
-            parentCategoryId: parentCategoryId || null,
+            namesList: names,
+            currentNameIndex: 0,
+            userLimit: parseInt(limite) || 0,
+            parentCategoryId: categoriaId || null,
+            createdAt: new Date()
         };
 
-        const settings = await dbService.addGenerator(guildId, generator);
-        res.json(settings);
-    } catch (error) {
-        console.error("[TempChannels Router] Error POST /api/generator:", error);
-        res.status(500).json({ error: error.message });
-    }
-});
+        settings.generators.push(generator);
+        await settings.save();
 
-// PATCH - Editar generador
-router.patch("/api/generator/:sourceChannelId", async (req, res) => {
-    try {
-        console.log("[TempChannels Router] PATCH /api/generator/:sourceChannelId");
-        const guildId = res.locals.guild.id;
-        const { sourceChannelId } = req.params;
-        const updates = req.body;
-
-        if (updates.namePrefix) {
-            updates.namePrefix = updates.namePrefix.trim();
-        }
-        if (updates.userLimit) {
-            updates.userLimit = parseInt(updates.userLimit);
-        }
-
-        const settings = await dbService.updateGenerator(guildId, sourceChannelId, updates);
-        res.json(settings);
-    } catch (error) {
-        console.error("[TempChannels Router] Error PATCH /api/generator:", error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// DELETE - Eliminar generador
-router.delete("/api/generator/:sourceChannelId", async (req, res) => {
-    try {
-        console.log("[TempChannels Router] DELETE /api/generator/:sourceChannelId");
-        const guildId = res.locals.guild.id;
-        const { sourceChannelId } = req.params;
-
-        const settings = await dbService.deleteGenerator(guildId, sourceChannelId);
-        res.json(settings);
-    } catch (error) {
-        console.error("[TempChannels Router] Error DELETE /api/generator:", error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// GET - Obtener canales activos
-router.get("/api/active", async (req, res) => {
-    try {
-        console.log("[TempChannels Router] GET /api/active");
-        const guildId = res.locals.guild.id;
-        
-        const response = await req.broadcastOne("tempchannels:getActiveChannels", { guildId });
-        res.json(response?.data || []);
-    } catch (error) {
-        console.error("[TempChannels Router] Error GET /api/active:", error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// DELETE - Eliminar canal activo
-router.delete("/api/channel/:channelId", async (req, res) => {
-    try {
-        console.log("[TempChannels Router] DELETE /api/channel/:channelId");
-        const guildId = res.locals.guild.id;
-        const { channelId } = req.params;
-
-        await req.broadcastOne("tempchannels:cleanupChannel", { guildId, channelId });
         res.json({ success: true });
     } catch (error) {
-        console.error("[TempChannels Router] Error DELETE /api/channel:", error);
-        res.status(500).json({ error: error.message });
+        console.error("[TempChannels Router] Error creando generador:", error);
+        res.status(500).json({ error: "Error creando generador" });
+    }
+});
+
+// PATCH /api/generator/:id - Actualizar generador
+router.patch("/api/generator/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { sourceChannelId, nombres, limite, categoriaId } = req.body;
+
+        const settings = await db.getSettings(req.guildId);
+        const generator = settings.generators.find(g => g.sourceChannelId === id);
+
+        if (!generator) {
+            return res.status(404).json({ error: "Generator not found" });
+        }
+
+        if (nombres) {
+            const names = nombres.split(",").map(n => n.trim()).filter(n => n.length > 0);
+            if (names.length > 0) {
+                generator.namesList = names;
+                generator.currentNameIndex = 0;
+            }
+        }
+
+        if (limite !== undefined) {
+            generator.userLimit = parseInt(limite) || 0;
+        }
+
+        if (categoriaId !== undefined) {
+            generator.parentCategoryId = categoriaId || null;
+        }
+
+        await settings.save();
+        res.json({ success: true });
+    } catch (error) {
+        console.error("[TempChannels Router] Error actualizando generador:", error);
+        res.status(500).json({ error: "Error actualizando generador" });
+    }
+});
+
+// DELETE /api/generator/:id - Eliminar generador
+router.delete("/api/generator/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const settings = await db.getSettings(req.guildId);
+        settings.generators = settings.generators.filter(g => g.sourceChannelId !== id);
+        await settings.save();
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error("[TempChannels Router] Error eliminando generador:", error);
+        res.status(500).json({ error: "Error eliminando generador" });
+    }
+});
+
+// DELETE /api/channel/:id - Eliminar canal activo
+router.delete("/api/channel/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const guild = req.client.guilds.cache.get(req.guildId);
+
+        if (guild) {
+            const channel = guild.channels.cache.get(id);
+            if (channel) {
+                await channel.delete();
+            }
+        }
+
+        await db.removeActiveChannel(id);
+        res.json({ success: true });
+    } catch (error) {
+        console.error("[TempChannels Router] Error eliminando canal:", error);
+        res.status(500).json({ error: "Error eliminando canal" });
     }
 });
 
