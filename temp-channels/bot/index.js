@@ -17,7 +17,7 @@ module.exports = new BotPlugin({
 
                 // Usuario se conecta a un canal de voz
                 if (!oldState.channel && channel) {
-                    console.log("[TempChannels] Usuario conectado al canal:", channel.name);
+                    Logger.info("[TempChannels] Usuario conectado al canal: " + channel.name);
                     
                     const settings = await dbService.getSettings(guild.id);
                     const generator = settings.generators.find((g) => g.sourceChannelId === channel.id);
@@ -85,7 +85,7 @@ module.exports = new BotPlugin({
                             console.log("[TempChannels] Moviendo usuario a:", tempChannel.id);
                             await member.voice.setChannel(tempChannel);
                             console.log("[TempChannels] Usuario movido correctamente");
-                            Logger.info(`[TempChannels] Canal temporal creado: ${currentName}`);
+                            Logger.success(`[TempChannels] Canal temporal creado: ${currentName}`);
                         } catch (moveError) {
                             console.error("[TempChannels] Error al mover usuario:", moveError.message);
                             Logger.error("[TempChannels] Error moviendo usuario:", moveError);
@@ -98,7 +98,7 @@ module.exports = new BotPlugin({
                 }
                 // Usuario se desconecta
                 else if (oldState.channel && (!newState.channel || oldState.channel.id !== newState.channel?.id)) {
-                    console.log("[TempChannels] Usuario desconectado de:", oldState.channel.name);
+                    Logger.success("[TempChannels] Usuario desconectado de: " + oldState.channel.name);
                     
                     const guildToCheck = oldState.guild;
                     if (!guildToCheck) return;
@@ -120,12 +120,12 @@ module.exports = new BotPlugin({
 
                             // Si el canal está vacío, ELIMINAR INMEDIATAMENTE
                             if (channel.members.size === 0) {
-                                console.log("[TempChannels] Canal vacío, eliminando inmediatamente:", channel.name);
+                                Logger.success("[TempChannels] Canal vacío, eliminando inmediatamente: " + channel.name);
                                 
                                 try {
                                     await channel.delete();
                                     await dbService.removeActiveChannel(activeChannel.channelId);
-                                    Logger.info(`[TempChannels] Canal temporal eliminado: ${channel.name}`);
+                                    Logger.success(`[TempChannels] Canal temporal eliminado: ${channel.name}`);
                                 } catch (deleteError) {
                                     console.error("[TempChannels] Error eliminando canal:", deleteError.message);
                                 }
