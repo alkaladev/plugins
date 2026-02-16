@@ -4,21 +4,21 @@ const db = require("../db.service");
 
 const router = express.Router();
 
-// Middleware para extraer guildId y guardarlo en res.locals
-router.use((req, res, next) => {
-    // Extraer guildId de la URL
-    if (req.baseUrl) {
-        const parts = req.baseUrl.split('/');
-        const guildId = parts[2]; // /dashboard/{guildId}/temp-channels
-        res.locals.guildId = guildId;
-    }
-    next();
-});
-
 // Renderizar vista
 router.get("/", async (req, res) => {
     try {
-        res.render(path.join(__dirname, "view.ejs"));
+        const guildId = res.locals.guildId;
+        
+        // Obtener canales y configuración usando broadcast
+        const [channelsResp, settings] = await Promise.all([
+            req.broadcastOne("getChannelsOf", guildId, { guildId }),
+            db.getSettings(guildId),
+        ]);
+
+        res.render(path.join(__dirname, "view.ejs"), {
+            channels: channelsResp || [],
+            settings: settings || {}
+        });
     } catch (error) {
         console.error("[TempChannels Router] Error renderizando vista:", error);
         res.status(500).send("Error renderizando vista");
@@ -52,28 +52,10 @@ router.get("/api/channels", async (req, res) => {
             return res.status(400).json({ error: "GuildId not found" });
         }
         
-        // Obtener el cliente de Discord desde req.app
-        const client = req.app.get('client');
+        // Usar broadcast para obtener canales
+        const channels = await req.broadcastOne("getChannelsOf", guildId, { guildId });
         
-        if (!client) {
-            console.error("[TempChannels Router] Client not available en /api/channels");
-            // Retornar array vacío en lugar de error para que el modal funcione
-            return res.json([]);
-        }
-
-        const guild = client.guilds.cache.get(guildId);
-        if (!guild) {
-            console.error("[TempChannels Router] Guild not found:", guildId);
-            return res.json([]);
-        }
-
-        const channels = guild.channels.cache.map(ch => ({
-            id: ch.id,
-            name: ch.name,
-            type: ch.type
-        }));
-
-        res.json(channels);
+        res.json(channels || []);
     } catch (error) {
         console.error("[TempChannels Router] Error obteniendo canales:", error);
         res.json([]);
@@ -212,19 +194,8 @@ router.delete("/api/channel/:id", async (req, res) => {
             return res.status(400).json({ error: "GuildId not found" });
         }
 
-        // Obtener el cliente de Discord desde req.app
-        const client = req.app.get('client');
-        
-        if (client) {
-            const guild = client.guilds.cache.get(guildId);
-
-            if (guild) {
-                const channel = guild.channels.cache.get(id);
-                if (channel) {
-                    await channel.delete();
-                }
-            }
-        }
+        // Usar broadcast para eliminar el canal
+        await req.broadcastOne("deleteChannel", guildId, { channelId: id, guildId });
 
         await db.removeActiveChannel(id);
         res.json({ success: true });

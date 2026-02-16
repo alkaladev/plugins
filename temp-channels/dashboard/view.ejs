@@ -28,7 +28,7 @@
     <div
       x-data="{
         generators: [],
-        channels: [],
+        channels: <%- JSON.stringify(channels || []) %>,
         categories: [],
         openModal: false,
         editingId: null,
@@ -219,7 +219,7 @@
               <select x-model="formData.sourceChannelId" required
                 class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-purple-500 outline-none transition-all">
                 <option value="">Selecciona un canal...</option>
-                <template x-for="ch in channels">
+                <template x-for="ch in channels.filter(c => c.type === 2)">
                   <option :value="ch.id" x-text="'🎤 ' + ch.name"></option>
                 </template>
               </select>
@@ -250,7 +250,7 @@
               <select x-model="formData.categoriaId"
                 class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-purple-500 outline-none transition-all">
                 <option value="">Sin categoría</option>
-                <template x-for="cat in categories">
+                <template x-for="cat in channels.filter(c => c.type === 4)">
                   <option :value="cat.id" x-text="'📁 ' + cat.name"></option>
                 </template>
               </select>
@@ -292,7 +292,6 @@
             this.loading = true;
             const guildId = this.getGuildId();
             const baseUrl = '/dashboard/' + guildId + '/temp-channels';
-            console.log('[Dashboard] Loading from:', baseUrl);
             const [resActive, resGen] = await Promise.all([
               fetch(baseUrl + '/api/active'),
               fetch(baseUrl + '/api/settings')
