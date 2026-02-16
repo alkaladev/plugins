@@ -7,9 +7,12 @@ module.exports = new BotPlugin({
     dbService: require("../db.service"),
 
     onEnable: (client) => {
-        Logger.info("[TempChannels] Plugin habilitado");
+        Logger.success("[TempChannels IPC] Cargando eventos IPC...");
 
         const dbService = require("../db.service");
+        const deleteTimers = new Map();
+
+        Logger.success("[TempChannels IPC] Eventos IPC cargados");
 
         client.on("voiceStateUpdate", async (oldState, newState) => {
             try {
