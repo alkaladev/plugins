@@ -421,6 +421,7 @@
         activeChannels: [],
         generators: [],
         loading: true,
+        deleteConfirmId: null,
         
         getGuildId() {
           const pathname = window.location.pathname;
@@ -460,8 +461,11 @@
           return gen ? gen.namesList.join(', ') : 'Desconocido';
         },
         
+        confirmDelete(id) {
+          this.deleteConfirmId = id;
+        },
+        
         async deleteChannel(id) {
-          if (!confirm('¿Estás seguro de que quieres eliminar este canal?')) return;
           try {
             const guildId = this.getGuildId();
             if (!guildId) return;
@@ -469,6 +473,7 @@
             const res = await fetch(baseUrl + '/api/channel/' + id, { method: 'DELETE' });
             if (res.ok) {
               Alpine.store('toast').show('Canal eliminado', 'success');
+              this.deleteConfirmId = null;
               await this.loadData();
             }
           } catch (error) {
@@ -512,7 +517,7 @@
                     </span>
                   </h4>
                 </div>
-                <button @click="deleteChannel(ch.channelId)" class="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
+                <button @click="confirmDelete(ch.channelId)" class="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
                   <i class="fa-solid fa-trash text-sm"></i>
                 </button>
               </div>
@@ -540,6 +545,46 @@
       
       <div x-show="loading" class="py-8 text-center">
         <i class="fa-solid fa-spinner fa-spin text-gray-400 text-lg"></i>
+      </div>
+
+      <!-- Modal de Confirmación para Eliminar -->
+      <div x-show="deleteConfirmId" @click.outside="deleteConfirmId = null" 
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm" style="display: none;">
+        <div @click.stop class="relative overflow-hidden rounded-xl bg-white dark:bg-[#07081d] shadow-2xl border-none max-w-lg w-full mx-4">
+          <button type="button" @click="deleteConfirmId = null"
+            class="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700 z-50">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+
+          <div class="p-8 text-center">
+            <div class="mb-4 flex justify-center">
+              <div class="flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 dark:bg-red-500/20">
+                <i class="fa-solid fa-trash text-3xl text-red-500"></i>
+              </div>
+            </div>
+
+            <h3 class="mb-3 text-2xl font-bold text-gray-900 dark:text-white">Eliminar Canal Temporal</h3>
+            <p class="mb-6 text-gray-600 dark:text-gray-400 text-lg">¿Estás seguro de que quieres eliminar este canal temporal? Esta acción no se puede deshacer.</p>
+            
+            <div class="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
+              <button @click="deleteConfirmId = null"
+                class="inline-flex items-center justify-center rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 px-8 py-3 font-bold text-gray-600 dark:text-gray-300 transition-all hover:bg-gray-200 dark:hover:bg-white/10 active:scale-95 relative overflow-hidden group">
+                <div class="absolute inset-0 bg-gradient-to-r from-gray-600/0 via-gray-600/10 to-gray-600/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                <i class="fa-solid fa-xmark mr-2 relative z-10"></i>
+                <span class="relative z-10">Cancelar</span>
+              </button>
+              <button @click="deleteChannel(deleteConfirmId)"
+                class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-red-500 to-rose-600 px-8 py-3 font-bold text-white transition-all shadow-[0_10px_40px_-10px_rgba(239,68,68,0.4)] hover:scale-105 hover:shadow-[0_15px_50px_-10px_rgba(239,68,68,0.5)] active:scale-95 relative overflow-hidden group">
+                <div class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                <i class="fa-solid fa-trash-can mr-2 relative z-10"></i>
+                <span class="relative z-10">Eliminar</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
