@@ -103,21 +103,23 @@ router.get("/api/active", async (req, res) => {
             return res.status(400).json({ error: "GuildId not found" });
         }
         
-        const activeChannels = await db.getActiveChannels(guildId);
+        let activeChannels = await db.getActiveChannels(guildId);
+        activeChannels = activeChannels.map(ch => ({
+            ...ch.toObject ? ch.toObject() : ch
+        }));
         
         // Obtener información del cliente para resolver nombres de usuario
         const client = req.app.get('client');
         if (client) {
-            const guild = client.guilds.cache.get(guildId);
-            if (guild) {
-                // Resolver los nombres de usuario
-                for (const channel of activeChannels) {
-                    try {
-                        const user = await client.users.fetch(channel.createdBy);
-                        channel.createdByName = user.username;
-                    } catch (e) {
-                        channel.createdByName = "Usuario desconocido";
-                    }
+            // Resolver los nombres de usuario
+            for (let i = 0; i < activeChannels.length; i++) {
+                try {
+                    const user = await client.users.fetch(activeChannels[i].createdBy);
+                    activeChannels[i].createdByName = user.username;
+                    console.log("[TempChannels] Usuario resuelto:", activeChannels[i].createdBy, "=>", user.username);
+                } catch (e) {
+                    console.error("[TempChannels] Error resolviendo usuario:", activeChannels[i].createdBy, e.message);
+                    activeChannels[i].createdByName = "Usuario desconocido";
                 }
             }
         }
