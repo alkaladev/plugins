@@ -41,12 +41,18 @@
         saving: false,
         loading: true,
         
+        getGuildId() {
+          const pathname = window.location.pathname;
+          const match = pathname.match(/\/dashboard\/([a-zA-Z0-9]+)/);
+          return match ? match[1] : '';
+        },
+        
         async loadData() {
           try {
             this.loading = true;
-            const parts = window.location.pathname.split('/');
-            const guildId = parts[3];
+            const guildId = this.getGuildId();
             const baseUrl = '/dashboard/' + guildId + '/temp-channels';
+            console.log('[Dashboard] Loading from:', baseUrl + '/api/settings');
             const res = await fetch(baseUrl + '/api/settings');
             if (res.ok) {
               const data = await res.json();
@@ -64,9 +70,9 @@
         
         async loadChannels() {
           try {
-            const parts = window.location.pathname.split('/');
-            const guildId = parts[3];
+            const guildId = this.getGuildId();
             const baseUrl = '/dashboard/' + guildId + '/temp-channels';
+            console.log('[Dashboard] Loading from:', baseUrl + '/api/channels');
             const res = await fetch(baseUrl + '/api/channels');
             if (res.ok) {
               const data = await res.json();
@@ -99,8 +105,7 @@
         async submitForm() {
           this.saving = true;
           try {
-            const parts = window.location.pathname.split('/');
-            const guildId = parts[3];
+            const guildId = this.getGuildId();
             const baseUrl = '/dashboard/' + guildId + '/temp-channels';
             const method = this.editingId ? 'PATCH' : 'POST';
             const url = this.editingId 
@@ -131,8 +136,7 @@
         async deleteGenerator(id) {
           if (!confirm('¿Estás seguro de que quieres eliminar este generador?')) return;
           try {
-            const parts = window.location.pathname.split('/');
-            const guildId = parts[3];
+            const guildId = this.getGuildId();
             const baseUrl = '/dashboard/' + guildId + '/temp-channels';
             const res = await fetch(baseUrl + '/api/generator/' + id, { method: 'DELETE' });
             if (res.ok) {
@@ -277,12 +281,18 @@
         generators: [],
         loading: true,
         
+        getGuildId() {
+          const pathname = window.location.pathname;
+          const match = pathname.match(/\/dashboard\/([a-zA-Z0-9]+)/);
+          return match ? match[1] : '';
+        },
+        
         async loadData() {
           try {
             this.loading = true;
-            const parts = window.location.pathname.split('/');
-            const guildId = parts[3];
+            const guildId = this.getGuildId();
             const baseUrl = '/dashboard/' + guildId + '/temp-channels';
+            console.log('[Dashboard] Loading from:', baseUrl);
             const [resActive, resGen] = await Promise.all([
               fetch(baseUrl + '/api/active'),
               fetch(baseUrl + '/api/settings')
@@ -313,8 +323,7 @@
         async deleteChannel(id) {
           if (!confirm('¿Estás seguro de que quieres eliminar este canal?')) return;
           try {
-            const parts = window.location.pathname.split('/');
-            const guildId = parts[3];
+            const guildId = this.getGuildId();
             const baseUrl = '/dashboard/' + guildId + '/temp-channels';
             const res = await fetch(baseUrl + '/api/channel/' + id, { method: 'DELETE' });
             if (res.ok) {
