@@ -22,8 +22,8 @@
 </style>
 
 <script>
-  window.initialChannels = <%- JSON.stringify((channels || []).filter(c => c.type === 2)) %>;
-  window.initialCategories = <%- JSON.stringify((channels || []).filter(c => c.type === 4)) %>;
+  window.initialVoiceChannels = <%- JSON.stringify(voiceChannels || []) %>;
+  window.initialCategories = <%- JSON.stringify(categories || []) %>;
 </script>
 
 <section>
@@ -33,7 +33,7 @@
     <div
       x-data="{
         generators: [],
-        channels: window.initialChannels || [],
+        channels: window.initialVoiceChannels || [],
         categories: window.initialCategories || [],
         openModal: false,
         editingId: null,
