@@ -4,14 +4,14 @@ const db = require("../db.service");
 
 const router = express.Router();
 
-// Middleware para extraer guildId y guardarlo globalmente
+// Middleware para extraer guildId y guardarlo en res.locals
 router.use((req, res, next) => {
-    // Extraer guildId de la URL si no está en params
-    if (!req.params.guildId && req.baseUrl) {
-        const guildId = req.baseUrl.split('/')[2];
-        req.params.guildId = guildId;
-        req.guildId = guildId; // También en req
-        console.log("[TempChannels Router] GuildId extraído del middleware:", guildId);
+    // Extraer guildId de la URL
+    if (req.baseUrl) {
+        const parts = req.baseUrl.split('/');
+        const guildId = parts[2]; // /dashboard/{guildId}/temp-channels
+        res.locals.guildId = guildId;
+        console.log("[TempChannels Router] GuildId guardado en res.locals:", guildId);
     }
     next();
 });
@@ -29,7 +29,7 @@ router.get("/", async (req, res) => {
 // GET /api/settings - Obtener configuración
 router.get("/api/settings", async (req, res) => {
     try {
-        const guildId = req.guildId || req.params.guildId;
+        const guildId = res.locals.guildId;
         console.log("[TempChannels Router] GET /api/settings - GuildId:", guildId);
         
         if (!guildId) {
@@ -49,7 +49,7 @@ router.get("/api/settings", async (req, res) => {
 // GET /api/channels - Obtener canales del servidor
 router.get("/api/channels", async (req, res) => {
     try {
-        const guildId = req.guildId || req.params.guildId;
+        const guildId = res.locals.guildId;
         console.log("[TempChannels Router] GET /api/channels - GuildId:", guildId);
         
         if (!guildId) {
@@ -87,7 +87,7 @@ router.get("/api/channels", async (req, res) => {
 // GET /api/active - Obtener canales activos
 router.get("/api/active", async (req, res) => {
     try {
-        const guildId = req.guildId || req.params.guildId;
+        const guildId = res.locals.guildId;
         console.log("[TempChannels Router] GET /api/active - GuildId:", guildId);
         
         if (!guildId) {
@@ -107,7 +107,7 @@ router.get("/api/active", async (req, res) => {
 // POST /api/generator - Crear generador
 router.post("/api/generator", async (req, res) => {
     try {
-        const guildId = req.guildId || req.params.guildId;
+        const guildId = res.locals.guildId;
         const { sourceChannelId, nombres, limite, categoriaId } = req.body;
 
         console.log("[TempChannels Router] POST /api/generator - GuildId:", guildId);
@@ -151,7 +151,7 @@ router.post("/api/generator", async (req, res) => {
 // PATCH /api/generator/:id - Actualizar generador
 router.patch("/api/generator/:id", async (req, res) => {
     try {
-        const guildId = req.guildId || req.params.guildId;
+        const guildId = res.locals.guildId;
         const { id } = req.params;
         const { sourceChannelId, nombres, limite, categoriaId } = req.body;
 
@@ -196,7 +196,7 @@ router.patch("/api/generator/:id", async (req, res) => {
 // DELETE /api/generator/:id - Eliminar generador
 router.delete("/api/generator/:id", async (req, res) => {
     try {
-        const guildId = req.guildId || req.params.guildId;
+        const guildId = res.locals.guildId;
         const { id } = req.params;
 
         console.log("[TempChannels Router] DELETE /api/generator/:id - GuildId:", guildId, "Id:", id);
@@ -220,7 +220,7 @@ router.delete("/api/generator/:id", async (req, res) => {
 // DELETE /api/channel/:id - Eliminar canal activo
 router.delete("/api/channel/:id", async (req, res) => {
     try {
-        const guildId = req.guildId || req.params.guildId;
+        const guildId = res.locals.guildId;
         const { id } = req.params;
 
         console.log("[TempChannels Router] DELETE /api/channel/:id - GuildId:", guildId, "ChannelId:", id);
