@@ -44,9 +44,10 @@
         async loadData() {
           try {
             this.loading = true;
-            const baseUrl = window.location.pathname.split('/dashboard')[0];
-            const guildId = window.location.pathname.split('/')[3];
-            const res = await fetch(\`\${baseUrl}/dashboard/\${guildId}/temp-channels/api/settings\`);
+            const parts = window.location.pathname.split('/');
+            const guildId = parts[3];
+            const baseUrl = '/dashboard/' + guildId + '/temp-channels';
+            const res = await fetch(baseUrl + '/api/settings');
             if (res.ok) {
               const data = await res.json();
               console.log('[Dashboard] Generadores obtenidos:', data);
@@ -63,9 +64,10 @@
         
         async loadChannels() {
           try {
-            const baseUrl = window.location.pathname.split('/dashboard')[0];
-            const guildId = window.location.pathname.split('/')[3];
-            const res = await fetch(\`\${baseUrl}/dashboard/\${guildId}/temp-channels/api/channels\`);
+            const parts = window.location.pathname.split('/');
+            const guildId = parts[3];
+            const baseUrl = '/dashboard/' + guildId + '/temp-channels';
+            const res = await fetch(baseUrl + '/api/channels');
             if (res.ok) {
               const data = await res.json();
               console.log('[Dashboard] Canales obtenidos:', data);
@@ -97,12 +99,13 @@
         async submitForm() {
           this.saving = true;
           try {
-            const baseUrl = window.location.pathname.split('/dashboard')[0];
-            const guildId = window.location.pathname.split('/')[3];
+            const parts = window.location.pathname.split('/');
+            const guildId = parts[3];
+            const baseUrl = '/dashboard/' + guildId + '/temp-channels';
             const method = this.editingId ? 'PATCH' : 'POST';
             const url = this.editingId 
-              ? \`\${baseUrl}/dashboard/\${guildId}/temp-channels/api/generator/\${this.editingId}\`
-              : \`\${baseUrl}/dashboard/\${guildId}/temp-channels/api/generator\`;
+              ? baseUrl + '/api/generator/' + this.editingId
+              : baseUrl + '/api/generator';
             
             const res = await fetch(url, {
               method,
@@ -128,9 +131,10 @@
         async deleteGenerator(id) {
           if (!confirm('¿Estás seguro de que quieres eliminar este generador?')) return;
           try {
-            const baseUrl = window.location.pathname.split('/dashboard')[0];
-            const guildId = window.location.pathname.split('/')[3];
-            const res = await fetch(\`\${baseUrl}/dashboard/\${guildId}/temp-channels/api/generator/\${id}\`, { method: 'DELETE' });
+            const parts = window.location.pathname.split('/');
+            const guildId = parts[3];
+            const baseUrl = '/dashboard/' + guildId + '/temp-channels';
+            const res = await fetch(baseUrl + '/api/generator/' + id, { method: 'DELETE' });
             if (res.ok) {
               Alpine.store('toast').show('Generador eliminado', 'success');
               await this.loadData();
@@ -229,7 +233,7 @@
                 <button type="button" @click="if(formData.limite > 0) formData.limite--" class="flex h-9 w-9 items-center justify-center text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-white/10 transition-colors">
                   <i class="fa-solid fa-minus text-xs"></i>
                 </button>
-                <input type="number" x-model="formData.limite" class="w-full bg-transparent border-none text-center font-bold text-gray-900 dark:text-white focus:ring-0 outline-none" />
+                <input type="number" x-model.number="formData.limite" class="w-full bg-transparent border-none text-center font-bold text-gray-900 dark:text-white focus:ring-0 outline-none" />
                 <button type="button" @click="if(formData.limite < 99) formData.limite++" class="flex h-9 w-9 items-center justify-center text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-white/10 transition-colors">
                   <i class="fa-solid fa-plus text-xs"></i>
                 </button>
@@ -276,11 +280,12 @@
         async loadData() {
           try {
             this.loading = true;
-            const baseUrl = window.location.pathname.split('/dashboard')[0];
-            const guildId = window.location.pathname.split('/')[3];
+            const parts = window.location.pathname.split('/');
+            const guildId = parts[3];
+            const baseUrl = '/dashboard/' + guildId + '/temp-channels';
             const [resActive, resGen] = await Promise.all([
-              fetch(\`\${baseUrl}/dashboard/\${guildId}/temp-channels/api/active\`),
-              fetch(\`\${baseUrl}/dashboard/\${guildId}/temp-channels/api/settings\`)
+              fetch(baseUrl + '/api/active'),
+              fetch(baseUrl + '/api/settings')
             ]);
             
             if (resActive.ok) {
@@ -308,9 +313,10 @@
         async deleteChannel(id) {
           if (!confirm('¿Estás seguro de que quieres eliminar este canal?')) return;
           try {
-            const baseUrl = window.location.pathname.split('/dashboard')[0];
-            const guildId = window.location.pathname.split('/')[3];
-            const res = await fetch(\`\${baseUrl}/dashboard/\${guildId}/temp-channels/api/channel/\${id}\`, { method: 'DELETE' });
+            const parts = window.location.pathname.split('/');
+            const guildId = parts[3];
+            const baseUrl = '/dashboard/' + guildId + '/temp-channels';
+            const res = await fetch(baseUrl + '/api/channel/' + id, { method: 'DELETE' });
             if (res.ok) {
               Alpine.store('toast').show('Canal eliminado', 'success');
               await this.loadData();
