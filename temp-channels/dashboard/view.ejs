@@ -22,7 +22,7 @@
 </style>
 
 <script>
-  window.initialChannels = <%- JSON.stringify(channels || []) %>;
+  window.initialChannels = Array.isArray(<%- JSON.stringify(channels || []) %>) ? <%- JSON.stringify(channels || []) %> : [];
 </script>
 
 <section>
@@ -32,7 +32,7 @@
     <div
       x-data="{
         generators: [],
-        channels: window.initialChannels || [],
+        channels: Array.isArray(window.initialChannels) ? window.initialChannels : [],
         categories: [],
         openModal: false,
         editingId: null,
@@ -82,8 +82,10 @@
             const res = await fetch(baseUrl + '/api/channels');
             if (res.ok) {
               const data = await res.json();
-              this.channels = data.filter(c => c.type === 2) || [];
-              this.categories = data.filter(c => c.type === 4) || [];
+              const allChannels = Array.isArray(data) ? data : [];
+              this.channels = allChannels.filter(c => c.type === 2) || [];
+              this.categories = allChannels.filter(c => c.type === 4) || [];
+              console.log('[Dashboard] Canales cargados:', this.channels.length);
             }
           } catch (error) {
             console.error('[Dashboard] Error loading channels:', error);
@@ -229,7 +231,7 @@
               <select x-model="formData.sourceChannelId" required
                 class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-purple-500 outline-none transition-all">
                 <option value="">Selecciona un canal...</option>
-                <template x-for="ch in channels.filter(c => c.type === 2)">
+                <template x-for="ch in channels.filter(c => c.type === 2 || !c.type)">
                   <option :value="ch.id" x-text="'🎤 ' + ch.name"></option>
                 </template>
               </select>
@@ -260,7 +262,7 @@
               <select x-model="formData.categoriaId"
                 class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-purple-500 outline-none transition-all">
                 <option value="">Sin categoría</option>
-                <template x-for="cat in channels.filter(c => c.type === 4)">
+                <template x-for="cat in categories.filter(c => c.type === 4 || !c.type)">
                   <option :value="cat.id" x-text="'📁 ' + cat.name"></option>
                 </template>
               </select>
@@ -313,12 +315,12 @@
             
             if (resActive.ok) {
               const data = await resActive.json();
-              this.activeChannels = data || [];
+              this.activeChannels = Array.isArray(data) ? data : [];
             }
             
             if (resGen.ok) {
               const data = await resGen.json();
-              this.generators = data.generators || [];
+              this.generators = (data && data.generators) || [];
             }
           } catch (error) {
             console.error('[Dashboard] Error loading data:', error);
