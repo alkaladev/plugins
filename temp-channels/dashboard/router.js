@@ -20,6 +20,7 @@ router.use((req, res, next) => {
 router.get("/", async (req, res) => {
     try {
         const guildId = res.locals.guildId;
+        console.log("[TempChannels] GET / - GuildId:", guildId);
         
         if (!guildId) {
             return res.status(400).send("GuildId not found");
@@ -29,16 +30,20 @@ router.get("/", async (req, res) => {
         const channels = await req.broadcastOne("getChannelsOf", guildId, { guildId });
         const settings = await db.getSettings(guildId);
 
+        console.log("[TempChannels] Canales recibidos:", typeof channels, Array.isArray(channels) ? channels.length : 'no es array');
+        
         // Filtrar canales en el servidor
-        const voiceChannels = Array.isArray(channels) 
-            ? channels.filter(c => c.type === 2) 
-            : [];
-        const categories = Array.isArray(channels) 
-            ? channels.filter(c => c.type === 4) 
-            : [];
-
-        console.log("[TempChannels] Canales de voz:", voiceChannels.length);
-        console.log("[TempChannels] Categorías:", categories.length);
+        let voiceChannels = [];
+        let categories = [];
+        
+        if (Array.isArray(channels)) {
+            voiceChannels = channels.filter(c => c.type === 2);
+            categories = channels.filter(c => c.type === 4);
+            console.log("[TempChannels] Canales de voz encontrados:", voiceChannels.length);
+            console.log("[TempChannels] Categorías encontradas:", categories.length);
+        } else {
+            console.warn("[TempChannels] Channels no es un array:", channels);
+        }
 
         res.render(path.join(__dirname, "view.ejs"), {
             voiceChannels: voiceChannels,
@@ -47,7 +52,7 @@ router.get("/", async (req, res) => {
         });
     } catch (error) {
         console.error("[TempChannels Router] Error renderizando vista:", error);
-        res.status(500).send("Error renderizando vista");
+        res.status(500).send("Error renderizando vista: " + error.message);
     }
 });
 

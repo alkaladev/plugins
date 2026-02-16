@@ -24,6 +24,9 @@
 <script>
   window.initialVoiceChannels = <%- JSON.stringify(voiceChannels || []) %>;
   window.initialCategories = <%- JSON.stringify(categories || []) %>;
+  console.log('[Dashboard EJS] Voice Channels:', window.initialVoiceChannels.length);
+  console.log('[Dashboard EJS] Categories:', window.initialCategories.length);
+  console.log('[Dashboard EJS] Voice Channels Data:', window.initialVoiceChannels);
 </script>
 
 <section>
@@ -65,7 +68,6 @@
             if (res.ok) {
               const data = await res.json();
               this.generators = data.generators || [];
-              console.log('[Dashboard] Generadores cargados:', this.generators.length);
             } else {
               console.error('[Dashboard] Error:', res.status);
             }
@@ -87,7 +89,7 @@
               const allChannels = Array.isArray(data) ? data : [];
               this.channels = allChannels.filter(c => c.type === 2) || [];
               this.categories = allChannels.filter(c => c.type === 4) || [];
-              console.log('[Dashboard] Canales actualizados:', this.channels.length);
+              console.log('[Dashboard] Canales actualizados desde API:', this.channels.length);
             }
           } catch (error) {
             console.error('[Dashboard] Error loading channels:', error);
@@ -99,6 +101,7 @@
           this.formData = { sourceChannelId: '', nombres: '', limite: 0, categoriaId: '' };
           this.openModal = true;
           console.log('[Dashboard] Modal abierto. Canales disponibles:', this.channels.length);
+          console.log('[Dashboard] Canales array:', this.channels);
         },
         
         editGenerator(gen) {
