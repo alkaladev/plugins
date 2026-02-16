@@ -1,60 +1,26 @@
 {
   "VSETUP": {
-    "DESCRIPTION": "Set up a voice channel as a temporary channel generator",
-    "SUCCESS": "✅ Generator configured successfully",
-    "DETAILS": "📌 **Details:**",
-    "CHANNEL": "Channel",
-    "NAMES": "Names",
-    "LIMIT": "User limit",
-    "UNLIMITED": "Unlimited",
-    "INFO": "Temporary channels will be created when someone joins the voice channel",
-    "INVALID_ID": "❌ Please provide a valid channel ID",
-    "INVALID_CHANNEL": "❌ Could not find a channel with that ID",
-    "INVALID_VOICE": "❌ The channel must be a voice channel",
-    "INVALID_LIMIT": "❌ The limit must be a number between 0 and 99",
-    "NO_NAMES": "❌ You must provide at least one name",
-    "DUPLICATED": "⚠️ This channel is already configured as a generator"
-  },
-  "VLISTA": {
-    "DESCRIPTION": "Shows the list of configured temporary channel generators",
-    "TITLE": "🎤 **Configured Channel Generators:**",
-    "NEXT_NAME": "Next name",
-    "CATEGORY": "Category",
-    "TOTAL": "Total",
-    "EMPTY": "📭 No channels configured as generators"
-  },
-  "VQUITAR": {
-    "DESCRIPTION": "Removes a channel generator",
-    "SUCCESS": "✅ Generator removed successfully",
-    "NEXT_USERS": "New users joining the channel will not create temporary channels",
-    "INVALID_ID": "❌ Please provide a valid channel ID",
-    "NOT_FOUND": "❌ There is no generator configured in that channel"
-  },
-  "VSTATUS": {
-    "DESCRIPTION": "Shows the current status of temporary channels",
-    "TITLE": "📊 **Temporary Channels Status:**",
-    "MEMBERS": "Members",
-    "CREATOR": "Created by",
-    "CREATED": "Created",
-    "SECONDS": "s ago",
-    "EMPTY": "📭 There are no active temporary channels at this moment",
-    "TOTAL": "Total"
+    "NAME": "vsetup",
+    "DESCRIPTION": "Configure a new temporary channel generator"
   },
   "VBORRAR": {
-    "DESCRIPTION": "Deletes all active temporary channels",
-    "SUCCESS": "✅ **Cleanup Completed**",
-    "DELETED": "Deleted",
-    "FAILED": "Failed",
-    "EMPTY": "📭 No temporary channels to delete"
+    "NAME": "vborrar",
+    "DESCRIPTION": "Delete a temporary channel generator"
   },
   "VEDITAR": {
-    "DESCRIPTION": "Edit an existing channel generator",
-    "SUCCESS": "✅ Generator edited successfully",
-    "CHANGES": "📌 **Changes made:**",
-    "NEW_NAMES": "New names",
-    "NEW_LIMIT": "New limit",
-    "NO_CHANGES": "⚠️ You must specify at least one change (names or limit)",
-    "INVALID_ID": "❌ Invalid channel ID",
-    "NOT_FOUND": "❌ There is no generator configured in that channel"
+    "NAME": "veditar",
+    "DESCRIPTION": "Edit the configuration of an existing generator"
+  },
+  "VLISTA": {
+    "NAME": "vlista",
+    "DESCRIPTION": "Show the list of configured generators"
+  },
+  "VQUITAR": {
+    "NAME": "vquitar",
+    "DESCRIPTION": "Manually delete a temporary channel"
+  },
+  "VSTATUS": {
+    "NAME": "vstatus",
+    "DESCRIPTION": "Show the status of active temporary channels"
   }
 }

@@ -1,60 +1,26 @@
 {
   "VSETUP": {
-    "DESCRIPTION": "Configura un canal generador de canales temporales",
-    "SUCCESS": "✅ Generador configurado correctamente",
-    "DETAILS": "📌 **Detalles:**",
-    "CHANNEL": "Canal",
-    "NAMES": "Nombres",
-    "LIMIT": "Límite de usuarios",
-    "UNLIMITED": "Ilimitado",
-    "INFO": "Los canales temporales se crearán cuando alguien se conecte al canal de voz",
-    "INVALID_ID": "❌ Debes proporcionar una ID de canal válida",
-    "INVALID_CHANNEL": "❌ No encontré un canal con esa ID",
-    "INVALID_VOICE": "❌ El canal debe ser un canal de voz",
-    "INVALID_LIMIT": "❌ El límite debe ser un número entre 0 y 99",
-    "NO_NAMES": "❌ Debes proporcionar al menos un nombre",
-    "DUPLICATED": "⚠️ Este canal ya está configurado como generador"
-  },
-  "VLISTA": {
-    "DESCRIPTION": "Muestra la lista de canales generadores configurados",
-    "TITLE": "🎤 **Generadores de Canales Configurados:**",
-    "NEXT_NAME": "Próximo nombre",
-    "CATEGORY": "Categoría",
-    "TOTAL": "Total",
-    "EMPTY": "📭 No hay canales configurados como generadores"
-  },
-  "VQUITAR": {
-    "DESCRIPTION": "Elimina un generador de canales",
-    "SUCCESS": "✅ Generador eliminado correctamente",
-    "NEXT_USERS": "Los nuevos usuarios que se conecten al canal no crearán canales temporales",
-    "INVALID_ID": "❌ Debes proporcionar una ID de canal válida",
-    "NOT_FOUND": "❌ No hay un generador configurado en ese canal"
-  },
-  "VSTATUS": {
-    "DESCRIPTION": "Muestra el estado actual de los canales temporales",
-    "TITLE": "📊 **Estado de Canales Temporales:**",
-    "MEMBERS": "Miembros",
-    "CREATOR": "Creado por",
-    "CREATED": "Creado hace",
-    "SECONDS": "s",
-    "EMPTY": "📭 No hay canales temporales activos en este momento",
-    "TOTAL": "Total"
+    "NAME": "vsetup",
+    "DESCRIPTION": "Configura un nuevo generador de canales temporales"
   },
   "VBORRAR": {
-    "DESCRIPTION": "Elimina todos los canales temporales activos",
-    "SUCCESS": "✅ **Limpieza Completada**",
-    "DELETED": "Eliminados",
-    "FAILED": "Fallidos",
-    "EMPTY": "📭 No hay canales temporales para eliminar"
+    "NAME": "vborrar",
+    "DESCRIPTION": "Elimina un generador de canales temporales"
   },
   "VEDITAR": {
-    "DESCRIPTION": "Edita un generador de canales existente",
-    "SUCCESS": "✅ Generador editado correctamente",
-    "CHANGES": "📌 **Cambios realizados:**",
-    "NEW_NAMES": "Nuevos nombres",
-    "NEW_LIMIT": "Nuevo límite",
-    "NO_CHANGES": "⚠️ Debes especificar al menos un cambio (nombres o límite)",
-    "INVALID_ID": "❌ ID de canal inválida",
-    "NOT_FOUND": "❌ No hay un generador configurado en ese canal"
+    "NAME": "veditar",
+    "DESCRIPTION": "Edita la configuración de un generador existente"
+  },
+  "VLISTA": {
+    "NAME": "vlista",
+    "DESCRIPTION": "Muestra la lista de generadores configurados"
+  },
+  "VQUITAR": {
+    "NAME": "vquitar",
+    "DESCRIPTION": "Elimina un canal temporal manualmente"
+  },
+  "VSTATUS": {
+    "NAME": "vstatus",
+    "DESCRIPTION": "Muestra el estado de los canales temporales activos"
   }
 }
