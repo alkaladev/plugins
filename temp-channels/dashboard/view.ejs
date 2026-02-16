@@ -22,7 +22,8 @@
 </style>
 
 <script>
-  window.initialChannels = Array.isArray(<%- JSON.stringify(channels || []) %>) ? <%- JSON.stringify(channels || []) %> : [];
+  window.initialChannels = <%- JSON.stringify((channels || []).filter(c => c.type === 2)) %>;
+  window.initialCategories = <%- JSON.stringify((channels || []).filter(c => c.type === 4)) %>;
 </script>
 
 <section>
@@ -32,8 +33,8 @@
     <div
       x-data="{
         generators: [],
-        channels: Array.isArray(window.initialChannels) ? window.initialChannels : [],
-        categories: [],
+        channels: window.initialChannels || [],
+        categories: window.initialCategories || [],
         openModal: false,
         editingId: null,
         formData: {
@@ -64,6 +65,7 @@
             if (res.ok) {
               const data = await res.json();
               this.generators = data.generators || [];
+              console.log('[Dashboard] Generadores cargados:', this.generators.length);
             } else {
               console.error('[Dashboard] Error:', res.status);
             }
@@ -85,7 +87,7 @@
               const allChannels = Array.isArray(data) ? data : [];
               this.channels = allChannels.filter(c => c.type === 2) || [];
               this.categories = allChannels.filter(c => c.type === 4) || [];
-              console.log('[Dashboard] Canales cargados:', this.channels.length);
+              console.log('[Dashboard] Canales actualizados:', this.channels.length);
             }
           } catch (error) {
             console.error('[Dashboard] Error loading channels:', error);
@@ -96,6 +98,7 @@
           this.editingId = null;
           this.formData = { sourceChannelId: '', nombres: '', limite: 0, categoriaId: '' };
           this.openModal = true;
+          console.log('[Dashboard] Modal abierto. Canales disponibles:', this.channels.length);
         },
         
         editGenerator(gen) {
@@ -161,8 +164,9 @@
         },
         
         init() {
-          this.loadChannels();
+          console.log('[Dashboard] Inicializando. Canales iniciales:', this.channels.length);
           this.loadData();
+          this.loadChannels();
         }
       }"
       class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c] transition-colors duration-300">
@@ -231,7 +235,7 @@
               <select x-model="formData.sourceChannelId" required
                 class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-purple-500 outline-none transition-all">
                 <option value="">Selecciona un canal...</option>
-                <template x-for="ch in channels.filter(c => c.type === 2 || !c.type)">
+                <template x-for="ch in channels" :key="ch.id">
                   <option :value="ch.id" x-text="'🎤 ' + ch.name"></option>
                 </template>
               </select>
@@ -262,7 +266,7 @@
               <select x-model="formData.categoriaId"
                 class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-gray-900 dark:text-white border-0 focus:ring-2 focus:ring-purple-500 outline-none transition-all">
                 <option value="">Sin categoría</option>
-                <template x-for="cat in categories.filter(c => c.type === 4 || !c.type)">
+                <template x-for="cat in categories" :key="cat.id">
                   <option :value="cat.id" x-text="'📁 ' + cat.name"></option>
                 </template>
               </select>
