@@ -27,10 +27,12 @@ router.get("/", async (req, res) => {
         }
         
         // Obtener canales usando broadcast
-        const channels = await req.broadcastOne("getChannelsOf", guildId, { guildId });
+        const channelsResponse = await req.broadcastOne("getChannelsOf", guildId, { guildId });
         const settings = await db.getSettings(guildId);
 
-        console.log("[TempChannels] Canales recibidos:", typeof channels, Array.isArray(channels) ? channels.length : 'no es array');
+        // El broadcast devuelve { success: true, data: [...] }
+        const channels = (channelsResponse && channelsResponse.data) || [];
+        console.log("[TempChannels] Canales recibidos:", channels.length);
         
         // Filtrar canales en el servidor
         let voiceChannels = [];
@@ -42,7 +44,7 @@ router.get("/", async (req, res) => {
             console.log("[TempChannels] Canales de voz encontrados:", voiceChannels.length);
             console.log("[TempChannels] Categorías encontradas:", categories.length);
         } else {
-            console.warn("[TempChannels] Channels no es un array:", channels);
+            console.warn("[TempChannels] Channels no es un array");
         }
 
         res.render(path.join(__dirname, "view.ejs"), {
@@ -83,8 +85,9 @@ router.get("/api/channels", async (req, res) => {
         }
         
         // Usar broadcast para obtener canales
-        const channels = await req.broadcastOne("getChannelsOf", guildId, { guildId });
-        res.json(channels || []);
+        const channelsResponse = await req.broadcastOne("getChannelsOf", guildId, { guildId });
+        const channels = (channelsResponse && channelsResponse.data) || [];
+        res.json(channels);
     } catch (error) {
         console.error("[TempChannels Router] Error obteniendo canales:", error);
         res.json([]);
