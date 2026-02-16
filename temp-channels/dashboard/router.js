@@ -4,14 +4,15 @@ const db = require("../db.service");
 
 const router = express.Router();
 
-// Middleware para extraer guildId
+// Middleware para extraer guildId y guardarlo globalmente
 router.use((req, res, next) => {
     // Extraer guildId de la URL si no está en params
-    if (!req.params.guildId) {
+    if (!req.params.guildId && req.baseUrl) {
         const guildId = req.baseUrl.split('/')[2];
         req.params.guildId = guildId;
+        req.guildId = guildId; // También en req
+        console.log("[TempChannels Router] GuildId extraído del middleware:", guildId);
     }
-    console.log("[TempChannels Router] GuildId en middleware:", req.params.guildId);
     next();
 });
 
@@ -28,8 +29,12 @@ router.get("/", async (req, res) => {
 // GET /api/settings - Obtener configuración
 router.get("/api/settings", async (req, res) => {
     try {
-        const guildId = req.params.guildId;
+        const guildId = req.guildId || req.params.guildId;
         console.log("[TempChannels Router] GET /api/settings - GuildId:", guildId);
+        
+        if (!guildId) {
+            return res.status(400).json({ error: "GuildId not found" });
+        }
         
         const settings = await db.getSettings(guildId);
         console.log("[TempChannels Router] Settings obtenidos:", settings.generators.length, "generadores");
@@ -44,8 +49,12 @@ router.get("/api/settings", async (req, res) => {
 // GET /api/channels - Obtener canales del servidor
 router.get("/api/channels", async (req, res) => {
     try {
-        const guildId = req.params.guildId;
+        const guildId = req.guildId || req.params.guildId;
         console.log("[TempChannels Router] GET /api/channels - GuildId:", guildId);
+        
+        if (!guildId) {
+            return res.status(400).json({ error: "GuildId not found" });
+        }
         
         // Obtener el cliente de Discord desde req.app
         const client = req.app.get('client');
@@ -78,8 +87,12 @@ router.get("/api/channels", async (req, res) => {
 // GET /api/active - Obtener canales activos
 router.get("/api/active", async (req, res) => {
     try {
-        const guildId = req.params.guildId;
+        const guildId = req.guildId || req.params.guildId;
         console.log("[TempChannels Router] GET /api/active - GuildId:", guildId);
+        
+        if (!guildId) {
+            return res.status(400).json({ error: "GuildId not found" });
+        }
         
         const activeChannels = await db.getActiveChannels(guildId);
         console.log("[TempChannels Router] Canales activos obtenidos:", activeChannels.length);
@@ -94,10 +107,14 @@ router.get("/api/active", async (req, res) => {
 // POST /api/generator - Crear generador
 router.post("/api/generator", async (req, res) => {
     try {
-        const guildId = req.params.guildId;
+        const guildId = req.guildId || req.params.guildId;
         const { sourceChannelId, nombres, limite, categoriaId } = req.body;
 
         console.log("[TempChannels Router] POST /api/generator - GuildId:", guildId);
+
+        if (!guildId) {
+            return res.status(400).json({ error: "GuildId not found" });
+        }
 
         const names = nombres.split(",").map(n => n.trim()).filter(n => n.length > 0);
         if (names.length === 0) {
@@ -134,11 +151,15 @@ router.post("/api/generator", async (req, res) => {
 // PATCH /api/generator/:id - Actualizar generador
 router.patch("/api/generator/:id", async (req, res) => {
     try {
-        const guildId = req.params.guildId;
+        const guildId = req.guildId || req.params.guildId;
         const { id } = req.params;
         const { sourceChannelId, nombres, limite, categoriaId } = req.body;
 
         console.log("[TempChannels Router] PATCH /api/generator/:id - GuildId:", guildId, "Id:", id);
+
+        if (!guildId) {
+            return res.status(400).json({ error: "GuildId not found" });
+        }
 
         const settings = await db.getSettings(guildId);
         const generator = settings.generators.find(g => g.sourceChannelId === id);
@@ -175,10 +196,14 @@ router.patch("/api/generator/:id", async (req, res) => {
 // DELETE /api/generator/:id - Eliminar generador
 router.delete("/api/generator/:id", async (req, res) => {
     try {
-        const guildId = req.params.guildId;
+        const guildId = req.guildId || req.params.guildId;
         const { id } = req.params;
 
         console.log("[TempChannels Router] DELETE /api/generator/:id - GuildId:", guildId, "Id:", id);
+
+        if (!guildId) {
+            return res.status(400).json({ error: "GuildId not found" });
+        }
 
         const settings = await db.getSettings(guildId);
         settings.generators = settings.generators.filter(g => g.sourceChannelId !== id);
@@ -195,10 +220,14 @@ router.delete("/api/generator/:id", async (req, res) => {
 // DELETE /api/channel/:id - Eliminar canal activo
 router.delete("/api/channel/:id", async (req, res) => {
     try {
-        const guildId = req.params.guildId;
+        const guildId = req.guildId || req.params.guildId;
         const { id } = req.params;
 
         console.log("[TempChannels Router] DELETE /api/channel/:id - GuildId:", guildId, "ChannelId:", id);
+
+        if (!guildId) {
+            return res.status(400).json({ error: "GuildId not found" });
+        }
 
         // Obtener el cliente de Discord desde req.app
         const client = req.app.get('client');
