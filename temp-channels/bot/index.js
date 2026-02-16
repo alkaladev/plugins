@@ -10,7 +10,6 @@ module.exports = new BotPlugin({
         Logger.info("[TempChannels] Plugin habilitado");
 
         const dbService = require("../db.service");
-        const deleteTimers = new Map();
 
         client.on("voiceStateUpdate", async (oldState, newState) => {
             try {
@@ -108,7 +107,6 @@ module.exports = new BotPlugin({
                             if (!channel) {
                                 console.log("[TempChannels] Canal no encontrado, eliminando DB:", activeChannel.channelId);
                                 await dbService.removeActiveChannel(activeChannel.channelId);
-                                deleteTimers.delete(activeChannel.channelId);
                                 continue;
                             }
 
@@ -120,12 +118,6 @@ module.exports = new BotPlugin({
                                     await channel.delete();
                                     await dbService.removeActiveChannel(activeChannel.channelId);
                                     Logger.info(`[TempChannels] Canal temporal eliminado: ${channel.name}`);
-                                    
-                                    // Cancelar timer si existe
-                                    if (deleteTimers.has(activeChannel.channelId)) {
-                                        clearTimeout(deleteTimers.get(activeChannel.channelId));
-                                        deleteTimers.delete(activeChannel.channelId);
-                                    }
                                 } catch (deleteError) {
                                     console.error("[TempChannels] Error eliminando canal:", deleteError.message);
                                 }
@@ -135,6 +127,28 @@ module.exports = new BotPlugin({
                             console.error("[TempChannels] Error:", error.message);
                         }
                     }
+
+                    // Verificar si NO hay canales temporales activos, si es así, reiniciar índice a 0
+                    setTimeout(async () => {
+                        try {
+                            const remainingChannels = await dbService.getActiveChannels(guildToCheck.id);
+                            
+                            if (remainingChannels.length === 0) {
+                                console.log("[TempChannels] No hay canales temporales activos, reiniciando índices a 0");
+                                
+                                const settings = await dbService.getSettings(guildToCheck.id);
+                                
+                                for (let generator of settings.generators) {
+                                    generator.currentNameIndex = 0;
+                                }
+                                
+                                await settings.save();
+                                console.log("[TempChannels] Índices reiniciados a 0");
+                            }
+                        } catch (error) {
+                            console.error("[TempChannels] Error reiniciando índices:", error.message);
+                        }
+                    }, 1000);
                 }
             } catch (error) {
                 Logger.error("[TempChannels] Error en voiceStateUpdate:", error);
