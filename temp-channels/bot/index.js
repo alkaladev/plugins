@@ -20,8 +20,6 @@ module.exports = new BotPlugin({
                     console.log("[TempChannels] Usuario conectado al canal:", channel.name);
                     
                     const settings = await dbService.getSettings(guild.id);
-                    console.log("[TempChannels] Settings obtenidos:", JSON.stringify(settings.generators, null, 2));
-                    
                     const generator = settings.generators.find((g) => g.sourceChannelId === channel.id);
                     
                     if (!generator) {
@@ -29,21 +27,38 @@ module.exports = new BotPlugin({
                         return;
                     }
 
-                    console.log("[TempChannels] Generador encontrado:", JSON.stringify(generator, null, 2));
-                    console.log("[TempChannels] NamesList:", generator.namesList);
-                    console.log("[TempChannels] CurrentNameIndex:", generator.currentNameIndex);
-
                     try {
-                        // Obtener el nombre actual de la lista
-                        const currentName = generator.namesList[generator.currentNameIndex];
-                        console.log("[TempChannels] Nombre actual a usar:", currentName);
+                        // Obtener canales activos para este generador
+                        const activeChannels = await dbService.getActiveChannels(guild.id);
+                        const generatorActiveChannels = activeChannels.filter(ac => ac.sourceChannelId === channel.id);
+                        
+                        console.log("[TempChannels] Canales activos para este generador:", generatorActiveChannels.length);
+                        console.log("[TempChannels] NamesList:", generator.namesList);
+
+                        // Obtener los nombres ya usados (activos)
+                        const usedNames = generatorActiveChannels.map(ac => ac.channelName);
+                        console.log("[TempChannels] Nombres ya usados:", usedNames);
+
+                        // Buscar el PRIMER nombre disponible en la lista
+                        let currentName = null;
+                        let foundIndex = -1;
+
+                        for (let i = 0; i < generator.namesList.length; i++) {
+                            if (!usedNames.includes(generator.namesList[i])) {
+                                currentName = generator.namesList[i];
+                                foundIndex = i;
+                                break;
+                            }
+                        }
+
+                        console.log("[TempChannels] Nombre disponible encontrado:", currentName, "en índice:", foundIndex);
 
                         if (!currentName) {
-                            console.error("[TempChannels] Error: No hay nombre disponible en el índice:", generator.currentNameIndex);
+                            console.error("[TempChannels] Error: No hay nombres disponibles");
                             return;
                         }
 
-                        // Crear el canal con el nombre actual
+                        // Crear el canal con el nombre encontrado
                         const tempChannel = await guild.channels.create({
                             name: currentName,
                             type: 2,
@@ -65,14 +80,7 @@ module.exports = new BotPlugin({
 
                         console.log("[TempChannels] Canal guardado en BD");
 
-                        // Incrementar el índice para el siguiente canal (rotatorio)
-                        generator.currentNameIndex = (generator.currentNameIndex + 1) % generator.namesList.length;
-                        console.log("[TempChannels] Nuevo índice:", generator.currentNameIndex);
-                        await settings.save();
-
-                        console.log("[TempChannels] Settings guardados");
-
-                        // Mover al usuario SIN delay
+                        // Mover al usuario
                         try {
                             console.log("[TempChannels] Moviendo usuario a:", tempChannel.id);
                             await member.voice.setChannel(tempChannel);
@@ -127,28 +135,6 @@ module.exports = new BotPlugin({
                             console.error("[TempChannels] Error:", error.message);
                         }
                     }
-
-                    // Verificar si NO hay canales temporales activos, si es así, reiniciar índice a 0
-                    setTimeout(async () => {
-                        try {
-                            const remainingChannels = await dbService.getActiveChannels(guildToCheck.id);
-                            
-                            if (remainingChannels.length === 0) {
-                                console.log("[TempChannels] No hay canales temporales activos, reiniciando índices a 0");
-                                
-                                const settings = await dbService.getSettings(guildToCheck.id);
-                                
-                                for (let generator of settings.generators) {
-                                    generator.currentNameIndex = 0;
-                                }
-                                
-                                await settings.save();
-                                console.log("[TempChannels] Índices reiniciados a 0");
-                            }
-                        } catch (error) {
-                            console.error("[TempChannels] Error reiniciando índices:", error.message);
-                        }
-                    }, 1000);
                 }
             } catch (error) {
                 Logger.error("[TempChannels] Error en voiceStateUpdate:", error);
