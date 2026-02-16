@@ -358,7 +358,7 @@
                   </button>
                   <input type="number" x-model.number="formData.limite" 
                          class="w-full bg-transparent border-none text-center font-bold text-gray-900 dark:text-white focus:ring-0 outline-none" 
-                         style="border: none !important; box-shadow: none !important; -moz-appearance: textfield;" />
+                         style="border: none !important; box-shadow: none !important; -webkit-appearance: textfield !important; -moz-appearance: textfield !important; appearance: textfield !important;" />
                   <button type="button" @click="formData.limite++" 
                           class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-white/10 transition-colors outline-none border-none">
                     <i class="fa-solid fa-plus text-xs"></i>
