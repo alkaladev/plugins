@@ -21,6 +21,10 @@
   }
 </style>
 
+<script>
+  window.initialChannels = <%- JSON.stringify(channels || []) %>;
+</script>
+
 <section>
   <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
     
@@ -28,7 +32,7 @@
     <div
       x-data="{
         generators: [],
-        channels: <%- JSON.stringify(channels || []) %>,
+        channels: window.initialChannels || [],
         categories: [],
         openModal: false,
         editingId: null,
@@ -51,12 +55,14 @@
           try {
             this.loading = true;
             const guildId = this.getGuildId();
+            if (!guildId) {
+              console.error('[Dashboard] No guildId found');
+              return;
+            }
             const baseUrl = '/dashboard/' + guildId + '/temp-channels';
-            console.log('[Dashboard] Loading from:', baseUrl + '/api/settings');
             const res = await fetch(baseUrl + '/api/settings');
             if (res.ok) {
               const data = await res.json();
-              console.log('[Dashboard] Generadores obtenidos:', data);
               this.generators = data.generators || [];
             } else {
               console.error('[Dashboard] Error:', res.status);
@@ -71,12 +77,11 @@
         async loadChannels() {
           try {
             const guildId = this.getGuildId();
+            if (!guildId) return;
             const baseUrl = '/dashboard/' + guildId + '/temp-channels';
-            console.log('[Dashboard] Loading from:', baseUrl + '/api/channels');
             const res = await fetch(baseUrl + '/api/channels');
             if (res.ok) {
               const data = await res.json();
-              console.log('[Dashboard] Canales obtenidos:', data);
               this.channels = data.filter(c => c.type === 2) || [];
               this.categories = data.filter(c => c.type === 4) || [];
             }
@@ -106,6 +111,10 @@
           this.saving = true;
           try {
             const guildId = this.getGuildId();
+            if (!guildId) {
+              Alpine.store('toast').show('Guild no encontrado', 'error');
+              return;
+            }
             const baseUrl = '/dashboard/' + guildId + '/temp-channels';
             const method = this.editingId ? 'PATCH' : 'POST';
             const url = this.editingId 
@@ -137,6 +146,7 @@
           if (!confirm('¿Estás seguro de que quieres eliminar este generador?')) return;
           try {
             const guildId = this.getGuildId();
+            if (!guildId) return;
             const baseUrl = '/dashboard/' + guildId + '/temp-channels';
             const res = await fetch(baseUrl + '/api/generator/' + id, { method: 'DELETE' });
             if (res.ok) {
@@ -291,6 +301,10 @@
           try {
             this.loading = true;
             const guildId = this.getGuildId();
+            if (!guildId) {
+              console.error('[Dashboard] No guildId found');
+              return;
+            }
             const baseUrl = '/dashboard/' + guildId + '/temp-channels';
             const [resActive, resGen] = await Promise.all([
               fetch(baseUrl + '/api/active'),
@@ -299,7 +313,6 @@
             
             if (resActive.ok) {
               const data = await resActive.json();
-              console.log('[Dashboard] Canales activos obtenidos:', data);
               this.activeChannels = data || [];
             }
             
@@ -323,6 +336,7 @@
           if (!confirm('¿Estás seguro de que quieres eliminar este canal?')) return;
           try {
             const guildId = this.getGuildId();
+            if (!guildId) return;
             const baseUrl = '/dashboard/' + guildId + '/temp-channels';
             const res = await fetch(baseUrl + '/api/channel/' + id, { method: 'DELETE' });
             if (res.ok) {

@@ -4,19 +4,37 @@ const db = require("../db.service");
 
 const router = express.Router();
 
+// Middleware CRÍTICO - Extraer guildId ANTES de cualquier otra ruta
+router.use((req, res, next) => {
+    const baseUrl = req.baseUrl;
+    console.log("[TempChannels] BaseUrl:", baseUrl);
+    
+    if (baseUrl) {
+        const parts = baseUrl.split('/');
+        // /dashboard/{guildId}/temp-channels
+        const guildId = parts[2];
+        console.log("[TempChannels] GuildId extraído:", guildId);
+        res.locals.guildId = guildId;
+    }
+    next();
+});
+
 // Renderizar vista
 router.get("/", async (req, res) => {
     try {
         const guildId = res.locals.guildId;
+        console.log("[TempChannels] GET / - GuildId:", guildId);
         
-        // Obtener canales y configuración usando broadcast
-        const [channelsResp, settings] = await Promise.all([
-            req.broadcastOne("getChannelsOf", guildId, { guildId }),
-            db.getSettings(guildId),
-        ]);
+        if (!guildId) {
+            return res.status(400).send("GuildId not found");
+        }
+        
+        // Obtener canales usando broadcast
+        const channels = await req.broadcastOne("getChannelsOf", guildId, { guildId });
+        const settings = await db.getSettings(guildId);
 
         res.render(path.join(__dirname, "view.ejs"), {
-            channels: channelsResp || [],
+            channels: channels || [],
             settings: settings || {}
         });
     } catch (error) {
@@ -29,13 +47,13 @@ router.get("/", async (req, res) => {
 router.get("/api/settings", async (req, res) => {
     try {
         const guildId = res.locals.guildId;
+        console.log("[TempChannels] GET /api/settings - GuildId:", guildId);
         
         if (!guildId) {
             return res.status(400).json({ error: "GuildId not found" });
         }
         
         const settings = await db.getSettings(guildId);
-        
         res.json(settings);
     } catch (error) {
         console.error("[TempChannels Router] Error obteniendo settings:", error);
@@ -47,6 +65,7 @@ router.get("/api/settings", async (req, res) => {
 router.get("/api/channels", async (req, res) => {
     try {
         const guildId = res.locals.guildId;
+        console.log("[TempChannels] GET /api/channels - GuildId:", guildId);
         
         if (!guildId) {
             return res.status(400).json({ error: "GuildId not found" });
@@ -54,7 +73,6 @@ router.get("/api/channels", async (req, res) => {
         
         // Usar broadcast para obtener canales
         const channels = await req.broadcastOne("getChannelsOf", guildId, { guildId });
-        
         res.json(channels || []);
     } catch (error) {
         console.error("[TempChannels Router] Error obteniendo canales:", error);
@@ -66,13 +84,13 @@ router.get("/api/channels", async (req, res) => {
 router.get("/api/active", async (req, res) => {
     try {
         const guildId = res.locals.guildId;
+        console.log("[TempChannels] GET /api/active - GuildId:", guildId);
         
         if (!guildId) {
             return res.status(400).json({ error: "GuildId not found" });
         }
         
         const activeChannels = await db.getActiveChannels(guildId);
-        
         res.json(activeChannels);
     } catch (error) {
         console.error("[TempChannels Router] Error obteniendo canales activos:", error);
