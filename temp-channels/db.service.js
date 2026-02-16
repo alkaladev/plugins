@@ -88,7 +88,8 @@ class TempChannelsService extends DBService {
     async addActiveChannel(channelData) {
         const ActiveChannelsModel = this.getModel("activeChannels");
         try {
-            return await ActiveChannelsModel.create({
+            // Usar insertOne en lugar de create para evitar el _id automático
+            const result = await ActiveChannelsModel.collection.insertOne({
                 channelId: channelData.channelId,
                 guildId: channelData.guildId,
                 sourceChannelId: channelData.sourceChannelId,
@@ -96,6 +97,7 @@ class TempChannelsService extends DBService {
                 createdBy: channelData.createdBy,
                 createdAt: new Date(),
             });
+            return result;
         } catch (error) {
             console.error("[TempChannels DB] Error creando canal activo:", error);
             throw error;
