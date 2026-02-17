@@ -11,6 +11,8 @@ module.exports = {
     command: {
         enabled: true,
         minArgsCount: 2,
+        usage: "<titulo> <descripcion>",
+        help: "Crea un nuevo embed para asignar roles automáticamente",
     },
     slashCommand: {
         enabled: true,
@@ -45,7 +47,11 @@ module.exports = {
             if (!titulo || !descripcion) {
                 const embed = new EmbedBuilder()
                     .setColor("#fd3b02")
-                    .setDescription("❌ Debes proporcionar un título y una descripción");
+                    .setTitle("❌ Uso incorrecto")
+                    .setDescription(
+                        `\`\`\`\n!asetup <titulo> <descripcion>\n\`\`\`\n\n` +
+                        `**Ejemplo:**\n\`!asetup "Elige tu rol" "Haz clic en los botones para obtener roles"\``
+                    );
                 return message.reply({ embeds: [embed] });
             }
 
