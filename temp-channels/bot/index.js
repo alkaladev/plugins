@@ -73,14 +73,14 @@ module.exports = new BotPlugin({
                         });
 
                         // Registrar log
-                        await dbService.addLog(guild.id, {
-                            action: 'created',
-                            channelId: tempChannel.id,
-                            channelName: currentName,
-                            userId: member.id,
-                            sourceChannelId: channel.id,
-                            timestamp: new Date(),
-                        });
+                        // await dbService.addLog(guild.id, {
+                        //     action: 'created',
+                        //     channelId: tempChannel.id,
+                        //     channelName: currentName,
+                        //     userId: member.id,
+                        //     sourceChannelId: channel.id,
+                        //     timestamp: new Date(),
+                        // });
 
                         // Mover al usuario
                         try {
@@ -125,28 +125,28 @@ module.exports = new BotPlugin({
                                     await dbService.removeActiveChannel(activeChannel.channelId);
                                     
                                     // Registrar en historial
-                                    await dbService.addDeletedChannel(guildToCheck.id, {
-                                        channelId: activeChannel.channelId,
-                                        channelName: activeChannel.channelName,
-                                        sourceChannelId: activeChannel.sourceChannelId,
-                                        createdBy: activeChannel.createdBy,
-                                        createdAt: new Date(activeChannel.createdAt),
-                                        deletedAt: new Date(),
-                                        duration: duration,
-                                        members: 0,
-                                        reason: 'empty',
-                                    });
+                                    // await dbService.addDeletedChannel(guildToCheck.id, {
+                                    //     channelId: activeChannel.channelId,
+                                    //     channelName: activeChannel.channelName,
+                                    //     sourceChannelId: activeChannel.sourceChannelId,
+                                    //     createdBy: activeChannel.createdBy,
+                                    //     createdAt: new Date(activeChannel.createdAt),
+                                    //     deletedAt: new Date(),
+                                    //     duration: duration,
+                                    //     members: 0,
+                                    //     reason: 'empty',
+                                    // });
 
                                     // Registrar log
-                                    await dbService.addLog(guildToCheck.id, {
-                                        action: 'deleted',
-                                        channelId: activeChannel.channelId,
-                                        channelName: activeChannel.channelName,
-                                        userId: 'system',
-                                        sourceChannelId: activeChannel.sourceChannelId,
-                                        timestamp: new Date(),
-                                        duration: duration,
-                                    });
+                                    // await dbService.addLog(guildToCheck.id, {
+                                    //     action: 'deleted',
+                                    //     channelId: activeChannel.channelId,
+                                    //     channelName: activeChannel.channelName,
+                                    //     userId: 'system',
+                                    //     sourceChannelId: activeChannel.sourceChannelId,
+                                    //     timestamp: new Date(),
+                                    //     duration: duration,
+                                    // });
                                     
                                     Logger.success(`[TempChannels] Canal temporal eliminado: ${channel.name}`);
                                 } catch (deleteError) {

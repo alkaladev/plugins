@@ -41,40 +41,6 @@ class TempChannelsService extends DBService {
                 },
                 { _id: false }
             ),
-
-            channelLogs: new Schema({
-                _id: String,
-                guildId: { type: String, required: true },
-                logs: [
-                    {
-                        action: String, // 'created', 'deleted', 'renamed'
-                        channelId: String,
-                        channelName: String,
-                        userId: String,
-                        sourceChannelId: String,
-                        timestamp: { type: Date, default: Date.now },
-                        duration: Number, // segundos que estuvo activo
-                    },
-                ],
-            }),
-
-            deletedChannels: new Schema({
-                _id: String,
-                guildId: { type: String, required: true },
-                history: [
-                    {
-                        channelId: String,
-                        channelName: String,
-                        sourceChannelId: String,
-                        createdBy: String,
-                        createdAt: Date,
-                        deletedAt: { type: Date, default: Date.now },
-                        duration: Number, // segundos que estuvo activo
-                        members: Number, // cantidad de usuarios cuando se eliminó
-                        reason: String, // 'empty', 'timeout', 'manual'
-                    },
-                ],
-            }),
         };
     }
 
@@ -170,40 +136,6 @@ class TempChannelsService extends DBService {
     async getActiveChannelCount(sourceChannelId) {
         const ActiveChannelsModel = this.getModel("activeChannels");
         return await ActiveChannelsModel.countDocuments({ sourceChannelId });
-    }
-
-    async addLog(guildId, logData) {
-        const LogsModel = this.getModel("channelLogs");
-        const logs = await LogsModel.findOneAndUpdate(
-            { _id: guildId, guildId },
-            { $push: { logs: logData }, $setOnInsert: { _id: guildId, guildId, logs: [logData] } },
-            { upsert: true, new: true }
-        );
-        return logs;
-    }
-
-    async getLogs(guildId, limit = 50) {
-        const LogsModel = this.getModel("channelLogs");
-        const logs = await LogsModel.findOne({ guildId });
-        if (!logs) return [];
-        return logs.logs.slice(-limit).reverse();
-    }
-
-    async addDeletedChannel(guildId, channelData) {
-        const DeletedModel = this.getModel("deletedChannels");
-        const deleted = await DeletedModel.findOneAndUpdate(
-            { _id: guildId, guildId },
-            { $push: { history: channelData }, $setOnInsert: { _id: guildId, guildId, history: [channelData] } },
-            { upsert: true, new: true }
-        );
-        return deleted;
-    }
-
-    async getDeletedChannels(guildId, limit = 50) {
-        const DeletedModel = this.getModel("deletedChannels");
-        const deleted = await DeletedModel.findOne({ guildId });
-        if (!deleted) return [];
-        return deleted.history.slice(-limit).reverse();
     }
 }
 

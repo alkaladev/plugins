@@ -274,40 +274,4 @@ router.delete("/api/channel/:id", async (req, res) => {
     }
 });
 
-// GET /api/logs - Obtener logs
-router.get("/api/logs", async (req, res) => {
-    try {
-        const guildId = res.locals.guildId;
-        const limit = parseInt(req.query.limit) || 50;
-
-        if (!guildId) {
-            return res.status(400).json({ error: "GuildId not found" });
-        }
-
-        const logs = await db.getLogs(guildId, limit);
-        res.json(logs);
-    } catch (error) {
-        console.error("[TempChannels Router] Error obteniendo logs:", error);
-        res.status(500).json({ error: "Error obteniendo logs" });
-    }
-});
-
-// GET /api/deleted - Obtener historial de canales eliminados
-router.get("/api/deleted", async (req, res) => {
-    try {
-        const guildId = res.locals.guildId;
-        const limit = parseInt(req.query.limit) || 50;
-
-        if (!guildId) {
-            return res.status(400).json({ error: "GuildId not found" });
-        }
-
-        const deleted = await db.getDeletedChannels(guildId, limit);
-        res.json(deleted);
-    } catch (error) {
-        console.error("[TempChannels Router] Error obteniendo historial:", error);
-        res.status(500).json({ error: "Error obteniendo historial" });
-    }
-});
-
 module.exports = router;
