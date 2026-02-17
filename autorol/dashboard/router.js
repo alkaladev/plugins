@@ -26,10 +26,11 @@ router.get("/", async (req, res) => {
         }
         
         const settings = await db.getSettings(guildId);
+        const messages = (settings && settings.messages) || [];
 
         res.render(path.join(__dirname, "view.ejs"), {
-            settings: settings || {},
-            messages: (settings && settings.messages) || []
+            messages: messages,
+            channels: []
         });
     } catch (error) {
         console.error("[Autorol Router] Error renderizando vista:", error);
@@ -89,35 +90,57 @@ router.delete("/api/messages/:messageId", async (req, res) => {
     }
 });
 
-// POST /api/messages - Crear nuevo embed
-router.post("/api/messages", async (req, res) => {
+// PUT - Crear nuevo embed
+router.put("/", async (req, res) => {
     try {
         const guildId = res.locals.guildId;
-        const { title, description, color, footer } = req.body;
+        const { titulo, descripcion, color, action } = req.body;
         
         if (!guildId) {
             return res.status(400).json({ error: "GuildId not found" });
         }
         
-        if (!title || !description) {
-            return res.status(400).json({ error: "Title and description required" });
+        if (action === 'create_message') {
+            if (!titulo || !descripcion) {
+                return res.status(400).json({ error: "Title and description required" });
+            }
+            
+            const messageData = {
+                messageId: Date.now().toString(),
+                channelId: "",
+                title: titulo,
+                description: descripcion,
+                color: color || "#5865F2",
+                footer: null,
+                buttons: []
+            };
+            
+            await db.addMessage(guildId, messageData);
+            return res.json({ success: true, data: messageData });
+        }
+    } catch (error) {
+        console.error("[Autorol Router] Error:", error);
+        res.status(500).json({ error: "Error" });
+    }
+});
+
+// DELETE - Eliminar mensaje
+router.delete("/", async (req, res) => {
+    try {
+        const guildId = res.locals.guildId;
+        const { messageId, action } = req.body;
+        
+        if (!guildId) {
+            return res.status(400).json({ error: "GuildId not found" });
         }
         
-        const messageData = {
-            messageId: Date.now().toString(),
-            channelId: req.body.channelId || "",
-            title,
-            description,
-            color: color || "#2f3136",
-            footer: footer || null,
-            buttons: []
-        };
-        
-        await db.addMessage(guildId, messageData);
-        res.json({ success: true, data: messageData });
+        if (action === 'delete_message') {
+            await db.deleteMessage(guildId, messageId);
+            return res.json({ success: true });
+        }
     } catch (error) {
-        console.error("[Autorol Router] Error creando mensaje:", error);
-        res.status(500).json({ error: "Error creando mensaje" });
+        console.error("[Autorol Router] Error:", error);
+        res.status(500).json({ error: "Error" });
     }
 });
 

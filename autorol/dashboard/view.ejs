@@ -1,592 +1,173 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Autorol - Role Assignment</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<%- contentFor("Autorol") %>
+<section
+  x-data="{
+    messages: <%= messages ? JSON.stringify(messages) : '[]' %>,
+    channels: <%= channels ? JSON.stringify(channels) : '[]' %>,
+    formData: {
+      titulo: '',
+      descripcion: '',
+      color: '#5865F2'
+    },
+    saving: false,
+    async submitForm() {
+      this.saving = true;
+      try {
+        const response = await fetch(window.location.href, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...this.formData,
+            action: 'create_message'
+          })
+        });
+        if (!response.ok) throw new Error('Failed to create');
+        Alpine.store('toast').show('<%=tr(`SETTINGS_SAVE`)%>', 'success');
+        this.formData = { titulo: '', descripcion: '', color: '#5865F2' };
+        location.reload();
+      } catch (error) {
+        Alpine.store('toast').show('<%=tr(`SETTINGS_SAVE_ERROR`)%>', 'error');
+      } finally {
+        this.saving = false;
+      }
+    }
+  }"
+  class="border-border bg-bg-panel rounded-lg border p-4 shadow-sm">
+  
+  <!-- Header -->
+  <div class="mb-4">
+    <h3 class="text-text text-lg font-semibold">📝 Crear nuevo Sistema</h3>
+    <p class="text-text-muted text-sm font-normal">Crea un nuevo embed de asignación de roles</p>
+  </div>
 
-        :root {
-            --primary: #5865F2;
-            --primary-dark: #4752C4;
-            --success: #57F287;
-            --danger: #ED4245;
-            --warning: #FFA500;
-            --bg-panel: #2C2F33;
-            --bg-interactive: #40444B;
-            --border: #202225;
-            --text: #FFFFFF;
-            --text-muted: #72767D;
-        }
-
-        body {
-            background-color: #1E1F22;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            color: var(--text);
-            line-height: 1.5;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .header {
-            margin-bottom: 30px;
-        }
-
-        .header h1 {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: var(--text);
-        }
-
-        .header p {
-            color: var(--text-muted);
-            font-size: 14px;
-        }
-
-        .card {
-            background: var(--bg-panel);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .card-header {
-            padding: 16px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .card-header h2 {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text);
-            margin: 0;
-        }
-
-        .card-header p {
-            color: var(--text-muted);
-            font-size: 13px;
-            margin: 4px 0 0 0;
-        }
-
-        .card-body {
-            padding: 16px;
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-group:last-child {
-            margin-bottom: 0;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text);
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .form-group .help-text {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        .form-input,
-        .form-textarea,
-        .form-select {
-            width: 100%;
-            background-color: var(--bg-interactive);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            color: var(--text);
-            padding: 10px 12px;
-            font-size: 14px;
-            font-family: inherit;
-            transition: border-color 0.2s, background-color 0.2s;
-        }
-
-        .form-input:hover,
-        .form-textarea:hover,
-        .form-select:hover {
-            border-color: #40444B;
-        }
-
-        .form-input:focus,
-        .form-textarea:focus,
-        .form-select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.1);
-            background-color: #36393F;
-        }
-
-        .form-textarea {
-            resize: vertical;
-            min-height: 100px;
-            font-family: "Courier New", monospace;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 16px;
-        }
-
-        @media (min-width: 768px) {
-            .form-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-
-        .form-grid.full {
-            grid-template-columns: 1fr;
-        }
-
-        .button {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 10px 16px;
-            border: none;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            gap: 8px;
-        }
-
-        .button-primary {
-            background-color: var(--primary);
-            color: white;
-        }
-
-        .button-primary:hover {
-            background-color: var(--primary-dark);
-        }
-
-        .button-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .button-danger {
-            background-color: var(--danger);
-            color: white;
-        }
-
-        .button-danger:hover {
-            background-color: #D83C3A;
-        }
-
-        .button-secondary {
-            background-color: var(--bg-interactive);
-            color: var(--text);
-            border: 1px solid var(--border);
-        }
-
-        .button-secondary:hover {
-            background-color: #4A4D51;
-            border-color: #5D6064;
-        }
-
-        .card-footer {
-            padding: 16px;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-        }
-
-        .messages-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 16px;
-        }
-
-        .message-card {
-            background: var(--bg-interactive);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 16px;
-            transition: all 0.2s;
-        }
-
-        .message-card:hover {
-            border-color: var(--primary);
-            background-color: #474B50;
-        }
-
-        .message-card-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text);
-            margin-bottom: 8px;
-        }
-
-        .message-card-desc {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 12px;
-            line-height: 1.4;
-        }
-
-        .message-card-info {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .message-card-actions {
-            display: flex;
-            gap: 8px;
-            justify-content: flex-end;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-muted);
-        }
-
-        .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-            opacity: 0.5;
-        }
-
-        .empty-state-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text);
-            margin-bottom: 8px;
-        }
-
-        .empty-state-desc {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        .info-box {
-            background: rgba(88, 101, 242, 0.1);
-            border: 1px solid var(--primary);
-            border-radius: 4px;
-            padding: 12px 16px;
-            margin-bottom: 16px;
-            font-size: 13px;
-            color: var(--text);
-        }
-
-        .info-box strong {
-            color: var(--primary);
-        }
-
-        .commands-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 16px;
-        }
-
-        .command-box {
-            background: var(--bg-interactive);
-            padding: 12px;
-            border-radius: 4px;
-            margin-bottom: 0;
-        }
-
-        .command-name {
-            font-family: monospace;
-            color: var(--primary);
-            margin-bottom: 8px;
-            word-break: break-all;
-            font-size: 13px;
-        }
-
-        .command-desc {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1>👑 Autorol</h1>
-            <p>Sistema de asignación automática de roles mediante embeds interactivos</p>
-        </div>
-
-        <!-- Info Box -->
-        <div class="info-box">
-            <strong>💡 Tip:</strong> Crea embeds con botones para que los usuarios obtengan roles automáticamente. Usa los comandos del bot o el formulario a continuación.
-        </div>
-
-        <!-- Create Form -->
-        <div class="card">
-            <div class="card-header">
-                <h2>📝 Crear nuevo Sistema</h2>
-                <p>Crea un nuevo embed de asignación de roles</p>
-            </div>
-            <div class="card-body">
-                <form id="createForm" onsubmit="handleCreateForm(event)">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="titulo">Título</label>
-                            <span class="help-text">El título principal del embed</span>
-                            <input type="text" id="titulo" name="titulo" class="form-input" placeholder="ej: Elige tu rol" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="color">Color (Hexadecimal)</label>
-                            <span class="help-text">ej: #5865F2</span>
-                            <input type="text" id="color" name="color" class="form-input" placeholder="#5865F2" value="#5865F2">
-                        </div>
-                    </div>
-                    <div class="form-group form-grid full">
-                        <label for="descripcion">Descripción</label>
-                        <span class="help-text">El contenido principal del embed</span>
-                        <textarea id="descripcion" name="descripcion" class="form-textarea" placeholder="Haz clic en los botones para obtener roles..." required></textarea>
-                    </div>
-
-                    <div class="card-footer" style="border-top: 1px solid var(--border); padding-top: 16px; padding-left: 0; padding-right: 0; padding-bottom: 0; margin-top: 16px;">
-                        <button type="button" class="button button-secondary" onclick="resetCreateForm()">Limpiar</button>
-                        <button type="submit" class="button button-primary" id="submitBtn">Crear Embed</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Systems List -->
-        <div class="card">
-            <div class="card-header">
-                <h2>📋 Sistemas Creados</h2>
-                <p>Todos los embeds de asignación de roles</p>
-            </div>
-            <div class="card-body" id="messagesList">
-                <div class="empty-state">
-                    <div class="empty-state-icon">📭</div>
-                    <div class="empty-state-title">No hay sistemas configurados</div>
-                    <div class="empty-state-desc">Crea tu primer sistema usando el formulario de arriba</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Commands Help -->
-        <div class="card">
-            <div class="card-header">
-                <h2>⚙️ Comandos Disponibles</h2>
-                <p>Uso desde el servidor de Discord</p>
-            </div>
-            <div class="card-body">
-                <div class="commands-grid">
-                    <div class="command-box">
-                        <div class="command-name">!asetup &lt;titulo&gt; &lt;descripcion&gt;</div>
-                        <div class="command-desc">Crea un nuevo embed de roles</div>
-                    </div>
-                    <div class="command-box">
-                        <div class="command-name">!anadir &lt;id&gt; &lt;@rol&gt; &lt;etiqueta&gt;</div>
-                        <div class="command-desc">Añade un botón de rol</div>
-                    </div>
-                    <div class="command-box">
-                        <div class="command-name">!remover &lt;id&gt; &lt;@rol&gt;</div>
-                        <div class="command-desc">Remueve un botón</div>
-                    </div>
-                    <div class="command-box">
-                        <div class="command-name">!alista</div>
-                        <div class="command-desc">Lista todos los sistemas</div>
-                    </div>
-                    <div class="command-box">
-                        <div class="command-name">!aeditar &lt;id&gt; &lt;titulo&gt; &lt;descripcion&gt;</div>
-                        <div class="command-desc">Edita un embed existente</div>
-                    </div>
-                    <div class="command-box">
-                        <div class="command-name">!aeliminar &lt;id&gt;</div>
-                        <div class="command-desc">Elimina un sistema completo</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <!-- Form Grid -->
+  <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 mb-4">
+    <!-- Title -->
+    <div>
+      <div class="mb-2">
+        <label class="text-text text-sm font-semibold">Título</label>
+        <div class="text-text-muted text-sm font-normal">El título principal del embed</div>
+      </div>
+      <input
+        x-model="formData.titulo"
+        type="text"
+        placeholder="ej: Elige tu rol"
+        class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm"
+        required />
     </div>
 
-    <script>
-        // Cargar mensajes
-        async function loadMessages() {
-            try {
-                const response = await fetch('./api/messages');
-                const messages = await response.json();
-                
-                const container = document.getElementById('messagesList');
-                
-                if (!messages || messages.length === 0) {
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <div class="empty-state-icon">📭</div>
-                            <div class="empty-state-title">No hay sistemas configurados</div>
-                            <div class="empty-state-desc">Crea tu primer sistema usando el formulario de arriba</div>
-                        </div>
-                    `;
-                    return;
-                }
+    <!-- Color -->
+    <div>
+      <div class="mb-2">
+        <label class="text-text text-sm font-semibold">Color (Hexadecimal)</label>
+        <div class="text-text-muted text-sm font-normal">ej: #5865F2</div>
+      </div>
+      <input
+        x-model="formData.color"
+        type="text"
+        placeholder="#5865F2"
+        class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm"
+        pattern="^#[A-Fa-f0-9]{6}$" />
+    </div>
 
-                container.innerHTML = `
-                    <div class="messages-grid">
-                        ${messages.map(msg => `
-                            <div class="message-card">
-                                <div class="message-card-title" style="color: ${msg.color}">${msg.title}</div>
-                                <div class="message-card-desc">${msg.description}</div>
-                                <div class="message-card-info">
-                                    <span>Botones: <strong>${msg.buttons ? msg.buttons.length : 0}/25</strong></span>
-                                    <span>ID: <code style="background: var(--bg-panel); padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 11px;">${msg.messageId}</code></span>
-                                </div>
-                                <div class="message-card-actions">
-                                    <button class="button button-danger" onclick="deleteMessage('${msg.messageId}')">Eliminar</button>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            } catch (error) {
-                console.error('Error cargando mensajes:', error);
-            }
-        }
+    <!-- Spacer -->
+    <div></div>
+  </div>
 
-        // Crear embed
-        async function handleCreateForm(e) {
-            e.preventDefault();
+  <!-- Description -->
+  <div class="mb-4">
+    <div class="mb-2">
+      <label class="text-text text-sm font-semibold">Descripción</label>
+      <div class="text-text-muted text-sm font-normal">El contenido principal del embed</div>
+    </div>
+    <textarea
+      x-model="formData.descripcion"
+      placeholder="Haz clic en los botones para obtener roles..."
+      class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm"
+      style="min-height: 100px;"
+      required></textarea>
+  </div>
+
+  <!-- Embed Preview -->
+  <div class="mb-4">
+    <div class="mb-2">
+      <label class="text-text text-sm font-semibold">📋 Vista previa</label>
+    </div>
+    <div class="bg-bg-interactive border-border border rounded-lg p-0 overflow-hidden">
+      <!-- Discord Embed Style -->
+      <div class="p-4" style="background-color: #2C2F33;">
+        <!-- Empty state -->
+        <template x-if="!formData.titulo && !formData.descripcion">
+          <div class="text-text-muted text-sm text-center py-12">
+            Rellena los campos para ver una vista previa
+          </div>
+        </template>
+
+        <!-- Embed preview -->
+        <template x-if="formData.titulo || formData.descripcion">
+          <div class="embed-preview" style="border-left: 4px solid; border-left-color: var(--embed-color, #5865F2); padding-left: 12px;">
+            <!-- Embed Title -->
+            <div x-show="formData.titulo" x-text="formData.titulo" class="text-text font-semibold text-sm mb-2" :style="{ color: formData.color }"></div>
             
-            const titulo = document.getElementById('titulo').value;
-            const descripcion = document.getElementById('descripcion').value;
-            const color = document.getElementById('color').value;
-            const submitBtn = document.getElementById('submitBtn');
+            <!-- Embed Description -->
+            <div x-show="formData.descripcion" x-text="formData.descripcion" class="text-text-muted text-sm whitespace-pre-wrap leading-5"></div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
 
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Creando...';
+  <!-- Sistemas Creados -->
+  <template x-if="messages && messages.length > 0">
+    <div class="mb-4">
+      <div class="mb-2">
+        <label class="text-text text-sm font-semibold">📊 Sistemas Creados</label>
+      </div>
+      <div class="grid gap-3">
+        <template x-for="msg in messages" :key="msg.messageId">
+          <div class="bg-bg-interactive border-border border rounded-lg p-3">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <div x-text="msg.title" class="text-text font-semibold text-sm mb-1"></div>
+                <div x-text="msg.description" class="text-text-muted text-xs mb-2 line-clamp-2"></div>
+                <div class="text-text-muted text-xs space-y-1">
+                  <div>Botones: <strong x-text="(msg.buttons?.length || 0) + '/25'"></strong></div>
+                  <div>ID: <code class="bg-bg-panel px-2 py-1 rounded text-xs font-mono" x-text="msg.messageId"></code></div>
+                </div>
+              </div>
+              <button
+                @click="if(confirm('¿Eliminar este sistema?')) fetch(window.location.href, { method: 'DELETE', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({messageId: msg.messageId, action: 'delete_message'}) }).then(() => location.reload())"
+                class="bg-error hover:bg-error-dark text-white px-3 py-1 rounded text-sm font-medium ml-2 flex-shrink-0">
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </template>
 
-            try {
-                const response = await fetch('./api/messages', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ titulo, descripcion, color })
-                });
-
-                if (response.ok) {
-                    showNotification('✅ Embed creado correctamente', 'success');
-                    resetCreateForm();
-                    loadMessages();
-                } else {
-                    showNotification('❌ Error al crear el embed', 'error');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showNotification('❌ Error al crear el embed', 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Crear Embed';
-            }
-        }
-
-        // Eliminar mensaje
-        async function deleteMessage(messageId) {
-            if (!confirm('¿Estás seguro de que quieres eliminar este sistema?')) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`./api/messages/${messageId}`, {
-                    method: 'DELETE'
-                });
-
-                if (response.ok) {
-                    showNotification('✅ Sistema eliminado', 'success');
-                    loadMessages();
-                } else {
-                    showNotification('❌ Error al eliminar', 'error');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showNotification('❌ Error al eliminar', 'error');
-            }
-        }
-
-        // Resetear formulario
-        function resetCreateForm() {
-            document.getElementById('createForm').reset();
-            document.getElementById('color').value = '#5865F2';
-        }
-
-        // Notificación
-        function showNotification(message, type) {
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                background: ${type === 'success' ? 'var(--success)' : 'var(--danger)'};
-                color: #000;
-                padding: 12px 16px;
-                border-radius: 4px;
-                font-weight: 600;
-                z-index: 1000;
-                animation: slideIn 0.3s ease;
-            `;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-
-            setTimeout(() => {
-                notification.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => notification.remove(), 300);
-            }, 3000);
-        }
-
-        // Cargar mensajes al iniciar
-        loadMessages();
-
-        // Recargar cada 5 segundos
-        setInterval(loadMessages, 5000);
-
-        // Animaciones
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from {
-                    transform: translateX(400px);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-            @keyframes slideOut {
-                from {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-                to {
-                    transform: translateX(400px);
-                    opacity: 0;
-                }
-            }
-        `;
-        document.head.appendChild(style);
-    </script>
-</body>
-</html>
+  <!-- Footer -->
+  <div class="border-border mt-4 flex items-center justify-between border-t pt-3 sm:pt-6">
+    <div>
+      <button
+        type="button"
+        @click="formData = { titulo: '', descripcion: '', color: '#5865F2' }"
+        class="text-text-muted hover:text-text text-sm font-medium transition-colors">
+        Limpiar
+      </button>
+    </div>
+    <div class="flex-shrink-0">
+      <button
+        type="button"
+        @click="submitForm()"
+        :disabled="saving || !formData.titulo || !formData.descripcion"
+        :class="{'opacity-50': saving}"
+        class="bg-primary hover:bg-primary-dark focus:ring-primary inline-flex items-center rounded-lg px-3 py-2 text-center text-sm font-medium text-white focus:outline-none focus:ring-4 disabled:cursor-not-allowed">
+        <span x-show="!saving">Crear Sistema</span>
+        <span x-show="saving">Guardando...</span>
+      </button>
+    </div>
+  </div>
+</section>
