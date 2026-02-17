@@ -6,10 +6,11 @@ const db = require("../../db.service");
  */
 module.exports = {
     name: "aeditar",
-    description: "Edita un sistema de autorol existente",
+    description: "Edita un sistema de autorol",
     userPermissions: ["ManageGuild"],
     command: {
-        enabled: false,
+        enabled: true,
+        minArgsCount: 2,
     },
     slashCommand: {
         enabled: true,
@@ -23,29 +24,76 @@ module.exports = {
             },
             {
                 name: "titulo",
-                description: "Nuevo título del embed",
+                description: "Nuevo título",
                 type: ApplicationCommandOptionType.String,
                 required: false,
             },
             {
                 name: "descripcion",
-                description: "Nueva descripción del embed",
-                type: ApplicationCommandOptionType.String,
-                required: false,
-            },
-            {
-                name: "color",
-                description: "Nuevo color en hexadecimal (ej: #FF0000)",
-                type: ApplicationCommandOptionType.String,
-                required: false,
-            },
-            {
-                name: "pie",
-                description: "Nuevo texto del pie de página",
+                description: "Nueva descripción",
                 type: ApplicationCommandOptionType.String,
                 required: false,
             },
         ],
+    },
+
+    async messageRun({ message, args }) {
+        try {
+            const messageId = args[0];
+            const titulo = args[1];
+            const descripcion = args.slice(2).join(" ");
+
+            if (!messageId || !titulo) {
+                const embed = new EmbedBuilder()
+                    .setColor("#fd3b02")
+                    .setDescription("❌ Argumentos insuficientes");
+                return message.reply({ embeds: [embed] });
+            }
+
+            const messageData = await db.getMessageByMessageId(message.guildId, messageId);
+            if (!messageData) {
+                const embed = new EmbedBuilder()
+                    .setColor("#fd3b02")
+                    .setDescription("❌ Mensaje no encontrado");
+                return message.reply({ embeds: [embed] });
+            }
+
+            let discordMessage;
+            try {
+                const channel = message.guild.channels.cache.get(messageData.channelId);
+                discordMessage = await channel.messages.fetch(messageId);
+            } catch (error) {
+                const embed = new EmbedBuilder()
+                    .setColor("#fd3b02")
+                    .setDescription("❌ Mensaje no encontrado");
+                return message.reply({ embeds: [embed] });
+            }
+
+            await db.updateMessage(message.guildId, messageId, {
+                title: titulo,
+                description: descripcion || messageData.description,
+            });
+
+            const updatedMessage = await db.getMessageByMessageId(message.guildId, messageId);
+            const newEmbed = new EmbedBuilder()
+                .setColor(updatedMessage.color)
+                .setTitle(updatedMessage.title)
+                .setDescription(updatedMessage.description);
+
+            await discordMessage.edit({ embeds: [newEmbed] });
+
+            const successEmbed = new EmbedBuilder()
+                .setColor("#01fd3b")
+                .setTitle("✅ Embed actualizado");
+
+            return message.reply({ embeds: [successEmbed] });
+        } catch (error) {
+            console.error("[Autorol] Error:", error);
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("❌ Error al editar");
+            return message.reply({ embeds: [embed] });
+        }
     },
 
     async interactionRun({ interaction }) {
@@ -53,105 +101,58 @@ module.exports = {
             const messageId = interaction.options.getString("mensaje");
             const newTitle = interaction.options.getString("titulo");
             const newDescription = interaction.options.getString("descripcion");
-            const newColor = interaction.options.getString("color");
-            const newFooter = interaction.options.getString("pie");
 
-            // Validar que al menos un campo sea proporcionado
-            if (!newTitle && !newDescription && !newColor && !newFooter) {
+            if (!newTitle && !newDescription) {
                 const embed = new EmbedBuilder()
                     .setColor("#fd3b02")
-                    .setDescription("❌ Debes proporcionar al menos un campo para editar.");
+                    .setDescription("❌ Debes proporcionar al menos un campo");
                 return interaction.followUp({ embeds: [embed] });
             }
 
-            // Validar color si se proporciona
-            if (newColor && !isValidHexColor(newColor)) {
-                const embed = new EmbedBuilder()
-                    .setColor("#fd3b02")
-                    .setDescription("❌ El color debe ser un código hexadecimal válido (ej: #FF0000)");
-                return interaction.followUp({ embeds: [embed] });
-            }
-
-            // Obtener el mensaje de la BD
-            const messageData = await db.getMessageByMessageId(interaction.guild.id, messageId);
+            const messageData = await db.getMessageByMessageId(interaction.guildId, messageId);
             if (!messageData) {
                 const embed = new EmbedBuilder()
                     .setColor("#fd3b02")
-                    .setDescription("❌ No encontré ese mensaje. Verifica el ID.");
+                    .setDescription("❌ Mensaje no encontrado");
                 return interaction.followUp({ embeds: [embed] });
             }
 
-            // Verificar que el mensaje existe en Discord
             let discordMessage;
             try {
                 const channel = interaction.guild.channels.cache.get(messageData.channelId);
-                if (!channel) {
-                    await db.deleteMessage(interaction.guild.id, messageId);
-                    const embed = new EmbedBuilder()
-                        .setColor("#fd3b02")
-                        .setDescription("❌ El canal del mensaje fue eliminado.");
-                    return interaction.followUp({ embeds: [embed] });
-                }
-
                 discordMessage = await channel.messages.fetch(messageId);
             } catch (error) {
-                await db.deleteMessage(interaction.guild.id, messageId);
                 const embed = new EmbedBuilder()
                     .setColor("#fd3b02")
-                    .setDescription("❌ No pude encontrar el mensaje en Discord.");
+                    .setDescription("❌ Mensaje no encontrado");
                 return interaction.followUp({ embeds: [embed] });
             }
 
-            // Preparar actualizaciones
             const updates = {};
             if (newTitle) updates.title = newTitle;
             if (newDescription) updates.description = newDescription;
-            if (newColor) updates.color = newColor;
-            if (newFooter) updates.footer = newFooter;
 
-            // Actualizar en la BD
-            await db.updateMessage(interaction.guild.id, messageId, updates);
+            await db.updateMessage(interaction.guildId, messageId, updates);
 
-            // Crear nuevo embed
-            const updatedMessage = await db.getMessageByMessageId(interaction.guild.id, messageId);
+            const updatedMessage = await db.getMessageByMessageId(interaction.guildId, messageId);
             const newEmbed = new EmbedBuilder()
                 .setColor(updatedMessage.color)
                 .setTitle(updatedMessage.title)
                 .setDescription(updatedMessage.description);
 
-            if (updatedMessage.footer) {
-                newEmbed.setFooter({ text: updatedMessage.footer });
-            }
-
-            // Actualizar el mensaje en Discord
-            try {
-                await discordMessage.edit({
-                    embeds: [newEmbed],
-                });
-            } catch (editError) {
-                console.error("[Autorol] Error actualizando mensaje:", editError);
-                const embed = new EmbedBuilder()
-                    .setColor("#fd3b02")
-                    .setDescription("❌ Error al actualizar el embed en Discord.");
-                return interaction.followUp({ embeds: [embed] });
-            }
+            await discordMessage.edit({ embeds: [newEmbed] });
 
             const successEmbed = new EmbedBuilder()
                 .setColor("#01fd3b")
-                .setTitle("✅ Embed actualizado")
-                .setDescription("Se han guardado los cambios correctamente.");
+                .setTitle("✅ Embed actualizado");
 
             return interaction.followUp({ embeds: [successEmbed] });
         } catch (error) {
-            console.error("[Autorol] Error en interactionRun:", error);
+            console.error("[Autorol] Error:", error);
             const embed = new EmbedBuilder()
                 .setColor("#fd3b02")
-                .setDescription("❌ Ocurrió un error editando el embed");
+                .setDescription("❌ Error al editar");
             return interaction.followUp({ embeds: [embed] });
         }
     },
 };
-
-function isValidHexColor(color) {
-    return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color);
-}

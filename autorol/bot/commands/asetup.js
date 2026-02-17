@@ -1,4 +1,4 @@
-const { ApplicationCommandOptionType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const { ApplicationCommandOptionType, EmbedBuilder } = require("discord.js");
 const db = require("../../db.service");
 
 /**
@@ -9,7 +9,8 @@ module.exports = {
     description: "Crea un nuevo sistema de asignación automática de roles",
     userPermissions: ["ManageGuild"],
     command: {
-        enabled: false,
+        enabled: true,
+        minArgsCount: 2,
     },
     slashCommand: {
         enabled: true,
@@ -33,13 +34,52 @@ module.exports = {
                 type: ApplicationCommandOptionType.String,
                 required: false,
             },
-            {
-                name: "pie",
-                description: "Texto del pie de página",
-                type: ApplicationCommandOptionType.String,
-                required: false,
-            },
         ],
+    },
+
+    async messageRun({ message, args }) {
+        try {
+            const titulo = args[0];
+            const descripcion = args.slice(1).join(" ");
+
+            if (!titulo || !descripcion) {
+                const embed = new EmbedBuilder()
+                    .setColor("#fd3b02")
+                    .setDescription("❌ Debes proporcionar un título y una descripción");
+                return message.reply({ embeds: [embed] });
+            }
+
+            const color = "#2f3136";
+            const roleEmbed = new EmbedBuilder()
+                .setColor(color)
+                .setTitle(titulo)
+                .setDescription(descripcion);
+
+            const createdMessage = await message.channel.send({ embeds: [roleEmbed] });
+
+            await db.addMessage(message.guildId, {
+                messageId: createdMessage.id,
+                channelId: message.channelId,
+                title: titulo,
+                description: descripcion,
+                color: color,
+                footer: null,
+                buttons: [],
+            });
+
+            const successEmbed = new EmbedBuilder()
+                .setColor("#01fd3b")
+                .setTitle("✅ Sistema de roles creado")
+                .setDescription(`**ID del mensaje:** \`${createdMessage.id}\``);
+
+            return message.reply({ embeds: [successEmbed] });
+        } catch (error) {
+            console.error("[Autorol] Error en messageRun:", error);
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("❌ Ocurrió un error creando el sistema de roles");
+            return message.reply({ embeds: [embed] });
+        }
     },
 
     async interactionRun({ interaction }) {
@@ -47,48 +87,35 @@ module.exports = {
             const titulo = interaction.options.getString("titulo");
             const descripcion = interaction.options.getString("descripcion");
             const color = interaction.options.getString("color") || "#2f3136";
-            const pie = interaction.options.getString("pie") || null;
 
-            // Validar color
             if (!isValidHexColor(color)) {
                 const embed = new EmbedBuilder()
                     .setColor("#fd3b02")
-                    .setDescription("❌ El color debe ser un código hexadecimal válido (ej: #FF0000)");
+                    .setDescription("❌ Color hexadecimal inválido");
                 return interaction.followUp({ embeds: [embed] });
             }
 
-            // Crear embed base
             const roleEmbed = new EmbedBuilder()
                 .setColor(color)
                 .setTitle(titulo)
                 .setDescription(descripcion);
 
-            if (pie) {
-                roleEmbed.setFooter({ text: pie });
-            }
+            const createdMessage = await interaction.channel.send({ embeds: [roleEmbed] });
 
-            // Crear mensaje sin botones por ahora
-            const message = await interaction.channel.send({ embeds: [roleEmbed] });
-
-            // Guardar en la base de datos
-            await db.addMessage(interaction.guild.id, {
-                messageId: message.id,
+            await db.addMessage(interaction.guildId, {
+                messageId: createdMessage.id,
                 channelId: interaction.channel.id,
                 title: titulo,
                 description: descripcion,
                 color: color,
-                footer: pie,
+                footer: null,
                 buttons: [],
             });
 
             const successEmbed = new EmbedBuilder()
                 .setColor("#01fd3b")
                 .setTitle("✅ Sistema de roles creado")
-                .setDescription(
-                    `Se ha creado el sistema de asignación de roles en ${interaction.channel}\n\n` +
-                    `**ID del mensaje:** \`${message.id}\`\n\n` +
-                    `Usa \`/anadir\` para añadir botones de roles a este embed.`
-                );
+                .setDescription(`**ID del mensaje:** \`${createdMessage.id}\``);
 
             return interaction.followUp({ embeds: [successEmbed] });
         } catch (error) {

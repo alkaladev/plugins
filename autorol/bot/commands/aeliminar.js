@@ -9,7 +9,8 @@ module.exports = {
     description: "Elimina un sistema de autorol",
     userPermissions: ["ManageGuild"],
     command: {
-        enabled: false,
+        enabled: true,
+        minArgsCount: 1,
     },
     slashCommand: {
         enabled: true,
@@ -24,20 +25,67 @@ module.exports = {
         ],
     },
 
+    async messageRun({ message, args }) {
+        try {
+            const messageId = args[0];
+
+            if (!messageId) {
+                const embed = new EmbedBuilder()
+                    .setColor("#fd3b02")
+                    .setDescription("❌ Argumentos insuficientes");
+                return message.reply({ embeds: [embed] });
+            }
+
+            const messageData = await db.getMessageByMessageId(message.guildId, messageId);
+            if (!messageData) {
+                const embed = new EmbedBuilder()
+                    .setColor("#fd3b02")
+                    .setDescription("❌ Mensaje no encontrado");
+                return message.reply({ embeds: [embed] });
+            }
+
+            try {
+                const channel = message.guild.channels.cache.get(messageData.channelId);
+                if (channel) {
+                    try {
+                        const discordMessage = await channel.messages.fetch(messageId);
+                        await discordMessage.delete();
+                    } catch (fetchError) {
+                        // El mensaje ya no existe
+                    }
+                }
+            } catch (error) {
+                console.error("[Autorol] Error:", error);
+            }
+
+            await db.deleteMessage(message.guildId, messageId);
+
+            const successEmbed = new EmbedBuilder()
+                .setColor("#01fd3b")
+                .setTitle("✅ Sistema eliminado");
+
+            return message.reply({ embeds: [successEmbed] });
+        } catch (error) {
+            console.error("[Autorol] Error:", error);
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("❌ Error al eliminar");
+            return message.reply({ embeds: [embed] });
+        }
+    },
+
     async interactionRun({ interaction }) {
         try {
             const messageId = interaction.options.getString("mensaje");
 
-            // Obtener el mensaje de la BD
-            const messageData = await db.getMessageByMessageId(interaction.guild.id, messageId);
+            const messageData = await db.getMessageByMessageId(interaction.guildId, messageId);
             if (!messageData) {
                 const embed = new EmbedBuilder()
                     .setColor("#fd3b02")
-                    .setDescription("❌ No encontré ese mensaje. Verifica el ID.");
+                    .setDescription("❌ Mensaje no encontrado");
                 return interaction.followUp({ embeds: [embed] });
             }
 
-            // Verificar que el mensaje existe en Discord y eliminarlo
             try {
                 const channel = interaction.guild.channels.cache.get(messageData.channelId);
                 if (channel) {
@@ -45,27 +93,25 @@ module.exports = {
                         const discordMessage = await channel.messages.fetch(messageId);
                         await discordMessage.delete();
                     } catch (fetchError) {
-                        // El mensaje ya no existe, continuar con la eliminación de la BD
+                        // El mensaje ya no existe
                     }
                 }
             } catch (error) {
-                console.error("[Autorol] Error eliminando mensaje de Discord:", error);
+                console.error("[Autorol] Error:", error);
             }
 
-            // Eliminar de la BD
-            await db.deleteMessage(interaction.guild.id, messageId);
+            await db.deleteMessage(interaction.guildId, messageId);
 
             const successEmbed = new EmbedBuilder()
                 .setColor("#01fd3b")
-                .setTitle("✅ Sistema eliminado")
-                .setDescription("El sistema de autorol ha sido eliminado correctamente.");
+                .setTitle("✅ Sistema eliminado");
 
             return interaction.followUp({ embeds: [successEmbed] });
         } catch (error) {
-            console.error("[Autorol] Error en interactionRun:", error);
+            console.error("[Autorol] Error:", error);
             const embed = new EmbedBuilder()
                 .setColor("#fd3b02")
-                .setDescription("❌ Ocurrió un error eliminando el sistema de autorol");
+                .setDescription("❌ Error al eliminar");
             return interaction.followUp({ embeds: [embed] });
         }
     },

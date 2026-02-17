@@ -6,10 +6,11 @@ const db = require("../../db.service");
  */
 module.exports = {
     name: "remover",
-    description: "Remueve un botón de rol del sistema de autorol",
+    description: "Remueve un botón de rol",
     userPermissions: ["ManageGuild"],
     command: {
-        enabled: false,
+        enabled: true,
+        minArgsCount: 2,
     },
     slashCommand: {
         enabled: true,
@@ -30,94 +31,117 @@ module.exports = {
         ],
     },
 
+    async messageRun({ message, args }) {
+        try {
+            const messageId = args[0];
+            const roleId = args[1];
+
+            if (!messageId || !roleId) {
+                const embed = new EmbedBuilder()
+                    .setColor("#fd3b02")
+                    .setDescription("❌ Argumentos insuficientes");
+                return message.reply({ embeds: [embed] });
+            }
+
+            const messageData = await db.getMessageByMessageId(message.guildId, messageId);
+            if (!messageData) {
+                const embed = new EmbedBuilder()
+                    .setColor("#fd3b02")
+                    .setDescription("❌ Mensaje no encontrado");
+                return message.reply({ embeds: [embed] });
+            }
+
+            if (!messageData.buttons.some((b) => b.roleId === roleId)) {
+                const embed = new EmbedBuilder()
+                    .setColor("#fd3b02")
+                    .setDescription("❌ Este rol no tiene botón");
+                return message.reply({ embeds: [embed] });
+            }
+
+            let discordMessage;
+            try {
+                const channel = message.guild.channels.cache.get(messageData.channelId);
+                discordMessage = await channel.messages.fetch(messageId);
+            } catch (error) {
+                const embed = new EmbedBuilder()
+                    .setColor("#fd3b02")
+                    .setDescription("❌ Mensaje no encontrado");
+                return message.reply({ embeds: [embed] });
+            }
+
+            await db.removeButton(message.guildId, messageId, roleId);
+
+            const updatedMessage = await db.getMessageByMessageId(message.guildId, messageId);
+            const embeds = discordMessage.embeds;
+            const rows = buildButtonRows(updatedMessage.buttons);
+
+            await discordMessage.edit({ embeds: embeds, components: rows });
+
+            const successEmbed = new EmbedBuilder()
+                .setColor("#01fd3b")
+                .setTitle("✅ Botón removido")
+                .setDescription(`Botones: ${updatedMessage.buttons.length}/25`);
+
+            return message.reply({ embeds: [successEmbed] });
+        } catch (error) {
+            console.error("[Autorol] Error:", error);
+            const embed = new EmbedBuilder()
+                .setColor("#fd3b02")
+                .setDescription("❌ Error al remover botón");
+            return message.reply({ embeds: [embed] });
+        }
+    },
+
     async interactionRun({ interaction }) {
         try {
             const messageId = interaction.options.getString("mensaje");
             const role = interaction.options.getRole("rol");
 
-            // Obtener el mensaje de la BD
-            const messageData = await db.getMessageByMessageId(interaction.guild.id, messageId);
+            const messageData = await db.getMessageByMessageId(interaction.guildId, messageId);
             if (!messageData) {
                 const embed = new EmbedBuilder()
                     .setColor("#fd3b02")
-                    .setDescription("❌ No encontré ese mensaje. Verifica el ID.");
+                    .setDescription("❌ Mensaje no encontrado");
                 return interaction.followUp({ embeds: [embed] });
             }
 
-            // Verificar que el rol exista en el embed
             if (!messageData.buttons.some((b) => b.roleId === role.id)) {
                 const embed = new EmbedBuilder()
                     .setColor("#fd3b02")
-                    .setDescription("❌ Este rol no tiene un botón en este embed.");
+                    .setDescription("❌ Este rol no tiene botón");
                 return interaction.followUp({ embeds: [embed] });
             }
 
-            // Verificar que el mensaje existe en Discord
             let discordMessage;
             try {
                 const channel = interaction.guild.channels.cache.get(messageData.channelId);
-                if (!channel) {
-                    await db.deleteMessage(interaction.guild.id, messageId);
-                    const embed = new EmbedBuilder()
-                        .setColor("#fd3b02")
-                        .setDescription("❌ El canal del mensaje fue eliminado.");
-                    return interaction.followUp({ embeds: [embed] });
-                }
-
                 discordMessage = await channel.messages.fetch(messageId);
             } catch (error) {
-                await db.deleteMessage(interaction.guild.id, messageId);
                 const embed = new EmbedBuilder()
                     .setColor("#fd3b02")
-                    .setDescription("❌ No pude encontrar el mensaje en Discord.");
+                    .setDescription("❌ Mensaje no encontrado");
                 return interaction.followUp({ embeds: [embed] });
             }
 
-            // Remover botón de la BD
-            await db.removeButton(interaction.guild.id, messageId, role.id);
+            await db.removeButton(interaction.guildId, messageId, role.id);
 
-            // Obtener la información actualizada
-            const updatedMessage = await db.getMessageByMessageId(interaction.guild.id, messageId);
-
-            // Reconstruir el embed y los botones
+            const updatedMessage = await db.getMessageByMessageId(interaction.guildId, messageId);
             const embeds = discordMessage.embeds;
             const rows = buildButtonRows(updatedMessage.buttons);
 
-            // Actualizar el mensaje
-            try {
-                if (rows.length === 0) {
-                    await discordMessage.edit({
-                        embeds: embeds,
-                        components: [],
-                    });
-                } else {
-                    await discordMessage.edit({
-                        embeds: embeds,
-                        components: rows,
-                    });
-                }
-            } catch (editError) {
-                console.error("[Autorol] Error actualizando mensaje:", editError);
-                const embed = new EmbedBuilder()
-                    .setColor("#fd3b02")
-                    .setDescription("❌ Error al actualizar el embed en Discord.");
-                return interaction.followUp({ embeds: [embed] });
-            }
+            await discordMessage.edit({ embeds: embeds, components: rows });
 
             const successEmbed = new EmbedBuilder()
                 .setColor("#01fd3b")
                 .setTitle("✅ Botón removido")
-                .setDescription(
-                    `Se ha removido el rol ${role}\n\n` +
-                    `**Botones restantes:** ${updatedMessage.buttons.length}/25`
-                );
+                .setDescription(`Botones: ${updatedMessage.buttons.length}/25`);
 
             return interaction.followUp({ embeds: [successEmbed] });
         } catch (error) {
-            console.error("[Autorol] Error en interactionRun:", error);
+            console.error("[Autorol] Error:", error);
             const embed = new EmbedBuilder()
                 .setColor("#fd3b02")
-                .setDescription("❌ Ocurrió un error removiendo el botón");
+                .setDescription("❌ Error al remover botón");
             return interaction.followUp({ embeds: [embed] });
         }
     },
@@ -136,11 +160,7 @@ function buildButtonRows(buttons) {
         const buttonBuilder = new ButtonBuilder()
             .setCustomId(`autorol_${button.roleId}`)
             .setLabel(button.label)
-            .setStyle(getButtonStyle(button.style));
-
-        if (button.emoji) {
-            buttonBuilder.setEmoji(button.emoji);
-        }
+            .setStyle(ButtonStyle.Primary);
 
         currentRow.addComponents(buttonBuilder);
     });
@@ -150,14 +170,4 @@ function buildButtonRows(buttons) {
     }
 
     return rows;
-}
-
-function getButtonStyle(style) {
-    const styles = {
-        Primary: ButtonStyle.Primary,
-        Secondary: ButtonStyle.Secondary,
-        Success: ButtonStyle.Success,
-        Danger: ButtonStyle.Danger,
-    };
-    return styles[style] || ButtonStyle.Primary;
 }
