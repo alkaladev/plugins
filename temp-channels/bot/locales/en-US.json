@@ -1,26 +1,20 @@
 {
   "VSETUP": {
-    "NAME": "vsetup",
     "DESCRIPTION": "Configure a new temporary channel generator"
   },
   "VBORRAR": {
-    "NAME": "vborrar",
     "DESCRIPTION": "Delete a temporary channel generator"
   },
   "VEDITAR": {
-    "NAME": "veditar",
     "DESCRIPTION": "Edit the configuration of an existing generator"
   },
   "VLISTA": {
-    "NAME": "vlista",
     "DESCRIPTION": "Show the list of configured generators"
   },
   "VQUITAR": {
-    "NAME": "vquitar",
     "DESCRIPTION": "Manually delete a temporary channel"
   },
   "VSTATUS": {
-    "NAME": "vstatus",
     "DESCRIPTION": "Show the status of active temporary channels"
   }
 }
