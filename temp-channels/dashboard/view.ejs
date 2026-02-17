@@ -332,7 +332,7 @@
                     <template x-for="ch in channels" :key="ch.id">
                       <div @click="formData.sourceChannelId = ch.id; openChannelDropdown = false" 
                            class="group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-purple-500/10 transition-colors">
-                        <span class="text-gray-700 dark:text-gray-300 group-hover:text-purple-500" x-text="'🎤 ' + ch.name"></span>
+                        <span class="text-gray-700 dark:text-gray-300 group-hover:text-purple-500" x-text="ch.name"></span>
                         <i class="fa-solid fa-check text-[10px] text-purple-500" x-show="formData.sourceChannelId === ch.id"></i>
                       </div>
                     </template>
@@ -586,6 +586,22 @@
                 <div class="flex items-center gap-2 text-sm">
                   <i class="fa-solid fa-user text-gray-400 w-4"></i>
                   <span class="text-gray-700 dark:text-gray-300"><strong>Creado por:</strong> <span x-text="ch.createdByName || ch.createdBy"></span></span>
+                </div>
+
+                <div x-show="ch.connectedMembers && ch.connectedMembers.length > 0" class="flex items-start gap-2 text-sm mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                  <i class="fa-solid fa-users text-gray-400 w-4 mt-1"></i>
+                  <div class="flex-1">
+                    <p class="text-gray-700 dark:text-gray-300 mb-2"><strong>Usuarios conectados (<span x-text="ch.memberCount || 0"></span>):</strong></p>
+                    <div class="flex flex-wrap gap-2">
+                      <template x-for="member in (ch.connectedMembers || [])" :key="member.id">
+                        <div class="flex items-center gap-1.5 bg-purple-500/10 dark:bg-purple-500/20 px-2.5 py-1 rounded-full text-xs">
+                          <img :src="'https://cdn.discordapp.com/avatars/' + member.id + '/' + member.avatar + '.png?size=32'" :alt="member.username" class="h-4 w-4 rounded-full">
+                          <span class="text-purple-700 dark:text-purple-300" x-text="member.username"></span>
+                          <i x-show="member.isBot" class="fa-solid fa-robot text-purple-500 text-[8px]"></i>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

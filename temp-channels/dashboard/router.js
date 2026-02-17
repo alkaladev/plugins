@@ -20,7 +20,6 @@ router.use((req, res, next) => {
 router.get("/", async (req, res) => {
     try {
         const guildId = res.locals.guildId;
-        console.log("[TempChannels] GET / - GuildId:", guildId);
         
         if (!guildId) {
             return res.status(400).send("GuildId not found");
@@ -33,7 +32,6 @@ router.get("/", async (req, res) => {
 
         // El broadcast devuelve { success: true, data: [...] }
         const channels = (channelsResponse && channelsResponse.data) || [];
-        console.log("[TempChannels] Canales recibidos:", channels.length);
         
         // Filtrar canales en el servidor
         let voiceChannels = [];
@@ -42,8 +40,6 @@ router.get("/", async (req, res) => {
         if (Array.isArray(channels)) {
             voiceChannels = channels.filter(c => c.type === 2);
             categories = channels.filter(c => c.type === 4);
-            console.log("[TempChannels] Canales de voz encontrados:", voiceChannels.length);
-            console.log("[TempChannels] Categorías encontradas:", categories.length);
         }
 
         res.render(path.join(__dirname, "view.ejs"), {
@@ -110,16 +106,38 @@ router.get("/api/active", async (req, res) => {
         
         // Obtener información del cliente para resolver nombres de usuario
         const client = req.app.get('client');
-        if (client) {
-            // Resolver los nombres de usuario
+        const guild = client.guilds.cache.get(guildId);
+        
+        if (client && guild) {
+            // Resolver los nombres de usuario y obtener miembros conectados
             for (let i = 0; i < activeChannels.length; i++) {
                 try {
+                    // Obtener nombre del creador
                     const user = await client.users.fetch(activeChannels[i].createdBy);
                     activeChannels[i].createdByName = user.username;
-                    console.log("[TempChannels] Usuario resuelto:", activeChannels[i].createdBy, "=>", user.username);
+                    activeChannels[i].createdByAvatar = user.avatar;
+                    
+                    // Obtener miembros conectados al canal
+                    const channel = guild.channels.cache.get(activeChannels[i].channelId);
+                    if (channel && channel.isVoiceBased()) {
+                        const members = Array.from(channel.members.values()).map(member => ({
+                            id: member.id,
+                            username: member.user.username,
+                            avatar: member.user.avatar,
+                            isBot: member.user.bot,
+                        }));
+                        activeChannels[i].connectedMembers = members;
+                        activeChannels[i].memberCount = members.length;
+                    } else {
+                        activeChannels[i].connectedMembers = [];
+                        activeChannels[i].memberCount = 0;
+                    }
+                    
                 } catch (e) {
-                    console.error("[TempChannels] Error resolviendo usuario:", activeChannels[i].createdBy, e.message);
                     activeChannels[i].createdByName = "Usuario desconocido";
+                    activeChannels[i].createdByAvatar = null;
+                    activeChannels[i].connectedMembers = [];
+                    activeChannels[i].memberCount = 0;
                 }
             }
         }
