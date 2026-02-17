@@ -1,8 +1,7 @@
 <%- contentFor("Autorol") %>
 <section
   x-data="{
-    messages: <%= messages ? JSON.stringify(messages) : '[]' %>,
-    channels: <%= channels ? JSON.stringify(channels) : '[]' %>,
+    messages: <%= JSON.stringify(messages || []) %>,
     formData: {
       titulo: '',
       descripcion: '',
@@ -12,25 +11,28 @@
     async submitForm() {
       this.saving = true;
       try {
-        const response = await fetch(window.location.href, {
-          method: 'PUT',
+        const response = await fetch('./api/messages', {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            ...this.formData,
-            action: 'create_message'
-          })
+          body: JSON.stringify(this.formData)
         });
-        if (!response.ok) throw new Error('Failed to create');
-        Alpine.store('toast').show('<%=tr(`SETTINGS_SAVE`)%>', 'success');
+        if (!response.ok) throw new Error('Failed');
+        Alpine.store('toast').show('✅ Sistema creado', 'success');
         this.formData = { titulo: '', descripcion: '', color: '#5865F2' };
         location.reload();
       } catch (error) {
-        Alpine.store('toast').show('<%=tr(`SETTINGS_SAVE_ERROR`)%>', 'error');
+        Alpine.store('toast').show('❌ Error al crear', 'error');
       } finally {
         this.saving = false;
       }
+    },
+    deleteMsg(messageId) {
+      if(!confirm('¿Eliminar este sistema?')) return;
+      fetch('./api/messages/' + messageId, { method: 'DELETE' })
+        .then(() => location.reload())
+        .catch(err => Alpine.store('toast').show('❌ Error al eliminar', 'error'));
     }
   }"
   class="border-border bg-bg-panel rounded-lg border p-4 shadow-sm">
@@ -71,7 +73,6 @@
         pattern="^#[A-Fa-f0-9]{6}$" />
     </div>
 
-    <!-- Spacer -->
     <div></div>
   </div>
 
@@ -94,27 +95,19 @@
     <div class="mb-2">
       <label class="text-text text-sm font-semibold">📋 Vista previa</label>
     </div>
-    <div class="bg-bg-interactive border-border border rounded-lg p-0 overflow-hidden">
-      <!-- Discord Embed Style -->
-      <div class="p-4" style="background-color: #2C2F33;">
-        <!-- Empty state -->
-        <template x-if="!formData.titulo && !formData.descripcion">
-          <div class="text-text-muted text-sm text-center py-12">
-            Rellena los campos para ver una vista previa
-          </div>
-        </template>
+    <div class="bg-bg-interactive border-border border rounded-lg p-4" style="background-color: #36393F;">
+      <template x-if="!formData.titulo && !formData.descripcion">
+        <div class="text-text-muted text-sm text-center py-8">
+          Rellena los campos para ver una vista previa
+        </div>
+      </template>
 
-        <!-- Embed preview -->
-        <template x-if="formData.titulo || formData.descripcion">
-          <div class="embed-preview" style="border-left: 4px solid; border-left-color: var(--embed-color, #5865F2); padding-left: 12px;">
-            <!-- Embed Title -->
-            <div x-show="formData.titulo" x-text="formData.titulo" class="text-text font-semibold text-sm mb-2" :style="{ color: formData.color }"></div>
-            
-            <!-- Embed Description -->
-            <div x-show="formData.descripcion" x-text="formData.descripcion" class="text-text-muted text-sm whitespace-pre-wrap leading-5"></div>
-          </div>
-        </template>
-      </div>
+      <template x-if="formData.titulo || formData.descripcion">
+        <div style="border-left: 4px solid; border-left-color: var(--preview-color, #5865F2); padding-left: 12px;">
+          <div x-show="formData.titulo" x-text="formData.titulo" class="text-white font-semibold text-sm mb-2" :style="{ color: formData.color }"></div>
+          <div x-show="formData.descripcion" x-text="formData.descripcion" class="text-gray-300 text-sm whitespace-pre-wrap leading-5"></div>
+        </div>
+      </template>
     </div>
   </div>
 
@@ -137,7 +130,7 @@
                 </div>
               </div>
               <button
-                @click="if(confirm('¿Eliminar este sistema?')) fetch(window.location.href, { method: 'DELETE', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({messageId: msg.messageId, action: 'delete_message'}) }).then(() => location.reload())"
+                @click="deleteMsg(msg.messageId)"
                 class="bg-error hover:bg-error-dark text-white px-3 py-1 rounded text-sm font-medium ml-2 flex-shrink-0">
                 Eliminar
               </button>
