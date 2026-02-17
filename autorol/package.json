@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "description": "Plugin para asignación automática de roles mediante botones",
     "main": "index.js",
-    "author": "Jorge",
+    "author": "",
     "license": "ISC",
     "dependencies": {},
     "peerDependencies": {
