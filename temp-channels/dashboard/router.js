@@ -20,7 +20,7 @@ router.use((req, res, next) => {
 router.get("/", async (req, res) => {
     try {
         const guildId = res.locals.guildId;
-        ///console.log("[TempChannels] GET / - GuildId:", guildId);
+        console.log("[TempChannels] GET / - GuildId:", guildId);
         
         if (!guildId) {
             return res.status(400).send("GuildId not found");
@@ -33,7 +33,7 @@ router.get("/", async (req, res) => {
 
         // El broadcast devuelve { success: true, data: [...] }
         const channels = (channelsResponse && channelsResponse.data) || [];
-        ///console.log("[TempChannels] Canales recibidos:", channels.length);
+        console.log("[TempChannels] Canales recibidos:", channels.length);
         
         // Filtrar canales en el servidor
         let voiceChannels = [];
@@ -42,8 +42,8 @@ router.get("/", async (req, res) => {
         if (Array.isArray(channels)) {
             voiceChannels = channels.filter(c => c.type === 2);
             categories = channels.filter(c => c.type === 4);
-            ///console.log("[TempChannels] Canales de voz encontrados:", voiceChannels.length);
-            ///console.log("[TempChannels] Categorías encontradas:", categories.length);
+            console.log("[TempChannels] Canales de voz encontrados:", voiceChannels.length);
+            console.log("[TempChannels] Categorías encontradas:", categories.length);
         }
 
         res.render(path.join(__dirname, "view.ejs"), {
@@ -271,6 +271,42 @@ router.delete("/api/channel/:id", async (req, res) => {
     } catch (error) {
         console.error("[TempChannels Router] Error eliminando canal:", error);
         res.status(500).json({ error: "Error eliminando canal" });
+    }
+});
+
+// GET /api/logs - Obtener logs
+router.get("/api/logs", async (req, res) => {
+    try {
+        const guildId = res.locals.guildId;
+        const limit = parseInt(req.query.limit) || 50;
+
+        if (!guildId) {
+            return res.status(400).json({ error: "GuildId not found" });
+        }
+
+        const logs = await db.getLogs(guildId, limit);
+        res.json(logs);
+    } catch (error) {
+        console.error("[TempChannels Router] Error obteniendo logs:", error);
+        res.status(500).json({ error: "Error obteniendo logs" });
+    }
+});
+
+// GET /api/deleted - Obtener historial de canales eliminados
+router.get("/api/deleted", async (req, res) => {
+    try {
+        const guildId = res.locals.guildId;
+        const limit = parseInt(req.query.limit) || 50;
+
+        if (!guildId) {
+            return res.status(400).json({ error: "GuildId not found" });
+        }
+
+        const deleted = await db.getDeletedChannels(guildId, limit);
+        res.json(deleted);
+    } catch (error) {
+        console.error("[TempChannels Router] Error obteniendo historial:", error);
+        res.status(500).json({ error: "Error obteniendo historial" });
     }
 });
 

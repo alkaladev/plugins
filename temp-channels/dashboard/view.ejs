@@ -332,7 +332,7 @@
                     <template x-for="ch in channels" :key="ch.id">
                       <div @click="formData.sourceChannelId = ch.id; openChannelDropdown = false" 
                            class="group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-purple-500/10 transition-colors">
-                        <span class="text-gray-700 dark:text-gray-300 group-hover:text-purple-500" x-text="ch.name"></span>
+                        <span class="text-gray-700 dark:text-gray-300 group-hover:text-purple-500" x-text="'🎤 ' + ch.name"></span>
                         <i class="fa-solid fa-check text-[10px] text-purple-500" x-show="formData.sourceChannelId === ch.id"></i>
                       </div>
                     </template>
