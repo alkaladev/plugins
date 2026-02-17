@@ -1,20 +1,22 @@
 {
-  "VSETUP": {
-    "DESCRIPTION": "Configure a new temporary channel generator"
-  },
-  "VBORRAR": {
-    "DESCRIPTION": "Delete a temporary channel generator"
-  },
-  "VEDITAR": {
-    "DESCRIPTION": "Edit the configuration of an existing generator"
-  },
-  "VLISTA": {
-    "DESCRIPTION": "Show the list of configured generators"
-  },
-  "VQUITAR": {
-    "DESCRIPTION": "Manually delete a temporary channel"
-  },
-  "VSTATUS": {
-    "DESCRIPTION": "Show the status of active temporary channels"
+  "tempchannels": {
+    "VSETUP": {
+      "DESCRIPTION": "Configure a new temporary channel generator"
+    },
+    "VBORRAR": {
+      "DESCRIPTION": "Delete a temporary channel generator"
+    },
+    "VEDITAR": {
+      "DESCRIPTION": "Edit the configuration of an existing generator"
+    },
+    "VLISTA": {
+      "DESCRIPTION": "Show the list of configured generators"
+    },
+    "VQUITAR": {
+      "DESCRIPTION": "Manually delete a temporary channel"
+    },
+    "VSTATUS": {
+      "DESCRIPTION": "Show the status of active temporary channels"
+    }
   }
 }

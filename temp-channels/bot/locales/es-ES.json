@@ -1,20 +1,22 @@
 {
-  "VSETUP": {
-    "DESCRIPTION": "Configura un nuevo generador de canales temporales"
-  },
-  "VBORRAR": {
-    "DESCRIPTION": "Elimina un generador de canales temporales"
-  },
-  "VEDITAR": {
-    "DESCRIPTION": "Edita la configuración de un generador existente"
-  },
-  "VLISTA": {
-    "DESCRIPTION": "Muestra la lista de generadores configurados"
-  },
-  "VQUITAR": {
-    "DESCRIPTION": "Elimina un canal temporal manualmente"
-  },
-  "VSTATUS": {
-    "DESCRIPTION": "Muestra el estado de los canales temporales activos"
+  "tempchannels": {
+    "VSETUP": {
+      "DESCRIPTION": "Configura un nuevo generador de canales temporales"
+    },
+    "VBORRAR": {
+      "DESCRIPTION": "Elimina un generador de canales temporales"
+    },
+    "VEDITAR": {
+      "DESCRIPTION": "Edita la configuración de un generador existente"
+    },
+    "VLISTA": {
+      "DESCRIPTION": "Muestra la lista de generadores configurados"
+    },
+    "VQUITAR": {
+      "DESCRIPTION": "Elimina un canal temporal manualmente"
+    },
+    "VSTATUS": {
+      "DESCRIPTION": "Muestra el estado de los canales temporales activos"
+    }
   }
 }
