@@ -106,39 +106,57 @@ router.get("/api/active", async (req, res) => {
         
         // Obtener información del cliente para resolver nombres de usuario
         const client = req.app.get('client');
-        const guild = client.guilds.cache.get(guildId);
         
-        if (client && guild) {
-            // Resolver los nombres de usuario y obtener miembros conectados
-            for (let i = 0; i < activeChannels.length; i++) {
-                try {
-                    // Obtener nombre del creador
-                    const user = await client.users.fetch(activeChannels[i].createdBy);
-                    activeChannels[i].createdByName = user.username;
-                    activeChannels[i].createdByAvatar = user.avatar;
-                    
-                    // Obtener miembros conectados al canal
-                    const channel = guild.channels.cache.get(activeChannels[i].channelId);
-                    if (channel && channel.isVoiceBased()) {
-                        const members = Array.from(channel.members.values()).map(member => ({
-                            id: member.id,
-                            username: member.user.username,
-                            avatar: member.user.avatar,
-                            isBot: member.user.bot,
-                        }));
-                        activeChannels[i].connectedMembers = members;
-                        activeChannels[i].memberCount = members.length;
-                    } else {
+        if (client) {
+            const guild = client.guilds?.cache?.get(guildId);
+            
+            if (guild) {
+                // Resolver los nombres de usuario y obtener miembros conectados
+                for (let i = 0; i < activeChannels.length; i++) {
+                    try {
+                        // Obtener nombre del creador
+                        const user = await client.users.fetch(activeChannels[i].createdBy);
+                        activeChannels[i].createdByName = user.username;
+                        activeChannels[i].createdByAvatar = user.avatar;
+                        
+                        // Obtener miembros conectados al canal
+                        const channel = guild.channels.cache.get(activeChannels[i].channelId);
+                        if (channel && channel.isVoiceBased?.()) {
+                            const members = Array.from(channel.members.values()).map(member => ({
+                                id: member.id,
+                                username: member.user.username,
+                                avatar: member.user.avatar,
+                                isBot: member.user.bot,
+                            }));
+                            activeChannels[i].connectedMembers = members;
+                            activeChannels[i].memberCount = members.length;
+                        } else {
+                            activeChannels[i].connectedMembers = [];
+                            activeChannels[i].memberCount = 0;
+                        }
+                    } catch (e) {
+                        activeChannels[i].createdByName = "Usuario desconocido";
+                        activeChannels[i].createdByAvatar = null;
                         activeChannels[i].connectedMembers = [];
                         activeChannels[i].memberCount = 0;
                     }
-                    
-                } catch (e) {
-                    activeChannels[i].createdByName = "Usuario desconocido";
+                }
+            } else {
+                // Si no se puede obtener el gremio, llenar con datos por defecto
+                for (let i = 0; i < activeChannels.length; i++) {
+                    activeChannels[i].createdByName = activeChannels[i].createdBy;
                     activeChannels[i].createdByAvatar = null;
                     activeChannels[i].connectedMembers = [];
                     activeChannels[i].memberCount = 0;
                 }
+            }
+        } else {
+            // Si no hay cliente disponible, llenar con IDs
+            for (let i = 0; i < activeChannels.length; i++) {
+                activeChannels[i].createdByName = activeChannels[i].createdBy;
+                activeChannels[i].createdByAvatar = null;
+                activeChannels[i].connectedMembers = [];
+                activeChannels[i].memberCount = 0;
             }
         }
         
