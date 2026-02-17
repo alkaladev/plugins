@@ -5,6 +5,9 @@ module.exports = new BotPlugin({
     dependencies: [],
     baseDir: __dirname,
     icon: "fa-solid fa-crown",
+    options: {
+        description: "Crea embeds con botones para que los usuarios obtengan roles automáticamente."
+    },
     dbService: require("../db.service"),
 
     onEnable: (client) => {
