@@ -6,7 +6,7 @@ const db = require("../../db.service");
  */
 module.exports = {
     name: "veditar",
-    description: "VEDITAR.DESCRIPTION",
+    description: "Edita la configuración de un generador existente",
     userPermissions: ["ManageGuild"],
     command: {
         enabled: true,

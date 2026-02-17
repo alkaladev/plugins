@@ -6,7 +6,7 @@ const db = require("../../db.service");
  */
 module.exports = {
     name: "vsetup",
-    description: "VSETUP.DESCRIPTION",
+    description: "Configura un nuevo generador de canales temporales",
     userPermissions: ["ManageGuild"],
     command: {
         enabled: true,

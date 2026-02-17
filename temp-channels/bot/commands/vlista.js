@@ -6,7 +6,7 @@ const db = require("../../db.service");
  */
 module.exports = {
     name: "vlista",
-    description: "VLISTA.DESCRIPTION",
+    description: "Muestra la lista de generadores configurados",
     userPermissions: ["ManageGuild"],
     command: {
         enabled: true,
