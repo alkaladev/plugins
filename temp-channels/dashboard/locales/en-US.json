@@ -1,0 +1,8 @@
+{
+    "PLUGIN": {
+    "NAME": "Canales Temporales"
+  },
+    "NAME": "Canales Temporales",
+    "TITLE": "Canales de Voz Temporales",
+    "DESCRIPTION": "Crea canales de forma automática con generadores. Conéctate a un canal y Akira creará uno nuevo y te moverá."
+}
