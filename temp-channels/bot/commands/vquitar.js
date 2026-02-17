@@ -6,7 +6,7 @@ const db = require("../../db.service");
  */
 module.exports = {
     name: "vquitar",
-    description: "Elimina un canal temporal manualmente",
+    description: "elimina un canal temporal manualmente",
     userPermissions: ["ManageGuild"],
     command: {
         enabled: true,

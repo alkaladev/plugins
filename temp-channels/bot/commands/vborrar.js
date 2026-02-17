@@ -7,7 +7,7 @@ const { Logger } = require("strange-sdk/utils");
  */
 module.exports = {
     name: "vborrar",
-    description: "Elimina un generador de canales temporales",
+    description: "elimina un generador de canales temporales",
     userPermissions: ["ManageGuild"],
     command: {
         enabled: true,

@@ -6,7 +6,7 @@ const db = require("../../db.service");
  */
 module.exports = {
     name: "vstatus",
-    description: "Muestra el estado de los canales temporales activos",
+    description: "vuestra el estado de los canales temporales activos",
     userPermissions: ["ManageGuild"],
     command: {
         enabled: true,
