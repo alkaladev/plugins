@@ -4,6 +4,7 @@ const { Logger } = require("strange-sdk/utils");
 module.exports = new BotPlugin({
     dependencies: [],
     baseDir: __dirname,
+    icon: "fa-solid fa-crown",
     dbService: require("../db.service"),
 
     onEnable: (client) => {
