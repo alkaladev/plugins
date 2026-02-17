@@ -7,7 +7,7 @@ const { Logger } = require("strange-sdk/utils");
  */
 module.exports = {
     name: "vborrar",
-    description: "tempchannels:VBORRAR.DESCRIPTION",
+    description: "VBORRAR.DESCRIPTION",
     userPermissions: ["ManageGuild"],
     command: {
         enabled: true,

@@ -6,7 +6,7 @@ const db = require("../../db.service");
  */
 module.exports = {
     name: "vlista",
-    description: "tempchannels:VLISTA.DESCRIPTION",
+    description: "VLISTA.DESCRIPTION",
     userPermissions: ["ManageGuild"],
     command: {
         enabled: true,

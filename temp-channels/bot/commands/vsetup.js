@@ -6,7 +6,7 @@ const db = require("../../db.service");
  */
 module.exports = {
     name: "vsetup",
-    description: "tempchannels:VSETUP.DESCRIPTION",
+    description: "VSETUP.DESCRIPTION",
     userPermissions: ["ManageGuild"],
     command: {
         enabled: true,

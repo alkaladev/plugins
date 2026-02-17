@@ -6,7 +6,7 @@ const db = require("../../db.service");
  */
 module.exports = {
     name: "veditar",
-    description: "tempchannels:VEDITAR.DESCRIPTION",
+    description: "VEDITAR.DESCRIPTION",
     userPermissions: ["ManageGuild"],
     command: {
         enabled: true,

@@ -6,7 +6,7 @@ const db = require("../../db.service");
  */
 module.exports = {
     name: "vstatus",
-    description: "tempchannels:VSTATUS.DESCRIPTION",
+    description: "VSTATUS.DESCRIPTION",
     userPermissions: ["ManageGuild"],
     command: {
         enabled: true,

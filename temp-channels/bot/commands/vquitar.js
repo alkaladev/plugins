@@ -6,7 +6,7 @@ const db = require("../../db.service");
  */
 module.exports = {
     name: "vquitar",
-    description: "tempchannels:VQUITAR.DESCRIPTION",
+    description: "VQUITAR.DESCRIPTION",
     userPermissions: ["ManageGuild"],
     command: {
         enabled: true,
