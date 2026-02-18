@@ -3,6 +3,7 @@ const dashboardRouter = require("./router");
 
 module.exports = new DashboardPlugin({
     icon: "fa-solid fa-microphone",
+    desription: "Crea embeds con botones para que los usuarios obtengan roles automáticamente",
     baseDir: __dirname,
     dashboardRouter: dashboardRouter,
     dbService: require("../db.service"),
