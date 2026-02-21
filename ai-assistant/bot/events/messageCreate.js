@@ -1,17 +1,17 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const db = require("../../db.service");
 
 module.exports = async (client, message) => {
     if (message.author.bot || !message.guild) return;
+    if (!client.aiDb) return;
 
-    // Obtener configuración global (API key) y ajustes del servidor
+    // Leer config y settings desde el client (inicializado en onEnable)
     const [globalConfig, settings] = await Promise.all([
-        db.getGlobalConfig(),
-        db.getSettings(message.guild.id),
+        client.aiDb.getGlobalConfig(),
+        client.aiDb.getSettings(message.guild.id),
     ]);
 
-    if (!globalConfig.api_key) return;
-    if (!settings.enabled) return;
+    if (!globalConfig?.api_key) return;
+    if (!settings?.enabled) return;
 
     const isMentioned = message.mentions.has(client.user);
     const isAiChannel = settings.ai_channel && settings.ai_channel === message.channel.id;
