@@ -1,0 +1,20 @@
+<section x-data="{ formData: { ai_channel: '<%= settings.ai_channel %>', enabled: <%= settings.enabled %> }, ... }">
+  <h3 class="text-xl font-bold text-white mb-6">Ajustes del Chatbot IA</h3>
+  
+  <div class="space-y-6">
+    <div class="flex items-center justify-between">
+       <span>Activar IA en este servidor</span>
+       <input type="checkbox" x-model="formData.enabled">
+    </div>
+
+    <div>
+      <label class="block text-sm text-gray-400 mb-2">Canal de Chat con IA</label>
+      <select x-model="formData.ai_channel" class="w-full bg-white/5 border-white/10 rounded-xl p-2.5 text-white">
+        <option value="">Selecciona un canal...</option>
+        <% channels.forEach(ch => { %>
+          <option value="<%= ch.id %>" <%= settings.ai_channel === ch.id ? 'selected' : '' %>><%= ch.name %></option>
+        <% }) %>
+      </select>
+    </div>
+  </div>
+</section>

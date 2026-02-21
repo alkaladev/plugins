@@ -1,0 +1,10 @@
+<section x-data="{ formData: { gemini_api_key: '<%= config.GEMINI_API_KEY %>' }, saving: false, async submitForm() { ... } }" class="...">
+  <h3 class="text-xl font-bold text-white mb-6">Configuración Global de Gemini</h3>
+  <form @submit.prevent="submitForm">
+    <div class="space-y-4">
+      <label class="block text-sm font-medium text-gray-400">Google AI Studio API Key</label>
+      <input type="password" x-model="formData.gemini_api_key" class="w-full rounded-xl bg-white/5 border border-white/10 p-2.5 text-white" placeholder="AIzaSy...">
+    </div>
+    <button type="submit" class="...">Guardar Cambios</button>
+  </form>
+</section>
