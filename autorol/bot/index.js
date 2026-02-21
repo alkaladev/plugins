@@ -1,30 +1,27 @@
 const { BotPlugin } = require("strange-sdk");
 const { Logger } = require("strange-sdk/utils");
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 
-module.exports = new BotPlugin({
+const BUTTON_STYLES = {
+    Primary: ButtonStyle.Primary,
+    Secondary: ButtonStyle.Secondary,
+    Success: ButtonStyle.Success,
+    Danger: ButtonStyle.Danger,
+};
+
+const plugin = new BotPlugin({
     dependencies: [],
     baseDir: __dirname,
-    icon: "fa-solid fa-crown",
-    options: {
-        description: "Crea embeds con botones para que los usuarios obtengan roles automáticamente."
-    },
     dbService: require("../db.service"),
 
     onEnable: (client) => {
         Logger.success("[Autorol] Cargando plugin...");
 
-        const dbService = require("../db.service");
-
-        // Evento para interactuar con los botones de roles
         client.on("interactionCreate", async (interaction) => {
             try {
-                // Solo procesar button interactions
                 if (!interaction.isButton()) return;
-
-                // Verificar si el botón es del autorol
                 if (!interaction.customId.startsWith("autorol_")) return;
 
-                // Extraer información del customId
                 const parts = interaction.customId.split("_");
                 const roleId = parts[1];
 
@@ -35,15 +32,12 @@ module.exports = new BotPlugin({
 
                 const role = interaction.guild.roles.cache.get(roleId);
                 if (!role) {
-                    await interaction.reply({
-                        content: "❌ El rol no existe o fue eliminado.",
-                        ephemeral: true,
-                    });
+                    await interaction.reply({ content: "❌ El rol no existe o fue eliminado.", ephemeral: true });
                     return;
                 }
 
                 const member = interaction.member;
-                let action = "add"; // add o remove
+                let action = "add";
 
                 if (member.roles.cache.has(roleId)) {
                     action = "remove";
@@ -60,24 +54,91 @@ module.exports = new BotPlugin({
                     ephemeral: true,
                 });
 
-                Logger.success(
-                    `[Autorol] Rol ${action === "add" ? "asignado" : "removido"}: ${role.name} a ${member.user.tag}`
-                );
+                Logger.success(`[Autorol] Rol ${action === "add" ? "asignado" : "removido"}: ${role.name} a ${member.user.tag}`);
             } catch (error) {
                 Logger.error("[Autorol] Error en interactionCreate:", error);
-                console.error("[Autorol] Detalles del error:", error.message);
-
                 try {
-                    await interaction.reply({
-                        content: "❌ Ocurrió un error al procesar tu solicitud.",
-                        ephemeral: true,
-                    });
-                } catch (replyError) {
-                    console.error("[Autorol] Error en reply:", replyError.message);
-                }
+                    await interaction.reply({ content: "❌ Ocurrió un error al procesar tu solicitud.", ephemeral: true });
+                } catch (_) {}
             }
         });
 
         Logger.success("[Autorol] Plugin cargado correctamente");
     },
 });
+
+// Definir ipcEvents en el objeto del plugin directamente (antes de exportar)
+// IPCClient lo llama como: handler(payload, this.discordClient)
+plugin.ipcEvents = new Map();
+
+plugin.ipcEvents.set("sendAutorolMessage", async (payload, discordClient) => {
+    console.log("[Autorol DEBUG BOT] Handler ejecutado");
+    console.log("[Autorol DEBUG BOT] typeof payload:", typeof payload);
+    console.log("[Autorol DEBUG BOT] payload completo:", JSON.stringify(payload, null, 2));
+    console.log("[Autorol DEBUG BOT] typeof discordClient:", typeof discordClient);
+    console.log("[Autorol DEBUG BOT] discordClient?.user?.tag:", discordClient?.user?.tag);
+
+    const { guildId, messageData } = payload;
+
+    console.log("[Autorol DEBUG BOT] guildId:", guildId);
+    console.log("[Autorol DEBUG BOT] messageData:", JSON.stringify(messageData, null, 2));
+    console.log("[Autorol DEBUG BOT] messageData?.channelId:", messageData?.channelId);
+
+    if (!messageData) throw new Error("messageData es undefined en el payload IPC");
+    if (!messageData.channelId) throw new Error("channelId no existe en messageData");
+
+    // Obtener canal directamente (evita problemas de caché de guilds/channels)
+    const channel = await discordClient.channels.fetch(messageData.channelId).catch((e) => {
+        console.log("[Autorol DEBUG BOT] Error fetching canal:", e.message);
+        return null;
+    });
+    console.log("[Autorol DEBUG BOT] channel:", channel?.name, channel?.id);
+    if (!channel) throw new Error("Canal no encontrado (ID: " + messageData.channelId + ")");
+
+    const embed = new EmbedBuilder();
+    if (messageData.title)       embed.setTitle(messageData.title);
+    if (messageData.description) embed.setDescription(messageData.description);
+    if (messageData.color && /^#[0-9A-F]{6}$/i.test(messageData.color)) {
+        embed.setColor(messageData.color);
+    } else {
+        embed.setColor("#5865F2");
+    }
+    if (messageData.image)     embed.setImage(messageData.image);
+    if (messageData.thumbnail) embed.setThumbnail(messageData.thumbnail);
+    if (messageData.timestamp) embed.setTimestamp();
+    if (messageData.footer?.text) {
+        embed.setFooter({ text: messageData.footer.text, iconURL: messageData.footer.iconURL || undefined });
+    }
+    if (messageData.author?.name) {
+        embed.setAuthor({ name: messageData.author.name, iconURL: messageData.author.iconURL || undefined });
+    }
+    if (Array.isArray(messageData.fields) && messageData.fields.length > 0) {
+        embed.addFields(messageData.fields.map(f => ({ name: f.name, value: f.value, inline: !!f.inline })));
+    }
+
+    const components = [];
+    const buttons = messageData.buttons || [];
+    for (let i = 0; i < buttons.length; i += 5) {
+        const row = new ActionRowBuilder();
+        buttons.slice(i, i + 5).forEach(btn => {
+            const button = new ButtonBuilder()
+                .setCustomId(`autorol_${btn.roleId}`)
+                .setLabel(btn.label)
+                .setStyle(BUTTON_STYLES[btn.style] || ButtonStyle.Primary);
+            if (btn.emoji) button.setEmoji(btn.emoji);
+            row.addComponents(button);
+        });
+        components.push(row);
+    }
+
+    const sent = await channel.send({
+        content: messageData.content || undefined,
+        embeds: [embed],
+        components,
+    });
+
+    Logger.success(`[Autorol] Embed enviado en #${channel.name} (ID: ${sent.id})`);
+    return { discordMessageId: sent.id };
+});
+
+module.exports = plugin;

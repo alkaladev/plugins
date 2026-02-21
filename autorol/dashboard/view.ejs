@@ -1,139 +1,480 @@
-<%- contentFor("Autorol") %>
+<%- contentFor("Constructor de Embed") %>
 <section
   x-data="{
-    messages: <%= JSON.stringify(messages || []) %>,
+    channels: <%= JSON.stringify(channels || []) %>,
+    openChannels: false,
+
     formData: {
-      titulo: '',
-      descripcion: '',
-      color: '#5865F2'
+      embed_channel: '',
+      content: '',
+      embed_title: '',
+      embed_description: '',
+      embed_color: '#5865F2',
+      embed_image: '',
+      embed_thumbnail: '',
+      embed_fields: [],
+      embed_footer: '',
+      embed_footer_icon: '',
+      embed_author: '',
+      embed_author_icon: '',
+      embed_timestamp: false
     },
+
     saving: false,
-    async submitForm() {
+
+    getGuildId() {
+      const match = window.location.pathname.match(/\/dashboard\/([a-zA-Z0-9]+)/);
+      return match ? match[1] : '';
+    },
+
+    validateURL(url) {
+      if (!url) return true;
+      try { new URL(url); return true; } catch { return false; }
+    },
+
+    validateColor(color) {
+      return /^#[0-9A-F]{6}$/i.test(color);
+    },
+
+    addField() {
+      this.formData.embed_fields.push({ name: '', value: '', inline: true });
+    },
+
+    removeField(idx) {
+      this.formData.embed_fields.splice(idx, 1);
+    },
+
+    async sendEmbed() {
+      if (!this.formData.embed_channel) {
+        Alpine.store('toast').show('⚠️ Por favor selecciona un canal', 'error');
+        return;
+      }
       this.saving = true;
       try {
-        const response = await fetch('./api/messages', {
+        const guildId = this.getGuildId();
+        const embedData = {
+          title: this.formData.embed_title.slice(0, 256),
+          description: this.formData.embed_description.slice(0, 4096),
+          color: this.validateColor(this.formData.embed_color) ? this.formData.embed_color : '#5865F2',
+          image: this.validateURL(this.formData.embed_image) ? this.formData.embed_image : '',
+          thumbnail: this.validateURL(this.formData.embed_thumbnail) ? this.formData.embed_thumbnail : '',
+          fields: this.formData.embed_fields.filter(f => f.name && f.value).slice(0, 25)
+            .map(f => ({ name: f.name.slice(0, 256), value: f.value.slice(0, 1024), inline: f.inline === true || f.inline === 'true' })),
+          footer: { text: this.formData.embed_footer.slice(0, 2048), iconURL: this.validateURL(this.formData.embed_footer_icon) ? this.formData.embed_footer_icon : '' },
+          author: { name: this.formData.embed_author.slice(0, 256), iconURL: this.validateURL(this.formData.embed_author_icon) ? this.formData.embed_author_icon : '' },
+          timestamp: this.formData.embed_timestamp === 'true' || this.formData.embed_timestamp === true,
+        };
+        const response = await fetch(`/dashboard/${guildId}/autorol/api/messages`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(this.formData)
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            titulo: this.formData.embed_title || 'Embed',
+            descripcion: this.formData.embed_description,
+            color: embedData.color,
+            embed_channel: this.formData.embed_channel,
+            content: this.formData.content,
+            embedData
+          })
         });
-        if (!response.ok) throw new Error('Failed');
-        Alpine.store('toast').show('✅ Sistema creado', 'success');
-        this.formData = { titulo: '', descripcion: '', color: '#5865F2' };
-        location.reload();
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error desconocido');
+        Alpine.store('toast').show('✅ Embed guardado. Ve a "Gestionar Embeds" para añadir botones y publicar.', 'success');
+        this.resetForm();
       } catch (error) {
-        Alpine.store('toast').show('❌ Error al crear', 'error');
+        Alpine.store('toast').show('❌ Error: ' + error.message, 'error');
       } finally {
         this.saving = false;
       }
     },
-    deleteMsg(messageId) {
-      if(!confirm('¿Eliminar este sistema?')) return;
-      fetch('./api/messages/' + messageId, { method: 'DELETE' })
-        .then(() => location.reload())
-        .catch(err => Alpine.store('toast').show('❌ Error al eliminar', 'error'));
+
+    resetForm() {
+      this.formData = { embed_channel: '', content: '', embed_title: '', embed_description: '', embed_color: '#5865F2', embed_image: '', embed_thumbnail: '', embed_fields: [], embed_footer: '', embed_footer_icon: '', embed_author: '', embed_author_icon: '', embed_timestamp: false };
     }
   }"
   class="border-border bg-bg-panel rounded-lg border p-4 shadow-sm">
-  
-  <!-- Header -->
-  <div class="mb-4">
-    <h3 class="text-text text-lg font-semibold">📝 Crear nuevo Sistema</h3>
-    <p class="text-text-muted text-sm font-normal">Crea un nuevo embed de asignación de roles</p>
-  </div>
 
-  <!-- Form Grid -->
-  <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 mb-4">
-    <!-- Title -->
-    <div>
-      <div class="mb-2">
-        <label class="text-text text-sm font-semibold">Título</label>
-        <div class="text-text-muted text-sm font-normal">El título principal del embed</div>
+  <!-- Canal destino -->
+  <div class="mb-5">
+    <label class="text-text text-sm font-semibold">Canal de destino</label>
+    <p class="text-text-muted text-sm font-normal mb-2">Selecciona en qué canal se publicará el embed</p>
+    <div class="relative">
+      <button
+        type="button"
+        @click="openChannels = !openChannels"
+        @click.away="openChannels = false"
+        class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text flex w-full items-center justify-between rounded-lg border p-2.5 text-sm text-left outline-none">
+        <span x-text="formData.embed_channel ? ('#\u00a0' + (channels.find(c => c.id === formData.embed_channel)?.name || 'Canal desconocido')) : '# Selecciona un canal'"></span>
+        <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300" :class="openChannels ? 'rotate-180' : ''"></i>
+      </button>
+      <div
+        x-show="openChannels"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 translate-y-[-10px]"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        class="border-border bg-bg-panel absolute top-full mt-1 w-full rounded-lg border shadow-xl z-50 max-h-56 overflow-y-auto"
+        style="display:none">
+        <template x-for="ch in channels" :key="ch.id">
+          <div
+            @click="formData.embed_channel = ch.id; openChannels = false"
+            class="group flex cursor-pointer items-center justify-between px-3 py-2 text-sm hover:bg-primary/10 transition-colors">
+            <span class="text-text group-hover:text-primary"># <span x-text="ch.name"></span></span>
+            <i class="fa-solid fa-check text-[10px] text-primary" x-show="formData.embed_channel === ch.id"></i>
+          </div>
+        </template>
       </div>
-      <input
-        x-model="formData.titulo"
-        type="text"
-        placeholder="ej: Elige tu rol"
-        class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm"
-        required />
     </div>
+  </div>
 
-    <!-- Color -->
-    <div>
-      <div class="mb-2">
-        <label class="text-text text-sm font-semibold">Color (Hexadecimal)</label>
-        <div class="text-text-muted text-sm font-normal">ej: #5865F2</div>
+  <!-- GRID editor + preview -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- EDITOR -->
+    <div class="space-y-4">
+
+      <!-- Mensaje adicional -->
+      <div>
+        <label class="text-text text-sm font-semibold">Mensaje adicional</label>
+        <p class="text-text-muted text-sm mb-1">Texto encima del embed (opcional)</p>
+        <textarea x-model="formData.content" maxlength="2000" rows="2"
+          class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm resize-none"
+          placeholder="Escribe un mensaje adicional..."></textarea>
+        <p class="text-text-muted text-xs mt-1" x-text="`${formData.content.length}/2000`"></p>
       </div>
-      <input
-        x-model="formData.color"
-        type="text"
-        placeholder="#5865F2"
-        class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm"
-        pattern="^#[A-Fa-f0-9]{6}$" />
-    </div>
 
-    <div></div>
-  </div>
+      <div class="border-border border-t pt-4">
+        <p class="text-text text-sm font-semibold mb-3">Opciones del Embed</p>
 
-  <!-- Description -->
-  <div class="mb-4">
-    <div class="mb-2">
-      <label class="text-text text-sm font-semibold">Descripción</label>
-      <div class="text-text-muted text-sm font-normal">El contenido principal del embed</div>
-    </div>
-    <textarea
-      x-model="formData.descripcion"
-      placeholder="Haz clic en los botones para obtener roles..."
-      class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm"
-      style="min-height: 100px;"
-      required></textarea>
-  </div>
-
-  <!-- Embed Preview -->
-  <div class="mb-4">
-    <div class="mb-2">
-      <label class="text-text text-sm font-semibold">📋 Vista previa</label>
-    </div>
-    <div class="bg-bg-interactive border-border border rounded-lg p-4" style="background-color: #36393F;">
-      <template x-if="!formData.titulo && !formData.descripcion">
-        <div class="text-text-muted text-sm text-center py-8">
-          Rellena los campos para ver una vista previa
+        <!-- Título -->
+        <div class="mb-3">
+          <label class="text-text-muted block text-xs font-bold uppercase tracking-widest mb-1">Título</label>
+          <input x-model="formData.embed_title" type="text" maxlength="256"
+            class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm"
+            placeholder="Título del embed" />
+          <p class="text-text-muted text-xs mt-1" x-text="`${formData.embed_title.length}/256`"></p>
         </div>
-      </template>
 
-      <template x-if="formData.titulo || formData.descripcion">
-        <div style="border-left: 4px solid; border-left-color: var(--preview-color, #5865F2); padding-left: 12px;">
-          <div x-show="formData.titulo" x-text="formData.titulo" class="text-white font-semibold text-sm mb-2" :style="{ color: formData.color }"></div>
-          <div x-show="formData.descripcion" x-text="formData.descripcion" class="text-gray-300 text-sm whitespace-pre-wrap leading-5"></div>
+        <!-- Descripción -->
+        <div class="mb-3">
+          <label class="text-text-muted block text-xs font-bold uppercase tracking-widest mb-1">Descripción</label>
+          <textarea x-model="formData.embed_description" maxlength="4096" rows="4"
+            class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm resize-none"
+            placeholder="Descripción del embed..."></textarea>
+          <p class="text-text-muted text-xs mt-1" x-text="`${formData.embed_description.length}/4096`"></p>
         </div>
-      </template>
+
+        <!-- Color -->
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <label class="text-text-muted block text-xs font-bold uppercase tracking-widest mb-1">Color</label>
+            <input x-model="formData.embed_color" type="color" class="border-border block w-full h-10 rounded-lg border cursor-pointer" />
+          </div>
+          <div>
+            <label class="text-text-muted block text-xs font-bold uppercase tracking-widest mb-1">Hex</label>
+            <input x-model="formData.embed_color" type="text" maxlength="7" placeholder="#5865F2"
+              class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm font-mono" />
+          </div>
+        </div>
+
+        <!-- Autor -->
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <label class="text-text-muted block text-xs font-bold uppercase tracking-widest mb-1">Autor</label>
+            <input x-model="formData.embed_author" type="text" maxlength="256" placeholder="Nombre del autor"
+              class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm" />
+          </div>
+          <div>
+            <label class="text-text-muted block text-xs font-bold uppercase tracking-widest mb-1">Icono Autor</label>
+            <input x-model="formData.embed_author_icon" type="url" placeholder="https://..."
+              class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm" />
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <label class="text-text-muted block text-xs font-bold uppercase tracking-widest mb-1">Pie de Página</label>
+            <input x-model="formData.embed_footer" type="text" maxlength="2048" placeholder="Texto del pie"
+              class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm" />
+          </div>
+          <div>
+            <label class="text-text-muted block text-xs font-bold uppercase tracking-widest mb-1">Icono Pie</label>
+            <input x-model="formData.embed_footer_icon" type="url" placeholder="https://..."
+              class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm" />
+          </div>
+        </div>
+
+        <!-- Imágenes -->
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <label class="text-text-muted block text-xs font-bold uppercase tracking-widest mb-1">Imagen Grande</label>
+            <input x-model="formData.embed_image" type="url" placeholder="https://..."
+              class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm" />
+          </div>
+          <div>
+            <label class="text-text-muted block text-xs font-bold uppercase tracking-widest mb-1">Thumbnail</label>
+            <input x-model="formData.embed_thumbnail" type="url" placeholder="https://..."
+              class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm" />
+          </div>
+        </div>
+
+        <!-- Campos -->
+        <div class="mb-3">
+          <label class="text-text-muted block text-xs font-bold uppercase tracking-widest mb-2">Campos (máx 25)</label>
+          <div class="space-y-2 mb-2">
+            <template x-for="(field, idx) in formData.embed_fields" :key="idx">
+              <div class="flex gap-2 items-center">
+                <input x-model="field.name" type="text" maxlength="256" placeholder="Nombre"
+                  class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text flex-1 rounded-lg border p-2 text-sm" />
+                <input x-model="field.value" type="text" maxlength="1024" placeholder="Valor"
+                  class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text flex-1 rounded-lg border p-2 text-sm" />
+                <label class="flex items-center gap-1 text-xs text-text-muted shrink-0">
+                  <input type="checkbox" x-model="field.inline" class="rounded" />
+                  Inline
+                </label>
+                <button @click="removeField(idx)"
+                  class="bg-error/10 text-error hover:bg-error/20 inline-flex items-center justify-center h-8 w-8 rounded-lg transition-colors">
+                  <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+              </div>
+            </template>
+          </div>
+          <button @click="addField()" class="text-primary hover:text-primary-dark text-sm font-semibold transition-colors">
+            <i class="fa-solid fa-plus text-xs mr-1"></i>Agregar Campo
+          </button>
+        </div>
+
+        <!-- Timestamp -->
+        <label class="border-border bg-bg-interactive flex items-center gap-3 rounded-lg border p-2.5 cursor-pointer">
+          <input type="checkbox" x-model="formData.embed_timestamp" class="rounded" />
+          <span class="text-text text-sm">Mostrar fecha y hora actual</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- PREVIEW -->
+    <div>
+      <p class="text-text-muted text-xs font-bold uppercase tracking-widest mb-3">Vista Previa</p>
+      <div class="bg-[#36393F] rounded-xl p-4 space-y-3 sticky top-6">
+        <div class="flex items-center text-xs text-[#99AAB5]">
+          <span class="mr-1">#</span>
+          <span x-text="channels.find(c => c.id === formData.embed_channel)?.name || 'general'"></span>
+          <span class="mx-2">•</span>
+          <span x-text="new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })"></span>
+        </div>
+        <div class="flex gap-3">
+          <img class="h-10 w-10 rounded-full flex-shrink-0"
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%235865F2'/%3E%3Ctext x='50%25' y='50%25' font-size='20' font-weight='bold' fill='white' text-anchor='middle' dy='.3em'%3E%F0%9F%A4%96%3C/text%3E%3C/svg%3E"
+            alt="Bot" />
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-white text-sm">Bot</div>
+            <div class="text-[#DCDDDE] text-xs whitespace-pre-wrap mt-1 mb-2" x-show="formData.content" x-text="formData.content"></div>
+            <template x-if="formData.embed_title || formData.embed_description || formData.embed_fields.length > 0">
+              <div class="rounded border-l-4 p-3 mt-2" :style="`background:#2F3136;border-color:${validateColor(formData.embed_color) ? formData.embed_color : '#5865F2'}`">
+                <template x-if="formData.embed_author">
+                  <div class="flex items-center gap-2 mb-2">
+                    <template x-if="formData.embed_author_icon && validateURL(formData.embed_author_icon)">
+                      <img :src="formData.embed_author_icon" class="w-4 h-4 rounded-full" />
+                    </template>
+                    <span class="text-white font-bold text-xs" x-text="formData.embed_author"></span>
+                  </div>
+                </template>
+                <div class="text-white font-bold text-sm mb-1" x-show="formData.embed_title" x-text="formData.embed_title"></div>
+                <div class="text-[#DCDDDE] text-xs mb-2 whitespace-pre-wrap" x-show="formData.embed_description" x-text="formData.embed_description"></div>
+                <template x-if="formData.embed_thumbnail && validateURL(formData.embed_thumbnail)">
+                  <div class="float-right ml-2 mb-2"><img :src="formData.embed_thumbnail" class="h-12 w-12 rounded-lg" /></div>
+                </template>
+                <template x-if="formData.embed_fields.length > 0">
+                  <div class="mb-2 clear-both space-y-1">
+                    <template x-for="field in formData.embed_fields.filter(f => f.name && f.value)">
+                      <div>
+                        <div class="text-white font-bold text-[10px]" x-text="field.name"></div>
+                        <div class="text-[#DCDDDE] text-[10px] whitespace-pre-wrap" x-text="field.value"></div>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+                <template x-if="formData.embed_image && validateURL(formData.embed_image)">
+                  <img :src="formData.embed_image" class="w-full rounded max-h-40 object-cover mt-2" />
+                </template>
+                <template x-if="formData.embed_footer || formData.embed_timestamp">
+                  <div class="flex items-center gap-1 text-[#99AAB5] text-[10px] mt-2 pt-1.5 border-t border-gray-700">
+                    <template x-if="formData.embed_footer_icon && validateURL(formData.embed_footer_icon)">
+                      <img :src="formData.embed_footer_icon" class="w-2.5 h-2.5 rounded-full" />
+                    </template>
+                    <span x-text="formData.embed_footer"></span>
+                    <template x-if="formData.embed_footer && formData.embed_timestamp"><span>•</span></template>
+                    <span x-show="formData.embed_timestamp" x-text="new Date().toLocaleString('es-ES')"></span>
+                  </div>
+                </template>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Sistemas Creados -->
-  <template x-if="messages && messages.length > 0">
-    <div class="mb-4">
-      <div class="mb-2">
-        <label class="text-text text-sm font-semibold">📊 Sistemas Creados</label>
+  <!-- Acciones -->
+  <div class="border-border mt-4 flex items-center justify-between border-t pt-4">
+    <button type="button" @click="resetForm()"
+      class="bg-error/10 text-error hover:bg-error/20 inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors">
+      <i class="fa-solid fa-trash text-xs"></i>
+      Limpiar
+    </button>
+    <button type="button" @click="sendEmbed()"
+      :disabled="!formData.embed_channel || saving"
+      :class="{'opacity-50 cursor-not-allowed': !formData.embed_channel || saving}"
+      class="bg-primary hover:bg-primary-dark focus:ring-primary inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white focus:outline-none focus:ring-4 transition-colors">
+      <i class="fa-solid fa-floppy-disk" x-show="!saving"></i>
+      <i class="fa-solid fa-spinner fa-spin" x-show="saving"></i>
+      <span x-text="saving ? 'Guardando...' : 'Guardar Embed'"></span>
+    </button>
+  </div>
+</section>
+
+
+<%- contentFor("Gestionar Embeds") %>
+<section
+  x-data="{
+    channels: <%= JSON.stringify(channels || []) %>,
+    roles: <%= JSON.stringify(roles || []) %>,
+    messages: <%= JSON.stringify(messages || []) %>,
+    selectedMessageId: null,
+    saving: false,
+
+    buttonForm: {
+      roleId: '',
+      label: '',
+      emoji: '',
+      style: 'Primary'
+    },
+
+    getGuildId() {
+      const match = window.location.pathname.match(/\/dashboard\/([a-zA-Z0-9]+)/);
+      return match ? match[1] : '';
+    },
+
+    async addButton() {
+      if (!this.selectedMessageId || !this.buttonForm.roleId || !this.buttonForm.label) {
+        Alpine.store('toast').show('⚠️ Completa todos los campos requeridos', 'error'); return;
+      }
+      this.saving = true;
+      try {
+        const guildId = this.getGuildId();
+        const response = await fetch(`/dashboard/${guildId}/autorol/api/messages/${this.selectedMessageId}/buttons`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.buttonForm)
+        });
+        if (!response.ok) throw new Error('Error al agregar botón');
+        const msg = this.messages.find(m => m.messageId === this.selectedMessageId);
+        if (msg) msg.buttons.push({ ...this.buttonForm });
+        Alpine.store('toast').show('✅ Botón agregado correctamente', 'success');
+        this.buttonForm = { roleId: '', label: '', emoji: '', style: 'Primary' };
+      } catch (error) {
+        Alpine.store('toast').show('❌ ' + error.message, 'error');
+      } finally { this.saving = false; }
+    },
+
+    async removeButton(messageId, roleId) {
+      this.saving = true;
+      try {
+        const guildId = this.getGuildId();
+        await fetch(`/dashboard/${guildId}/autorol/api/messages/${messageId}/buttons/${roleId}`, { method: 'DELETE' });
+        const msg = this.messages.find(m => m.messageId === messageId);
+        if (msg) msg.buttons = msg.buttons.filter(b => b.roleId !== roleId);
+        Alpine.store('toast').show('✅ Botón removido', 'success');
+      } catch (error) {
+        Alpine.store('toast').show('❌ Error al remover', 'error');
+      } finally { this.saving = false; }
+    },
+
+    async deleteMessage(messageId) {
+      if (!confirm('¿Estás seguro de que deseas eliminar este embed?')) return;
+      try {
+        const guildId = this.getGuildId();
+        await fetch(`/dashboard/${guildId}/autorol/api/messages/${messageId}`, { method: 'DELETE' });
+        this.messages = this.messages.filter(m => m.messageId !== messageId);
+        if (this.selectedMessageId === messageId) this.selectedMessageId = null;
+        Alpine.store('toast').show('✅ Embed eliminado', 'success');
+      } catch (error) {
+        Alpine.store('toast').show('❌ Error al eliminar', 'error');
+      }
+    },
+
+    async sendToDiscord(messageId) {
+      const msg = this.messages.find(m => m.messageId === messageId);
+      if (!msg || !msg.channelId || msg.channelId === '0') {
+        Alpine.store('toast').show('⚠️ Este embed no tiene canal asignado', 'error'); return;
+      }
+      this.saving = true;
+      try {
+        const guildId = this.getGuildId();
+        const response = await fetch(`/dashboard/${guildId}/autorol/api/messages/${messageId}/send`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al publicar');
+        if (data.discordMessageId && data.discordMessageId !== messageId) {
+          const idx = this.messages.findIndex(m => m.messageId === messageId);
+          if (idx !== -1) { this.messages[idx].messageId = data.discordMessageId; this.selectedMessageId = data.discordMessageId; }
+        }
+        Alpine.store('toast').show('🚀 ¡Embed publicado en Discord!', 'success');
+      } catch (error) {
+        Alpine.store('toast').show('❌ Error: ' + error.message, 'error');
+      } finally { this.saving = false; }
+    }
+  }"
+  class="space-y-4">
+
+  <!-- Sin embeds -->
+  <template x-if="messages.length === 0">
+    <div class="border-border bg-bg-panel rounded-lg border p-12 shadow-sm text-center">
+      <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 dark:bg-white/5">
+        <i class="fa-solid fa-inbox text-xl text-gray-400"></i>
       </div>
-      <div class="grid gap-3">
+      <p class="text-text-muted text-sm mb-4">No hay embeds creados todavía</p>
+      <p class="text-text-muted text-xs">Ve a la pestaña <strong class="text-text">Constructor de Embed</strong> para crear uno</p>
+    </div>
+  </template>
+
+  <!-- Lista de embeds -->
+  <template x-if="messages.length > 0">
+    <div class="border-border bg-bg-panel rounded-lg border p-4 shadow-sm">
+      <div class="mb-4">
+        <h3 class="text-text text-sm font-semibold">Embeds creados</h3>
+        <p class="text-text-muted text-sm">Selecciona uno para gestionar sus botones o publicarlo en Discord</p>
+      </div>
+
+      <div class="space-y-2">
         <template x-for="msg in messages" :key="msg.messageId">
-          <div class="bg-bg-interactive border-border border rounded-lg p-3">
-            <div class="flex items-start justify-between">
-              <div class="flex-1">
-                <div x-text="msg.title" class="text-text font-semibold text-sm mb-1"></div>
-                <div x-text="msg.description" class="text-text-muted text-xs mb-2 line-clamp-2"></div>
-                <div class="text-text-muted text-xs space-y-1">
-                  <div>Botones: <strong x-text="(msg.buttons?.length || 0) + '/25'"></strong></div>
-                  <div>ID: <code class="bg-bg-panel px-2 py-1 rounded text-xs font-mono" x-text="msg.messageId"></code></div>
+          <div
+            :class="selectedMessageId === msg.messageId ? 'ring-2 ring-primary bg-primary/5' : 'border-border border hover:border-primary/50'"
+            class="rounded-lg p-3 cursor-pointer transition-all"
+            @click="selectedMessageId = msg.messageId">
+            <div class="flex items-center justify-between gap-3">
+              <div class="flex-1 min-w-0">
+                <div class="text-text font-semibold text-sm truncate" x-text="msg.title || 'Sin título'"></div>
+                <div class="text-text-muted text-xs mt-0.5">
+                  <span x-text="`🔘 ${msg.buttons?.length || 0} botones`"></span>
+                  <span class="mx-1">•</span>
+                  <span x-text="`# ${channels.find(c => c.id === msg.channelId)?.name || 'canal desconocido'}`"></span>
                 </div>
               </div>
-              <button
-                @click="deleteMsg(msg.messageId)"
-                class="bg-error hover:bg-error-dark text-white px-3 py-1 rounded text-sm font-medium ml-2 flex-shrink-0">
-                Eliminar
-              </button>
+              <div class="flex items-center gap-2 shrink-0">
+                <button
+                  @click.stop="sendToDiscord(msg.messageId)"
+                  :disabled="saving"
+                  class="bg-primary hover:bg-primary-dark focus:ring-primary inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-white focus:outline-none focus:ring-4 disabled:opacity-50 transition-colors">
+                  <i class="fa-brands fa-discord" x-show="!saving"></i>
+                  <i class="fa-solid fa-spinner fa-spin" x-show="saving"></i>
+                  Publicar
+                </button>
+                <button
+                  @click.stop="deleteMessage(msg.messageId)"
+                  class="bg-error/10 text-error hover:bg-error/20 inline-flex items-center justify-center h-8 w-8 rounded-lg transition-colors">
+                  <i class="fa-solid fa-trash-can text-xs"></i>
+                </button>
+              </div>
             </div>
           </div>
         </template>
@@ -141,26 +482,89 @@
     </div>
   </template>
 
-  <!-- Footer -->
-  <div class="border-border mt-4 flex items-center justify-between border-t pt-3 sm:pt-6">
-    <div>
-      <button
-        type="button"
-        @click="formData = { titulo: '', descripcion: '', color: '#5865F2' }"
-        class="text-text-muted hover:text-text text-sm font-medium transition-colors">
-        Limpiar
-      </button>
+  <!-- Panel botones del embed seleccionado -->
+  <template x-if="selectedMessageId">
+    <div class="border-border bg-bg-panel rounded-lg border p-4 shadow-sm space-y-4">
+      <div>
+        <h3 class="text-text text-sm font-semibold">Botones de Rol</h3>
+        <p class="text-text-muted text-sm">
+          Embed: <span class="text-text font-medium" x-text="messages.find(m => m.messageId === selectedMessageId)?.title || ''"></span>
+        </p>
+      </div>
+
+      <!-- Botones existentes -->
+      <div x-show="messages.find(m => m.messageId === selectedMessageId)?.buttons?.length > 0" class="space-y-2">
+        <p class="text-text-muted text-xs font-bold uppercase tracking-widest">Botones actuales</p>
+        <template x-for="btn in messages.find(m => m.messageId === selectedMessageId)?.buttons || []" :key="btn.roleId">
+          <div class="border-border bg-bg-interactive flex items-center justify-between rounded-lg border p-3">
+            <div>
+              <div class="text-text text-sm font-medium" x-text="(btn.emoji ? btn.emoji + ' ' : '') + btn.label"></div>
+              <div class="text-text-muted text-xs mt-0.5" x-text="roles.find(r => r.id === btn.roleId)?.name || 'Rol desconocido'"></div>
+            </div>
+            <button
+              @click="removeButton(selectedMessageId, btn.roleId)"
+              class="bg-error/10 text-error hover:bg-error/20 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors">
+              <i class="fa-solid fa-trash-can"></i>
+              Eliminar
+            </button>
+          </div>
+        </template>
+      </div>
+
+      <p x-show="!messages.find(m => m.messageId === selectedMessageId)?.buttons?.length"
+        class="text-text-muted text-sm text-center py-3">
+        No hay botones todavía. Añade el primero abajo.
+      </p>
+
+      <!-- Formulario nuevo botón -->
+      <div class="border-border border-t pt-4">
+        <p class="text-text-muted text-xs font-bold uppercase tracking-widest mb-3">Añadir botón</p>
+        <div class="space-y-3">
+          <div>
+            <label class="text-text text-sm font-semibold mb-1 block">Rol a asignar</label>
+            <select x-model="buttonForm.roleId"
+              class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm">
+              <option value="">Selecciona un rol</option>
+              <template x-for="role in roles" :key="role.id">
+                <option :value="role.id" x-text="role.name"></option>
+              </template>
+            </select>
+          </div>
+          <div>
+            <label class="text-text text-sm font-semibold mb-1 block">Etiqueta del botón</label>
+            <input x-model="buttonForm.label" type="text" maxlength="80" placeholder="ej: Obtener rol"
+              class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm" />
+            <p class="text-text-muted text-xs mt-1" x-text="`${buttonForm.label.length}/80`"></p>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-text text-sm font-semibold mb-1 block">Emoji (opcional)</label>
+              <input x-model="buttonForm.emoji" type="text" maxlength="2" placeholder="🎮"
+                class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm" />
+            </div>
+            <div>
+              <label class="text-text text-sm font-semibold mb-1 block">Estilo</label>
+              <select x-model="buttonForm.style"
+                class="focus:ring-primary focus:border-primary border-border bg-bg-interactive text-text block w-full rounded-lg border p-2.5 text-sm">
+                <option>Primary</option>
+                <option>Secondary</option>
+                <option>Success</option>
+                <option>Danger</option>
+              </select>
+            </div>
+          </div>
+          <button
+            @click="addButton()"
+            :disabled="!buttonForm.roleId || !buttonForm.label || saving"
+            :class="{'opacity-50 cursor-not-allowed': !buttonForm.roleId || !buttonForm.label || saving}"
+            class="bg-primary hover:bg-primary-dark focus:ring-primary w-full inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-white focus:outline-none focus:ring-4 transition-colors">
+            <i class="fa-solid fa-plus" x-show="!saving"></i>
+            <i class="fa-solid fa-spinner fa-spin" x-show="saving"></i>
+            <span x-text="saving ? 'Agregando...' : 'Agregar Botón'"></span>
+          </button>
+        </div>
+      </div>
     </div>
-    <div class="flex-shrink-0">
-      <button
-        type="button"
-        @click="submitForm()"
-        :disabled="saving || !formData.titulo || !formData.descripcion"
-        :class="{'opacity-50': saving}"
-        class="bg-primary hover:bg-primary-dark focus:ring-primary inline-flex items-center rounded-lg px-3 py-2 text-center text-sm font-medium text-white focus:outline-none focus:ring-4 disabled:cursor-not-allowed">
-        <span x-show="!saving">Crear Sistema</span>
-        <span x-show="saving">Guardando...</span>
-      </button>
-    </div>
-  </div>
+  </template>
+
 </section>

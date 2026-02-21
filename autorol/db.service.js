@@ -13,7 +13,7 @@ class AutorolService extends DBService {
                 messages: [
                     {
                         messageId: { type: String, required: true },
-                        channelId: { type: String, required: true },
+                        channelId: { type: String, default: "0" },
                         title: String,
                         description: String,
                         color: { type: String, default: "#2f3136" },

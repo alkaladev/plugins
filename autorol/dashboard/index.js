@@ -6,9 +6,4 @@ module.exports = new DashboardPlugin({
     baseDir: __dirname,
     dashboardRouter: dashboardRouter,
     dbService: require("../db.service"),
-    onDashboardLoad: (app, client) => {
-        // Pasar el cliente a la aplicación express
-        app.set('client', client);
-        console.log("[Autorol] Cliente Discord vinculado al dashboard");
-    }
 });
