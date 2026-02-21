@@ -1,42 +1,27 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const db = require("../../db.service");
 
-module.exports = async (client, message) => {
-    // El SDK de strange pasa (client, ...eventArgs)
-    // Si message es undefined, puede que el SDK pase solo (message) sin client
-    const msg = message ?? client;
-    const discordClient = message ? client : null;
+/**
+ * @param {import("discord.js").Message} message
+ */
+module.exports = async (message) => {
+    if (message.author.bot || !message.guild) return;
 
-    if (!msg || msg.author?.bot || !msg.guild) return;
-
-    // Acceder al db de forma lazy para asegurarnos que ya está inicializado
-    let db;
-    try {
-        db = require("../../db.service");
-    } catch {
-        return;
-    }
-
-    let globalConfig, settings;
-    try {
-        [globalConfig, settings] = await Promise.all([
-            db.getGlobalConfig(),
-            db.getSettings(msg.guild.id),
-        ]);
-    } catch {
-        return;
-    }
+    const [globalConfig, settings] = await Promise.all([
+        db.getGlobalConfig(),
+        db.getSettings(message.guild.id),
+    ]);
 
     if (!globalConfig?.api_key) return;
     if (!settings?.enabled) return;
 
-    const botUser = discordClient?.user ?? msg.client?.user;
-    const isMentioned = botUser && msg.mentions.has(botUser);
-    const isAiChannel = settings.ai_channel && settings.ai_channel === msg.channel.id;
+    const isMentioned = message.mentions.has(message.client.user);
+    const isAiChannel = settings.ai_channel && settings.ai_channel === message.channel.id;
 
     if (!isMentioned && !isAiChannel) return;
 
     try {
-        await msg.channel.sendTyping();
+        await message.channel.sendTyping();
 
         const genAI = new GoogleGenerativeAI(globalConfig.api_key);
         const model = genAI.getGenerativeModel({
@@ -44,7 +29,7 @@ module.exports = async (client, message) => {
             systemInstruction: "Eres un asistente de Discord. Responde de forma concisa y útil.",
         });
 
-        const prompt = msg.content.replace(/<@(!?)\d+>/g, "").trim();
+        const prompt = message.content.replace(/<@(!?)\d+>/g, "").trim();
         if (!prompt) return;
 
         const result = await model.generateContent(prompt);
@@ -52,9 +37,9 @@ module.exports = async (client, message) => {
 
         if (text.length > 2000) {
             const chunks = text.match(/[\s\S]{1,1900}/g);
-            for (const chunk of chunks) await msg.reply(chunk);
+            for (const chunk of chunks) await message.reply(chunk);
         } else {
-            await msg.reply(text);
+            await message.reply(text);
         }
     } catch (error) {
         console.error("Error en Gemini:", error);
