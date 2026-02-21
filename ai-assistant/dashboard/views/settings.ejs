@@ -1,7 +1,13 @@
+<%
+  // Buscar el nombre del canal guardado para mostrarlo al cargar
+  const savedChannel = channels.find(ch => ch.id === (settings.ai_channel || ''));
+  const savedChannelName = savedChannel ? '# ' + savedChannel.name : '';
+%>
 <section
   x-data="{
     openChannel: false,
     channelBtnRect: null,
+    selectedChannelName: '<%= savedChannelName %>',
     formData: {
       ai_channel: '<%= settings.ai_channel || "" %>',
       enabled: <%= settings.enabled %>
@@ -18,6 +24,11 @@
           width: rect.width
         };
       }
+    },
+    selectChannel(id, name) {
+      this.formData.ai_channel = id;
+      this.selectedChannelName = id ? '# ' + name : '';
+      this.openChannel = false;
     },
     async submitForm() {
       this.saving = true;
@@ -74,34 +85,31 @@
         <%= tr("ai-assistant:CH_DESC") %>
       </p>
 
-      <!-- Botón trigger -->
       <button type="button" x-ref="channelBtn"
         @click="openDropdown()"
-        class="flex w-full items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-left dark:bg-white/5 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all outline-none border-none ring-0">
-        <span class="truncate font-medium text-sm"
-          x-text="formData.ai_channel ? document.querySelector(`[data-id-channel='${formData.ai_channel}']`)?.innerText : '<%=tr(`CHANNEL_SELECT`)%>'">
+        class="flex w-full items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-left dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all outline-none border-none ring-0">
+        <span class="truncate font-medium text-sm text-gray-900 dark:text-white"
+          x-text="selectedChannelName || '<%=tr(`CHANNEL_SELECT`)%>'">
         </span>
-        <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300" :class="openChannel ? 'rotate-180' : ''"></i>
+        <i class="fa-solid fa-chevron-down text-[10px] text-gray-500 dark:text-gray-400 transition-transform duration-300" :class="openChannel ? 'rotate-180' : ''"></i>
       </button>
 
-      <!-- Dropdown con position fixed para salir del contenedor -->
       <template x-teleport="body">
         <div
           x-show="openChannel"
           x-transition:enter="transition ease-out duration-200"
           x-transition:enter-start="opacity-0 translate-y-[-6px]"
           x-transition:enter-end="opacity-100 translate-y-0"
-          :style="channelBtnRect ? `position:fixed; top:${channelBtnRect.top}px; left:${channelBtnRect.left}px; width:${channelBtnRect.width}px;` : ''"
-          class="z-[9999] max-h-48 overflow-auto rounded-xl bg-white p-1.5 shadow-2xl ring-1 ring-black/5 dark:bg-[#0d123d] dark:ring-white/10 scrollbar-hide"
+          :style="channelBtnRect ? `position:fixed; top:${channelBtnRect.top}px; left:${channelBtnRect.left}px; width:${channelBtnRect.width}px; z-index:9999;` : 'display:none'"
+          class="max-h-48 overflow-auto rounded-xl bg-white p-1.5 shadow-2xl ring-1 ring-black/5 dark:bg-[#0d123d] dark:ring-white/10 scrollbar-hide"
           style="display:none;">
 
-          <div @click="formData.ai_channel = ''; openChannel = false"
-            class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-white/10 dark:text-gray-400 italic">
+          <div @click="selectChannel('', '')"
+            class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-white/10 dark:text-gray-400 text-gray-500 italic">
             <%=tr("CHANNEL_SELECT")%>
           </div>
           <% channels.forEach((ch) => { %>
-            <div @click="formData.ai_channel = '<%= ch.id %>'; openChannel = false"
-              data-id-channel="<%= ch.id %>"
+            <div @click="selectChannel('<%= ch.id %>', '<%= ch.name %>')"
               class="group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-purple-500/10 transition-colors">
               <span class="text-gray-700 dark:text-gray-300 group-hover:text-purple-500"># <%= ch.name %></span>
               <i class="fa-solid fa-check text-[10px] text-purple-500" x-show="formData.ai_channel === '<%= ch.id %>'"></i>
