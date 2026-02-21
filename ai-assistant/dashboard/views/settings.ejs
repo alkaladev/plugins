@@ -58,9 +58,9 @@
       </div>
       <button type="button" @click="formData.enabled = !formData.enabled"
         class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-        :class="formData.enabled ? 'bg-purple-500' : 'bg-gray-300 dark:bg-white/20'">
-        <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-          :class="formData.enabled ? 'translate-x-5' : 'translate-x-0'">
+        :style="formData.enabled ? 'background-color: rgb(168 85 247)' : 'background-color: rgb(209 213 219)'">
+        <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition-all duration-200 ease-in-out"
+          :style="formData.enabled ? 'transform: translateX(20px)' : 'transform: translateX(0px)'">
         </span>
       </button>
     </div>

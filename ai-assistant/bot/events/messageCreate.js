@@ -25,7 +25,7 @@ module.exports = async (message) => {
 
         const genAI = new GoogleGenerativeAI(globalConfig.api_key);
         const model = genAI.getGenerativeModel({
-            model: "gemini-2.0-flash",
+            model: "gemini-1.5-flash",
             systemInstruction: "Eres un asistente de Discord. Responde de forma concisa y útil.",
         });
 
@@ -42,6 +42,16 @@ module.exports = async (message) => {
             await message.reply(text);
         }
     } catch (error) {
+        // Cuota excedida (429)
+        if (error?.status === 429) {
+            await message.reply("⚠️ La IA ha alcanzado el límite de solicitudes. Por favor, espera unos minutos e inténtalo de nuevo.").catch(() => {});
+            return;
+        }
+        // API key inválida (400/403)
+        if (error?.status === 400 || error?.status === 403) {
+            await message.reply("❌ La API Key de Gemini no es válida. Contacta a un administrador del servidor.").catch(() => {});
+            return;
+        }
         console.error("Error en Gemini:", error);
     }
 };
