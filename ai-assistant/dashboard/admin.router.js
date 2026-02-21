@@ -1,19 +1,21 @@
 const path = require("node:path");
 const router = require("express").Router();
+const db = require("../db.service");
 
-router.get("/", (_req, res) => {
-    res.render(path.join(__dirname, "views/admin.ejs"));
+router.get("/", async (_req, res) => {
+    const globalConfig = await db.getGlobalConfig();
+    res.render(path.join(__dirname, "views/admin.ejs"), { globalConfig });
 });
 
 router.put("/", async (req, res) => {
-    const { config } = res.locals;
     const body = req.body;
+    const globalConfig = await db.getGlobalConfig();
 
-    if (body.gemini_api_key !== undefined) {
-        config["GEMINI_API_KEY"] = body.gemini_api_key;
+    if (body.api_key !== undefined) {
+        globalConfig.api_key = body.api_key;
     }
 
-    await config.save();
+    await globalConfig.save();
     res.sendStatus(200);
 });
 

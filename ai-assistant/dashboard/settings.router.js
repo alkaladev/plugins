@@ -4,14 +4,12 @@ const db = require("../db.service");
 
 router.get("/", async (req, res) => {
     const guildId = res.locals.guild.id;
-    
-    // Obtenemos canales del bot vía IPC (como en tu ejemplo de Giveaways)
     const channelsResp = await req.broadcastOne("getChannelsOf", { guildId }, { guildId });
     const settings = await db.getSettings(guildId);
 
     res.render(path.join(__dirname, "views/settings.ejs"), {
         channels: channelsResp?.data || [],
-        settings
+        settings,
     });
 });
 

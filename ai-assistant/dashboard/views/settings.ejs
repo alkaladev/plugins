@@ -1,20 +1,106 @@
-<section x-data="{ formData: { ai_channel: '<%= settings.ai_channel %>', enabled: <%= settings.enabled %> }, ... }">
-  <h3 class="text-xl font-bold text-white mb-6">Ajustes del Chatbot IA</h3>
-  
-  <div class="space-y-6">
-    <div class="flex items-center justify-between">
-       <span>Activar IA en este servidor</span>
-       <input type="checkbox" x-model="formData.enabled">
+<section
+  x-data="{
+    openChannel: false,
+    formData: {
+      ai_channel: '<%= settings.ai_channel || '' %>',
+      enabled: <%= settings.enabled %>
+    },
+    saving: false,
+    async submitForm() {
+      this.saving = true;
+      try {
+        const response = await fetch(window.location.href, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.formData)
+        });
+        if (response.ok) {
+          Alpine.store('toast').show('<%=tr(`SETTINGS_SAVE`)%>', 'success');
+        } else { throw new Error(); }
+      } catch (error) {
+        Alpine.store('toast').show('<%=tr(`SETTINGS_SAVE_ERROR`)%>', 'error');
+      } finally {
+        this.saving = false;
+      }
+    }
+  }"
+  class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c] transition-colors duration-300">
+
+  <h3 class="mb-6 text-xl font-bold text-gray-900 dark:text-white">
+    <%= tr("ai-assistant:SETTINGS_TITLE") %>
+  </h3>
+
+  <form @submit.prevent="submitForm" class="space-y-6">
+
+    <!-- TOGGLE ENABLE -->
+    <div class="flex items-center justify-between rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3">
+      <div>
+        <p class="text-sm font-bold text-gray-700 dark:text-gray-200">
+          <%= tr("ai-assistant:ENABLE_TITLE") %>
+        </p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          <%= tr("ai-assistant:ENABLE_DESC") %>
+        </p>
+      </div>
+      <button type="button" @click="formData.enabled = !formData.enabled"
+        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+        :class="formData.enabled ? 'bg-purple-500' : 'bg-gray-300 dark:bg-white/20'">
+        <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+          :class="formData.enabled ? 'translate-x-5' : 'translate-x-0'">
+        </span>
+      </button>
     </div>
 
+    <!-- CANAL DE IA -->
     <div>
-      <label class="block text-sm text-gray-400 mb-2">Canal de Chat con IA</label>
-      <select x-model="formData.ai_channel" class="w-full bg-white/5 border-white/10 rounded-xl p-2.5 text-white">
-        <option value="">Selecciona un canal...</option>
-        <% channels.forEach(ch => { %>
-          <option value="<%= ch.id %>" <%= settings.ai_channel === ch.id ? 'selected' : '' %>><%= ch.name %></option>
-        <% }) %>
-      </select>
+      <label class="block text-sm font-bold text-gray-700 dark:text-gray-200">
+        <%= tr("ai-assistant:CH_TITLE") %>
+      </label>
+      <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
+        <%= tr("ai-assistant:CH_DESC") %>
+      </p>
+      <div class="relative">
+        <button type="button" @click="openChannel = !openChannel" @click.away="openChannel = false"
+          class="flex w-full items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-left dark:bg-white/5 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all outline-none border-none ring-0">
+          <span class="truncate font-medium text-sm"
+            x-text="formData.ai_channel ? document.querySelector(`[data-id-channel='${formData.ai_channel}']`)?.innerText : '<%=tr(`CHANNEL_SELECT`)%>'">
+          </span>
+          <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300" :class="openChannel ? 'rotate-180' : ''"></i>
+        </button>
+
+        <div x-show="openChannel"
+          x-transition:enter="transition ease-out duration-200"
+          x-transition:enter-start="opacity-0 translate-y-[-10px]"
+          x-transition:enter-end="opacity-100 translate-y-0"
+          class="absolute z-50 mt-2 max-h-48 w-full overflow-auto rounded-xl bg-white p-1.5 shadow-2xl ring-1 ring-black/5 dark:bg-[#0d123d] dark:ring-white/10 scrollbar-hide"
+          style="display: none;">
+
+          <div @click="formData.ai_channel = ''; openChannel = false"
+            class="cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-white/10 dark:text-gray-400 italic">
+            <%=tr("CHANNEL_SELECT")%>
+          </div>
+          <% channels.forEach((ch) => { %>
+            <div @click="formData.ai_channel = '<%= ch.id %>'; openChannel = false"
+              data-id-channel="<%= ch.id %>"
+              class="group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-purple-500/10 transition-colors">
+              <span class="text-gray-700 dark:text-gray-300 group-hover:text-purple-500"># <%= ch.name %></span>
+              <i class="fa-solid fa-check text-[10px] text-purple-500" x-show="formData.ai_channel === '<%= ch.id %>'"></i>
+            </div>
+          <% }) %>
+        </div>
+      </div>
     </div>
-  </div>
+
+    <!-- FOOTER -->
+    <div class="flex items-center justify-end border-t border-gray-200 pt-6 dark:border-gray-700">
+      <button type="submit" :disabled="saving"
+        class="inline-flex items-center justify-center gap-2 rounded-xl bg-green-500/10 dark:bg-green-500/20 px-6 py-2.5 font-bold text-green-700 dark:text-green-300 transition-all duration-300 shadow-[0_10px_40px_-10px_rgba(16,185,129,0.4)] hover:scale-105 active:scale-95 disabled:opacity-50 group relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-green-500/0 via-green-500/10 to-green-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+        <i class="fa-solid fa-floppy-disk relative z-10" x-show="!saving"></i>
+        <i class="fa-solid fa-spinner fa-spin relative z-10" x-show="saving"></i>
+        <span class="relative z-10" x-text="saving ? '<%=tr(`BTN_SAVING`)%>' : '<%=tr(`BTN_SAVE`)%>'"></span>
+      </button>
+    </div>
+
+  </form>
 </section>

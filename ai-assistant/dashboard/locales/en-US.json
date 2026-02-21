@@ -1,4 +1,13 @@
 {
   "PLUGIN_NAME": "Gemini AI",
-  "PLUGIN_DESCRIPTION": "Chatbot inteligente usando Google Gemini"
+  "PLUGIN_DESCRIPTION": "Smart chatbot powered by Google Gemini",
+  "CONFIG_TITLE": "Gemini AI Global Configuration",
+  "CONFIG_DESC": "Set your Google AI Studio API key to enable the AI chatbot across all servers.",
+  "API_KEY": "Google AI Studio API Key",
+  "API_KEY_DESC": "Get your free API key at aistudio.google.com. This key is stored securely in the database.",
+  "SETTINGS_TITLE": "AI Chatbot Settings",
+  "ENABLE_TITLE": "Enable AI in this server",
+  "ENABLE_DESC": "Allow the bot to respond to messages in the configured channel or when mentioned.",
+  "CH_TITLE": "AI Chat Channel",
+  "CH_DESC": "The bot will automatically respond to all messages sent in this channel."
 }
