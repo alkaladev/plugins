@@ -1,5 +1,6 @@
 <section
   x-data="{
+    showKey: false,
     formData: {
       api_key: '<%= globalConfig.api_key %>'
     },
@@ -44,13 +45,13 @@
         <input
           :type="showKey ? 'text' : 'password'"
           x-model="formData.api_key"
-          x-data="{ showKey: false }"
           placeholder="AIzaSy..."
           class="w-full rounded-xl bg-gray-50 px-4 py-3 pr-12 text-sm font-medium text-gray-900 dark:bg-white/5 dark:text-white placeholder-gray-400 outline-none border-none focus:ring-2 focus:ring-purple-500/30 transition-all"
         />
         <button type="button" @click="showKey = !showKey"
           class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-          <i class="fa-solid" :class="showKey ? 'fa-eye-slash' : 'fa-eye'" style="font-size:14px"></i>
+          <i class="fa-solid fa-eye" x-show="!showKey"></i>
+          <i class="fa-solid fa-eye-slash" x-show="showKey"></i>
         </button>
       </div>
     </div>
