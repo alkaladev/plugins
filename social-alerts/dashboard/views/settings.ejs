@@ -1,0 +1,545 @@
+<%
+  const s = settings;
+  const tw  = s.twitch    || {};
+  const yt  = s.youtube   || {};
+  const tt  = s.twitter   || {};
+  const ig  = s.instagram || {};
+%>
+
+<style>
+  [x-cloak] { display: none !important; }
+</style>
+
+<%# ═══════════════════════════════════════════════ TWITCH (tab default) %>
+<section
+  x-data="{
+    openChannel: false,
+    openMention: false,
+    channelRect: null,
+    mentionRect: null,
+    newUsername: '',
+    newYtId: '',
+    newYtName: '',
+    editingMsg: null,
+    editMsgValue: '',
+    saving: false,
+
+    form: {
+      enabled:   <%= tw.enabled  || false %>,
+      channel:   '<%= tw.channel || '' %>',
+      mention:   '<%= tw.mention || '' %>',
+      streamers: <%= JSON.stringify(tw.streamers || []) %>,
+    },
+
+    getChannelName() {
+      const ch = channels.find(c => c.id === this.form.channel);
+      return ch ? '# ' + ch.name : 'Seleccionar canal';
+    },
+    getMentionName() {
+      const r = roles.find(r => r.id === this.form.mention);
+      return r ? r.name : 'Sin mencion';
+    },
+
+    openFixed(ref, rectKey, stateKey) {
+      this[stateKey] = !this[stateKey];
+      if (this[stateKey]) {
+        const rect = this.$refs[ref].getBoundingClientRect();
+        this[rectKey] = { top: rect.bottom + window.scrollY + 8, left: rect.left + window.scrollX, width: rect.width };
+      }
+    },
+
+    async save() {
+      this.saving = true;
+      try {
+        const res = await fetch(window.location.href, { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ platform: 'twitch', action: 'update', data: { enabled: this.form.enabled, channel: this.form.channel, mention: this.form.mention } }) });
+        if (res.ok) Alpine.store('toast').show('Guardado', 'success');
+        else throw new Error();
+      } catch { Alpine.store('toast').show('Error al guardar', 'error'); }
+      finally { this.saving = false; }
+    },
+
+    async addStreamer() {
+      const username = this.newUsername.trim().replace('@','');
+      if (!username) return;
+      const res = await fetch(window.location.href, { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform: 'twitch', action: 'add', data: { username, message: '' } }) });
+      const json = await res.json();
+      if (json.success) { this.form.streamers.push({ username, message: '' }); this.newUsername = ''; Alpine.store('toast').show('Streamer añadido', 'success'); }
+      else Alpine.store('toast').show(json.error || 'Ya existe', 'error');
+    },
+
+    async removeStreamer(username) {
+      await fetch(window.location.href, { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform: 'twitch', action: 'remove', data: { username } }) });
+      this.form.streamers = this.form.streamers.filter(s => s.username !== username);
+      Alpine.store('toast').show('Streamer eliminado', 'success');
+    },
+
+    async saveMessage(username) {
+      await fetch(window.location.href, { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform: 'twitch', action: 'update_message', data: { username, message: this.editMsgValue } }) });
+      const s = this.form.streamers.find(s => s.username === username);
+      if (s) s.message = this.editMsgValue;
+      this.editingMsg = null;
+      Alpine.store('toast').show('Mensaje actualizado', 'success');
+    }
+  }"
+  x-init="$watch('form.enabled', () => save()); $watch('form.channel', () => save()); $watch('form.mention', () => save())"
+  class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c] transition-colors duration-300">
+
+  <%- include('./_platform_header', { color: '#9146FF', icon: 'fa-brands fa-twitch', name: 'Twitch', desc: 'Notifica cuando un streamer se pone en directo.' }) %>
+
+  <div class="space-y-6">
+
+    <!-- ENABLE + CANAL + MENCION -->
+    <div class="grid gap-4 md:grid-cols-3">
+
+      <div class="flex items-center justify-between rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3">
+        <div>
+          <p class="text-sm font-bold text-gray-700 dark:text-gray-200">Activar</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Habilitar alertas de Twitch</p>
+        </div>
+        <button type="button" @click="form.enabled = !form.enabled"
+          class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
+          :style="form.enabled ? 'background-color:#9146FF' : 'background-color:rgb(209 213 219)'">
+          <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-all duration-200"
+            :style="form.enabled ? 'transform:translateX(20px)' : 'transform:translateX(0)'"></span>
+        </button>
+      </div>
+
+      <div>
+        <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Canal de alertas</label>
+        <button type="button" x-ref="twChannelBtn" @click="openFixed('twChannelBtn','channelRect','openChannel')"
+          class="flex w-full items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-left dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all outline-none border-none">
+          <span class="truncate text-sm font-medium text-gray-900 dark:text-white" x-text="getChannelName()"></span>
+          <i class="fa-solid fa-chevron-down text-[10px] text-gray-400 transition-transform" :class="openChannel?'rotate-180':''"></i>
+        </button>
+        <template x-teleport="body">
+          <div x-show="openChannel" x-transition @click.away="openChannel=false"
+            :style="channelRect?`position:fixed;top:${channelRect.top}px;left:${channelRect.left}px;width:${channelRect.width}px;z-index:9999`:'position:fixed;top:-9999px'"
+            class="max-h-48 overflow-auto rounded-xl bg-white p-1.5 shadow-2xl ring-1 ring-black/5 dark:bg-[#0d123d] dark:ring-white/10 scrollbar-hide">
+            <div @click="form.channel=''; openChannel=false" class="cursor-pointer rounded-lg px-3 py-2 text-sm italic text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10">Sin canal</div>
+            <% channels.forEach(ch => { %>
+              <div @click="form.channel='<%= ch.id %>'; openChannel=false"
+                class="group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-purple-500/10 transition-colors">
+                <span class="text-gray-700 dark:text-gray-300 group-hover:text-purple-500"># <%= ch.name %></span>
+                <i class="fa-solid fa-check text-[10px] text-purple-500" x-show="form.channel==='<%= ch.id %>'"></i>
+              </div>
+            <% }) %>
+          </div>
+        </template>
+      </div>
+
+      <div>
+        <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Mencionar rol</label>
+        <button type="button" x-ref="twMentionBtn" @click="openFixed('twMentionBtn','mentionRect','openMention')"
+          class="flex w-full items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-left dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all outline-none border-none">
+          <span class="truncate text-sm font-medium text-gray-900 dark:text-white" x-text="getMentionName()"></span>
+          <i class="fa-solid fa-chevron-down text-[10px] text-gray-400 transition-transform" :class="openMention?'rotate-180':''"></i>
+        </button>
+        <template x-teleport="body">
+          <div x-show="openMention" x-transition @click.away="openMention=false"
+            :style="mentionRect?`position:fixed;top:${mentionRect.top}px;left:${mentionRect.left}px;width:${mentionRect.width}px;z-index:9999`:'position:fixed;top:-9999px'"
+            class="max-h-48 overflow-auto rounded-xl bg-white p-1.5 shadow-2xl ring-1 ring-black/5 dark:bg-[#0d123d] dark:ring-white/10 scrollbar-hide">
+            <div @click="form.mention=''; openMention=false" class="cursor-pointer rounded-lg px-3 py-2 text-sm italic text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10">Sin mencion</div>
+            <% (roles||[]).forEach(r => { %>
+              <div @click="form.mention='<%= r.id %>'; openMention=false"
+                class="group flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-purple-500/10 transition-colors">
+                <span class="inline-block h-2.5 w-2.5 rounded-full flex-shrink-0" style="background:<%= r.color %>"></span>
+                <span class="text-gray-700 dark:text-gray-300 group-hover:text-purple-500"><%= r.name %></span>
+                <i class="fa-solid fa-check ml-auto text-[10px] text-purple-500" x-show="form.mention==='<%= r.id %>'"></i>
+              </div>
+            <% }) %>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- AÑADIR STREAMER -->
+    <div>
+      <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Streamers</label>
+      <div class="flex gap-2 mb-3">
+        <div class="relative flex-1">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">@</span>
+          <input type="text" x-model="newUsername" @keydown.enter.prevent="addStreamer()" placeholder="nombre_del_streamer"
+            class="w-full rounded-xl bg-gray-50 pl-7 pr-4 py-3 text-sm dark:bg-white/5 dark:text-white placeholder-gray-400 outline-none border-none focus:ring-2 focus:ring-[#9146FF]/30 transition-all" />
+        </div>
+        <button type="button" @click="addStreamer()"
+          class="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-colors"
+          style="background:#9146FF22;color:#9146FF" onmouseover="this.style.background='#9146FF33'" onmouseout="this.style.background='#9146FF22'">
+          <i class="fa-solid fa-plus text-xs"></i> Añadir
+        </button>
+      </div>
+
+      <div class="space-y-2">
+        <template x-for="s in form.streamers" :key="s.username">
+          <div class="rounded-xl bg-gray-50 dark:bg-white/5 p-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg" style="background:#9146FF22">
+                  <i class="fa-brands fa-twitch text-sm" style="color:#9146FF"></i>
+                </div>
+                <span class="font-medium text-gray-900 dark:text-white" x-text="'@' + s.username"></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" @click="editingMsg = editingMsg === s.username ? null : s.username; editMsgValue = s.message || ''"
+                  class="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-white/10 transition-colors">
+                  <i class="fa-solid fa-pen-to-square mr-1"></i> Mensaje
+                </button>
+                <button type="button" @click="removeStreamer(s.username)"
+                  class="rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 transition-colors">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </div>
+            <div x-show="editingMsg === s.username" x-transition class="mt-3">
+              <input type="text" x-model="editMsgValue" placeholder="Mensaje personalizado (vacio = mensaje por defecto)"
+                class="w-full rounded-lg bg-white dark:bg-white/10 px-3 py-2 text-sm dark:text-white placeholder-gray-400 outline-none border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-[#9146FF]/30 transition-all" />
+              <div class="mt-2 flex justify-end gap-2">
+                <button type="button" @click="editingMsg=null" class="rounded-lg px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">Cancelar</button>
+                <button type="button" @click="saveMessage(s.username)" class="rounded-lg px-3 py-1.5 text-xs font-bold text-white transition-colors" style="background:#9146FF">Guardar</button>
+              </div>
+            </div>
+          </div>
+        </template>
+        <div x-show="form.streamers.length === 0" class="rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 py-8 text-center">
+          <i class="fa-brands fa-twitch mb-2 text-2xl text-gray-300 dark:text-gray-600"></i>
+          <p class="text-sm text-gray-400">No hay streamers configurados</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<%# ═══════════════════════════════════════════════ YOUTUBE %>
+<%- contentFor("YouTube") %>
+<section
+  x-data="{
+    openChannel: false, openMention: false,
+    channelRect: null,  mentionRect: null,
+    newChId: '', newChName: '',
+    editingMsg: null, editMsgValue: '',
+    saving: false,
+    form: {
+      enabled:  <%= yt.enabled  || false %>,
+      channel:  '<%= yt.channel || '' %>',
+      mention:  '<%= yt.mention || '' %>',
+      channels: <%= JSON.stringify(yt.channels || []) %>,
+    },
+    getChannelName() { const c = channels.find(c=>c.id===this.form.channel); return c?'# '+c.name:'Seleccionar canal'; },
+    getMentionName()  { const r = roles.find(r=>r.id===this.form.mention);   return r?r.name:'Sin mencion'; },
+    openFixed(ref,rectKey,stateKey) {
+      this[stateKey]=!this[stateKey];
+      if(this[stateKey]){const rect=this.$refs[ref].getBoundingClientRect();this[rectKey]={top:rect.bottom+window.scrollY+8,left:rect.left+window.scrollX,width:rect.width};}
+    },
+    async save(){
+      this.saving=true;
+      try{const res=await fetch(window.location.href,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({platform:'youtube',action:'update',data:{enabled:this.form.enabled,channel:this.form.channel,mention:this.form.mention}})});if(res.ok)Alpine.store('toast').show('Guardado','success');else throw new Error();}catch{Alpine.store('toast').show('Error','error');}finally{this.saving=false;}
+    },
+    async addChannel(){
+      const id=this.newChId.trim(); const name=this.newChName.trim();
+      if(!id||!name)return;
+      const res=await fetch(window.location.href,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({platform:'youtube',action:'add',data:{id,name,message:''}})});
+      const json=await res.json();
+      if(json.success){this.form.channels.push({id,name,message:''});this.newChId='';this.newChName='';Alpine.store('toast').show('Canal añadido','success');}
+      else Alpine.store('toast').show(json.error||'Ya existe','error');
+    },
+    async removeChannel(id){
+      await fetch(window.location.href,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({platform:'youtube',action:'remove',data:{id}})});
+      this.form.channels=this.form.channels.filter(c=>c.id!==id);Alpine.store('toast').show('Canal eliminado','success');
+    },
+    async saveMessage(id){
+      await fetch(window.location.href,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({platform:'youtube',action:'update_message',data:{id,message:this.editMsgValue}})});
+      const c=this.form.channels.find(c=>c.id===id);if(c)c.message=this.editMsgValue;this.editingMsg=null;Alpine.store('toast').show('Mensaje actualizado','success');
+    }
+  }"
+  x-init="$watch('form.enabled',()=>save());$watch('form.channel',()=>save());$watch('form.mention',()=>save())"
+  class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c]">
+
+  <%- include('./_platform_header', { color: '#FF0000', icon: 'fa-brands fa-youtube', name: 'YouTube', desc: 'Notifica cuando se sube un nuevo video.' }) %>
+
+  <div class="space-y-6">
+    <div class="grid gap-4 md:grid-cols-3">
+      <div class="flex items-center justify-between rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3">
+        <div><p class="text-sm font-bold text-gray-700 dark:text-gray-200">Activar</p><p class="text-xs text-gray-500 dark:text-gray-400">Habilitar alertas de YouTube</p></div>
+        <button type="button" @click="form.enabled=!form.enabled" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200" :style="form.enabled?'background-color:#FF0000':'background-color:rgb(209 213 219)'">
+          <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-all duration-200" :style="form.enabled?'transform:translateX(20px)':'transform:translateX(0)'"></span>
+        </button>
+      </div>
+      <div>
+        <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Canal de alertas</label>
+        <button type="button" x-ref="ytChannelBtn" @click="openFixed('ytChannelBtn','channelRect','openChannel')" class="flex w-full items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-left dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all outline-none border-none">
+          <span class="truncate text-sm font-medium text-gray-900 dark:text-white" x-text="getChannelName()"></span>
+          <i class="fa-solid fa-chevron-down text-[10px] text-gray-400 transition-transform" :class="openChannel?'rotate-180':''"></i>
+        </button>
+        <template x-teleport="body">
+          <div x-show="openChannel" x-transition @click.away="openChannel=false" :style="channelRect?`position:fixed;top:${channelRect.top}px;left:${channelRect.left}px;width:${channelRect.width}px;z-index:9999`:'position:fixed;top:-9999px'" class="max-h-48 overflow-auto rounded-xl bg-white p-1.5 shadow-2xl ring-1 ring-black/5 dark:bg-[#0d123d] dark:ring-white/10 scrollbar-hide">
+            <div @click="form.channel='';openChannel=false" class="cursor-pointer rounded-lg px-3 py-2 text-sm italic text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10">Sin canal</div>
+            <% channels.forEach(ch => { %><div @click="form.channel='<%= ch.id %>';openChannel=false" class="group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-red-500/10 transition-colors"><span class="text-gray-700 dark:text-gray-300 group-hover:text-red-500"># <%= ch.name %></span><i class="fa-solid fa-check text-[10px] text-red-500" x-show="form.channel==='<%= ch.id %>'"></i></div><% }) %>
+          </div>
+        </template>
+      </div>
+      <div>
+        <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Mencionar rol</label>
+        <button type="button" x-ref="ytMentionBtn" @click="openFixed('ytMentionBtn','mentionRect','openMention')" class="flex w-full items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-left dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all outline-none border-none">
+          <span class="truncate text-sm font-medium text-gray-900 dark:text-white" x-text="getMentionName()"></span>
+          <i class="fa-solid fa-chevron-down text-[10px] text-gray-400 transition-transform" :class="openMention?'rotate-180':''"></i>
+        </button>
+        <template x-teleport="body">
+          <div x-show="openMention" x-transition @click.away="openMention=false" :style="mentionRect?`position:fixed;top:${mentionRect.top}px;left:${mentionRect.left}px;width:${mentionRect.width}px;z-index:9999`:'position:fixed;top:-9999px'" class="max-h-48 overflow-auto rounded-xl bg-white p-1.5 shadow-2xl ring-1 ring-black/5 dark:bg-[#0d123d] dark:ring-white/10 scrollbar-hide">
+            <div @click="form.mention='';openMention=false" class="cursor-pointer rounded-lg px-3 py-2 text-sm italic text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10">Sin mencion</div>
+            <% (roles||[]).forEach(r => { %><div @click="form.mention='<%= r.id %>';openMention=false" class="group flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-red-500/10 transition-colors"><span class="inline-block h-2.5 w-2.5 rounded-full flex-shrink-0" style="background:<%= r.color %>"></span><span class="text-gray-700 dark:text-gray-300 group-hover:text-red-500"><%= r.name %></span><i class="fa-solid fa-check ml-auto text-[10px] text-red-500" x-show="form.mention==='<%= r.id %>'"></i></div><% }) %>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- AÑADIR CANAL YT -->
+    <div>
+      <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Canales de YouTube</label>
+      <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">El ID del canal lo encuentras en la URL: <code class="rounded bg-gray-100 dark:bg-white/10 px-1">youtube.com/channel/<strong>UCxxxx</strong></code></p>
+      <div class="flex gap-2 mb-3">
+        <input type="text" x-model="newChId" placeholder="UCxxxxxxxxxxxxxxxx (ID del canal)" class="flex-1 rounded-xl bg-gray-50 px-4 py-3 text-sm font-mono dark:bg-white/5 dark:text-white placeholder-gray-400 outline-none border-none focus:ring-2 focus:ring-red-500/30 transition-all" />
+        <input type="text" x-model="newChName" @keydown.enter.prevent="addChannel()" placeholder="Nombre visible" class="w-40 rounded-xl bg-gray-50 px-4 py-3 text-sm dark:bg-white/5 dark:text-white placeholder-gray-400 outline-none border-none focus:ring-2 focus:ring-red-500/30 transition-all" />
+        <button type="button" @click="addChannel()" class="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-colors" style="background:#FF000022;color:#FF0000" onmouseover="this.style.background='#FF000033'" onmouseout="this.style.background='#FF000022'">
+          <i class="fa-solid fa-plus text-xs"></i> Añadir
+        </button>
+      </div>
+      <div class="space-y-2">
+        <template x-for="c in form.channels" :key="c.id">
+          <div class="rounded-xl bg-gray-50 dark:bg-white/5 p-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg" style="background:#FF000022"><i class="fa-brands fa-youtube text-sm" style="color:#FF0000"></i></div>
+                <div><p class="font-medium text-gray-900 dark:text-white" x-text="c.name"></p><p class="text-xs font-mono text-gray-400" x-text="c.id"></p></div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" @click="editingMsg=editingMsg===c.id?null:c.id;editMsgValue=c.message||''" class="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-white/10 transition-colors"><i class="fa-solid fa-pen-to-square mr-1"></i>Mensaje</button>
+                <button type="button" @click="removeChannel(c.id)" class="rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 transition-colors"><i class="fa-solid fa-trash"></i></button>
+              </div>
+            </div>
+            <div x-show="editingMsg===c.id" x-transition class="mt-3">
+              <input type="text" x-model="editMsgValue" placeholder="Mensaje personalizado" class="w-full rounded-lg bg-white dark:bg-white/10 px-3 py-2 text-sm dark:text-white placeholder-gray-400 outline-none border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-red-500/30 transition-all" />
+              <div class="mt-2 flex justify-end gap-2">
+                <button type="button" @click="editingMsg=null" class="rounded-lg px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">Cancelar</button>
+                <button type="button" @click="saveMessage(c.id)" class="rounded-lg px-3 py-1.5 text-xs font-bold text-white transition-colors" style="background:#FF0000">Guardar</button>
+              </div>
+            </div>
+          </div>
+        </template>
+        <div x-show="form.channels.length===0" class="rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 py-8 text-center">
+          <i class="fa-brands fa-youtube mb-2 text-2xl text-gray-300 dark:text-gray-600"></i>
+          <p class="text-sm text-gray-400">No hay canales configurados</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<%# ═══════════════════════════════════════════════ TWITTER %>
+<%- contentFor("Twitter") %>
+<section
+  x-data="{
+    openChannel:false,openMention:false,channelRect:null,mentionRect:null,
+    newUsername:'',editingMsg:null,editMsgValue:'',saving:false,
+    form:{enabled:<%= tt.enabled||false %>,channel:'<%= tt.channel||'' %>',mention:'<%= tt.mention||'' %>',accounts:<%- JSON.stringify(tt.accounts||[]) %>},
+    getChannelName(){const c=channels.find(c=>c.id===this.form.channel);return c?'# '+c.name:'Seleccionar canal';},
+    getMentionName(){const r=roles.find(r=>r.id===this.form.mention);return r?r.name:'Sin mencion';},
+    openFixed(ref,rk,sk){this[sk]=!this[sk];if(this[sk]){const rect=this.$refs[ref].getBoundingClientRect();this[rk]={top:rect.bottom+window.scrollY+8,left:rect.left+window.scrollX,width:rect.width};}},
+    async save(){try{await fetch(window.location.href,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({platform:'twitter',action:'update',data:{enabled:this.form.enabled,channel:this.form.channel,mention:this.form.mention}})});Alpine.store('toast').show('Guardado','success');}catch{Alpine.store('toast').show('Error','error');}},
+    async addAccount(){const u=this.newUsername.trim().replace('@','');if(!u)return;const res=await fetch(window.location.href,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({platform:'twitter',action:'add',data:{username:u,message:''}})});const j=await res.json();if(j.success){this.form.accounts.push({username:u,message:''});this.newUsername='';Alpine.store('toast').show('Cuenta añadida','success');}else Alpine.store('toast').show(j.error||'Ya existe','error');},
+    async removeAccount(u){await fetch(window.location.href,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({platform:'twitter',action:'remove',data:{username:u}})});this.form.accounts=this.form.accounts.filter(a=>a.username!==u);Alpine.store('toast').show('Cuenta eliminada','success');},
+    async saveMessage(u){await fetch(window.location.href,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({platform:'twitter',action:'update_message',data:{username:u,message:this.editMsgValue}})});const a=this.form.accounts.find(a=>a.username===u);if(a)a.message=this.editMsgValue;this.editingMsg=null;Alpine.store('toast').show('Mensaje actualizado','success');}
+  }"
+  x-init="$watch('form.enabled',()=>save());$watch('form.channel',()=>save());$watch('form.mention',()=>save())"
+  class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c]">
+
+  <%- include('./_platform_header', { color: '#1DA1F2', icon: 'fa-brands fa-x-twitter', name: 'Twitter / X', desc: 'Notifica cuando se publica un nuevo tweet.' }) %>
+
+  <div class="rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3 mb-6">
+    <p class="text-xs text-blue-600 dark:text-blue-400"><i class="fa-solid fa-circle-info mr-1.5"></i>Las alertas de Twitter funcionan via RSS publico. Algunos tweets pueden tardar unos minutos en aparecer.</p>
+  </div>
+
+  <div class="space-y-6">
+    <div class="grid gap-4 md:grid-cols-3">
+      <div class="flex items-center justify-between rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3">
+        <div><p class="text-sm font-bold text-gray-700 dark:text-gray-200">Activar</p><p class="text-xs text-gray-500 dark:text-gray-400">Habilitar alertas de Twitter</p></div>
+        <button type="button" @click="form.enabled=!form.enabled" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200" :style="form.enabled?'background-color:#1DA1F2':'background-color:rgb(209 213 219)'">
+          <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-all duration-200" :style="form.enabled?'transform:translateX(20px)':'transform:translateX(0)'"></span>
+        </button>
+      </div>
+      <div>
+        <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Canal de alertas</label>
+        <button type="button" x-ref="ttChannelBtn" @click="openFixed('ttChannelBtn','channelRect','openChannel')" class="flex w-full items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-left dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all outline-none border-none">
+          <span class="truncate text-sm font-medium text-gray-900 dark:text-white" x-text="getChannelName()"></span>
+          <i class="fa-solid fa-chevron-down text-[10px] text-gray-400 transition-transform" :class="openChannel?'rotate-180':''"></i>
+        </button>
+        <template x-teleport="body">
+          <div x-show="openChannel" x-transition @click.away="openChannel=false" :style="channelRect?`position:fixed;top:${channelRect.top}px;left:${channelRect.left}px;width:${channelRect.width}px;z-index:9999`:'position:fixed;top:-9999px'" class="max-h-48 overflow-auto rounded-xl bg-white p-1.5 shadow-2xl ring-1 ring-black/5 dark:bg-[#0d123d] dark:ring-white/10 scrollbar-hide">
+            <div @click="form.channel='';openChannel=false" class="cursor-pointer rounded-lg px-3 py-2 text-sm italic text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10">Sin canal</div>
+            <% channels.forEach(ch => { %><div @click="form.channel='<%= ch.id %>';openChannel=false" class="group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-blue-500/10 transition-colors"><span class="text-gray-700 dark:text-gray-300 group-hover:text-blue-500"># <%= ch.name %></span><i class="fa-solid fa-check text-[10px] text-blue-500" x-show="form.channel==='<%= ch.id %>'"></i></div><% }) %>
+          </div>
+        </template>
+      </div>
+      <div>
+        <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Mencionar rol</label>
+        <button type="button" x-ref="ttMentionBtn" @click="openFixed('ttMentionBtn','mentionRect','openMention')" class="flex w-full items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-left dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all outline-none border-none">
+          <span class="truncate text-sm font-medium text-gray-900 dark:text-white" x-text="getMentionName()"></span>
+          <i class="fa-solid fa-chevron-down text-[10px] text-gray-400 transition-transform" :class="openMention?'rotate-180':''"></i>
+        </button>
+        <template x-teleport="body">
+          <div x-show="openMention" x-transition @click.away="openMention=false" :style="mentionRect?`position:fixed;top:${mentionRect.top}px;left:${mentionRect.left}px;width:${mentionRect.width}px;z-index:9999`:'position:fixed;top:-9999px'" class="max-h-48 overflow-auto rounded-xl bg-white p-1.5 shadow-2xl ring-1 ring-black/5 dark:bg-[#0d123d] dark:ring-white/10 scrollbar-hide">
+            <div @click="form.mention='';openMention=false" class="cursor-pointer rounded-lg px-3 py-2 text-sm italic text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10">Sin mencion</div>
+            <% (roles||[]).forEach(r => { %><div @click="form.mention='<%= r.id %>';openMention=false" class="group flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-blue-500/10 transition-colors"><span class="inline-block h-2.5 w-2.5 rounded-full flex-shrink-0" style="background:<%= r.color %>"></span><span class="text-gray-700 dark:text-gray-300 group-hover:text-blue-500"><%= r.name %></span><i class="fa-solid fa-check ml-auto text-[10px] text-blue-500" x-show="form.mention==='<%= r.id %>'"></i></div><% }) %>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <div>
+      <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Cuentas</label>
+      <div class="flex gap-2 mb-3">
+        <div class="relative flex-1">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">@</span>
+          <input type="text" x-model="newUsername" @keydown.enter.prevent="addAccount()" placeholder="nombre_de_usuario" class="w-full rounded-xl bg-gray-50 pl-7 pr-4 py-3 text-sm dark:bg-white/5 dark:text-white placeholder-gray-400 outline-none border-none focus:ring-2 focus:ring-blue-500/30 transition-all" />
+        </div>
+        <button type="button" @click="addAccount()" class="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-bold" style="background:#1DA1F222;color:#1DA1F2" onmouseover="this.style.background='#1DA1F233'" onmouseout="this.style.background='#1DA1F222'">
+          <i class="fa-solid fa-plus text-xs"></i> Añadir
+        </button>
+      </div>
+      <div class="space-y-2">
+        <template x-for="a in form.accounts" :key="a.username">
+          <div class="rounded-xl bg-gray-50 dark:bg-white/5 p-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg" style="background:#1DA1F222"><i class="fa-brands fa-x-twitter text-sm" style="color:#1DA1F2"></i></div>
+                <span class="font-medium text-gray-900 dark:text-white" x-text="'@'+a.username"></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" @click="editingMsg=editingMsg===a.username?null:a.username;editMsgValue=a.message||''" class="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-white/10 transition-colors"><i class="fa-solid fa-pen-to-square mr-1"></i>Mensaje</button>
+                <button type="button" @click="removeAccount(a.username)" class="rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 transition-colors"><i class="fa-solid fa-trash"></i></button>
+              </div>
+            </div>
+            <div x-show="editingMsg===a.username" x-transition class="mt-3">
+              <input type="text" x-model="editMsgValue" placeholder="Mensaje personalizado" class="w-full rounded-lg bg-white dark:bg-white/10 px-3 py-2 text-sm dark:text-white placeholder-gray-400 outline-none border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-blue-500/30" />
+              <div class="mt-2 flex justify-end gap-2">
+                <button type="button" @click="editingMsg=null" class="rounded-lg px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-200 dark:hover:bg-white/10">Cancelar</button>
+                <button type="button" @click="saveMessage(a.username)" class="rounded-lg px-3 py-1.5 text-xs font-bold text-white" style="background:#1DA1F2">Guardar</button>
+              </div>
+            </div>
+          </div>
+        </template>
+        <div x-show="form.accounts.length===0" class="rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 py-8 text-center">
+          <i class="fa-brands fa-x-twitter mb-2 text-2xl text-gray-300 dark:text-gray-600"></i>
+          <p class="text-sm text-gray-400">No hay cuentas configuradas</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<%# ═══════════════════════════════════════════════ INSTAGRAM %>
+<%- contentFor("Instagram") %>
+<section
+  x-data="{
+    openChannel:false,openMention:false,channelRect:null,mentionRect:null,
+    newUsername:'',editingMsg:null,editMsgValue:'',saving:false,
+    form:{enabled:<%= ig.enabled||false %>,channel:'<%= ig.channel||'' %>',mention:'<%= ig.mention||'' %>',accounts:<%- JSON.stringify(ig.accounts||[]) %>},
+    getChannelName(){const c=channels.find(c=>c.id===this.form.channel);return c?'# '+c.name:'Seleccionar canal';},
+    getMentionName(){const r=roles.find(r=>r.id===this.form.mention);return r?r.name:'Sin mencion';},
+    openFixed(ref,rk,sk){this[sk]=!this[sk];if(this[sk]){const rect=this.$refs[ref].getBoundingClientRect();this[rk]={top:rect.bottom+window.scrollY+8,left:rect.left+window.scrollX,width:rect.width};}},
+    async save(){try{await fetch(window.location.href,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({platform:'instagram',action:'update',data:{enabled:this.form.enabled,channel:this.form.channel,mention:this.form.mention}})});Alpine.store('toast').show('Guardado','success');}catch{Alpine.store('toast').show('Error','error');}},
+    async addAccount(){const u=this.newUsername.trim().replace('@','');if(!u)return;const res=await fetch(window.location.href,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({platform:'instagram',action:'add',data:{username:u,message:''}})});const j=await res.json();if(j.success){this.form.accounts.push({username:u,message:''});this.newUsername='';Alpine.store('toast').show('Cuenta añadida','success');}else Alpine.store('toast').show(j.error||'Ya existe','error');},
+    async removeAccount(u){await fetch(window.location.href,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({platform:'instagram',action:'remove',data:{username:u}})});this.form.accounts=this.form.accounts.filter(a=>a.username!==u);Alpine.store('toast').show('Cuenta eliminada','success');},
+    async saveMessage(u){await fetch(window.location.href,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({platform:'instagram',action:'update_message',data:{username:u,message:this.editMsgValue}})});const a=this.form.accounts.find(a=>a.username===u);if(a)a.message=this.editMsgValue;this.editingMsg=null;Alpine.store('toast').show('Mensaje actualizado','success');}
+  }"
+  x-init="$watch('form.enabled',()=>save());$watch('form.channel',()=>save());$watch('form.mention',()=>save())"
+  class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c]">
+
+  <%- include('./_platform_header', { color: '#E1306C', icon: 'fa-brands fa-instagram', name: 'Instagram', desc: 'Notifica cuando se publica una nueva foto o video.' }) %>
+
+  <div class="rounded-xl border border-pink-500/20 bg-pink-500/5 px-4 py-3 mb-6">
+    <p class="text-xs text-pink-600 dark:text-pink-400"><i class="fa-solid fa-circle-info mr-1.5"></i>Las alertas de Instagram funcionan via RSS publico. Solo funciona con cuentas publicas.</p>
+  </div>
+
+  <div class="space-y-6">
+    <div class="grid gap-4 md:grid-cols-3">
+      <div class="flex items-center justify-between rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3">
+        <div><p class="text-sm font-bold text-gray-700 dark:text-gray-200">Activar</p><p class="text-xs text-gray-500 dark:text-gray-400">Habilitar alertas de Instagram</p></div>
+        <button type="button" @click="form.enabled=!form.enabled" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200" :style="form.enabled?'background-color:#E1306C':'background-color:rgb(209 213 219)'">
+          <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-all duration-200" :style="form.enabled?'transform:translateX(20px)':'transform:translateX(0)'"></span>
+        </button>
+      </div>
+      <div>
+        <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Canal de alertas</label>
+        <button type="button" x-ref="igChannelBtn" @click="openFixed('igChannelBtn','channelRect','openChannel')" class="flex w-full items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-left dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all outline-none border-none">
+          <span class="truncate text-sm font-medium text-gray-900 dark:text-white" x-text="getChannelName()"></span>
+          <i class="fa-solid fa-chevron-down text-[10px] text-gray-400 transition-transform" :class="openChannel?'rotate-180':''"></i>
+        </button>
+        <template x-teleport="body">
+          <div x-show="openChannel" x-transition @click.away="openChannel=false" :style="channelRect?`position:fixed;top:${channelRect.top}px;left:${channelRect.left}px;width:${channelRect.width}px;z-index:9999`:'position:fixed;top:-9999px'" class="max-h-48 overflow-auto rounded-xl bg-white p-1.5 shadow-2xl ring-1 ring-black/5 dark:bg-[#0d123d] dark:ring-white/10 scrollbar-hide">
+            <div @click="form.channel='';openChannel=false" class="cursor-pointer rounded-lg px-3 py-2 text-sm italic text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10">Sin canal</div>
+            <% channels.forEach(ch => { %><div @click="form.channel='<%= ch.id %>';openChannel=false" class="group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-pink-500/10 transition-colors"><span class="text-gray-700 dark:text-gray-300 group-hover:text-pink-500"># <%= ch.name %></span><i class="fa-solid fa-check text-[10px] text-pink-500" x-show="form.channel==='<%= ch.id %>'"></i></div><% }) %>
+          </div>
+        </template>
+      </div>
+      <div>
+        <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Mencionar rol</label>
+        <button type="button" x-ref="igMentionBtn" @click="openFixed('igMentionBtn','mentionRect','openMention')" class="flex w-full items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-left dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all outline-none border-none">
+          <span class="truncate text-sm font-medium text-gray-900 dark:text-white" x-text="getMentionName()"></span>
+          <i class="fa-solid fa-chevron-down text-[10px] text-gray-400 transition-transform" :class="openMention?'rotate-180':''"></i>
+        </button>
+        <template x-teleport="body">
+          <div x-show="openMention" x-transition @click.away="openMention=false" :style="mentionRect?`position:fixed;top:${mentionRect.top}px;left:${mentionRect.left}px;width:${mentionRect.width}px;z-index:9999`:'position:fixed;top:-9999px'" class="max-h-48 overflow-auto rounded-xl bg-white p-1.5 shadow-2xl ring-1 ring-black/5 dark:bg-[#0d123d] dark:ring-white/10 scrollbar-hide">
+            <div @click="form.mention='';openMention=false" class="cursor-pointer rounded-lg px-3 py-2 text-sm italic text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10">Sin mencion</div>
+            <% (roles||[]).forEach(r => { %><div @click="form.mention='<%= r.id %>';openMention=false" class="group flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-pink-500/10 transition-colors"><span class="inline-block h-2.5 w-2.5 rounded-full flex-shrink-0" style="background:<%= r.color %>"></span><span class="text-gray-700 dark:text-gray-300 group-hover:text-pink-500"><%= r.name %></span><i class="fa-solid fa-check ml-auto text-[10px] text-pink-500" x-show="form.mention==='<%= r.id %>'"></i></div><% }) %>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <div>
+      <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Cuentas</label>
+      <div class="flex gap-2 mb-3">
+        <div class="relative flex-1">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">@</span>
+          <input type="text" x-model="newUsername" @keydown.enter.prevent="addAccount()" placeholder="nombre_de_usuario" class="w-full rounded-xl bg-gray-50 pl-7 pr-4 py-3 text-sm dark:bg-white/5 dark:text-white placeholder-gray-400 outline-none border-none focus:ring-2 focus:ring-pink-500/30 transition-all" />
+        </div>
+        <button type="button" @click="addAccount()" class="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-bold" style="background:#E1306C22;color:#E1306C" onmouseover="this.style.background='#E1306C33'" onmouseout="this.style.background='#E1306C22'">
+          <i class="fa-solid fa-plus text-xs"></i> Añadir
+        </button>
+      </div>
+      <div class="space-y-2">
+        <template x-for="a in form.accounts" :key="a.username">
+          <div class="rounded-xl bg-gray-50 dark:bg-white/5 p-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg" style="background:#E1306C22"><i class="fa-brands fa-instagram text-sm" style="color:#E1306C"></i></div>
+                <span class="font-medium text-gray-900 dark:text-white" x-text="'@'+a.username"></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" @click="editingMsg=editingMsg===a.username?null:a.username;editMsgValue=a.message||''" class="rounded-lg px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-white/10 transition-colors"><i class="fa-solid fa-pen-to-square mr-1"></i>Mensaje</button>
+                <button type="button" @click="removeAccount(a.username)" class="rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 transition-colors"><i class="fa-solid fa-trash"></i></button>
+              </div>
+            </div>
+            <div x-show="editingMsg===a.username" x-transition class="mt-3">
+              <input type="text" x-model="editMsgValue" placeholder="Mensaje personalizado" class="w-full rounded-lg bg-white dark:bg-white/10 px-3 py-2 text-sm dark:text-white placeholder-gray-400 outline-none border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-pink-500/30" />
+              <div class="mt-2 flex justify-end gap-2">
+                <button type="button" @click="editingMsg=null" class="rounded-lg px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-200 dark:hover:bg-white/10">Cancelar</button>
+                <button type="button" @click="saveMessage(a.username)" class="rounded-lg px-3 py-1.5 text-xs font-bold text-white" style="background:#E1306C">Guardar</button>
+              </div>
+            </div>
+          </div>
+        </template>
+        <div x-show="form.accounts.length===0" class="rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 py-8 text-center">
+          <i class="fa-brands fa-instagram mb-2 text-2xl text-gray-300 dark:text-gray-600"></i>
+          <p class="text-sm text-gray-400">No hay cuentas configuradas</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

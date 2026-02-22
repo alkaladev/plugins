@@ -1,0 +1,58 @@
+<section
+  x-data="{
+    form: {
+      twitch_client_id:     '<%= config.twitch_client_id     || '' %>',
+      twitch_client_secret: '<%= config.twitch_client_secret || '' %>'
+    },
+    saving: false,
+    async save() {
+      this.saving = true;
+      try {
+        const res = await fetch(window.location.href, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.form) });
+        if (res.ok) Alpine.store('toast').show('Configuracion guardada', 'success');
+        else throw new Error();
+      } catch { Alpine.store('toast').show('Error al guardar', 'error'); }
+      finally { this.saving = false; }
+    }
+  }"
+  class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c]">
+
+  <h3 class="mb-2 text-xl font-bold text-gray-900 dark:text-white">Configuracion global</h3>
+  <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">Credenciales necesarias para Twitch. YouTube, Twitter e Instagram no requieren configuracion adicional.</p>
+
+  <form @submit.prevent="save" class="space-y-6">
+
+    <div class="rounded-xl border border-purple-500/20 bg-purple-500/5 p-5">
+      <div class="mb-4 flex items-center gap-3">
+        <div class="flex h-9 w-9 items-center justify-center rounded-xl" style="background:#9146FF22">
+          <i class="fa-brands fa-twitch text-[#9146FF]"></i>
+        </div>
+        <div>
+          <p class="font-bold text-gray-900 dark:text-white">Twitch</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Obtén tus credenciales en <a href="https://dev.twitch.tv/console" target="_blank" class="text-purple-500 hover:underline">dev.twitch.tv/console</a></p>
+        </div>
+      </div>
+      <div class="grid gap-4 md:grid-cols-2">
+        <div>
+          <label class="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-200">Client ID</label>
+          <input type="text" x-model="form.twitch_client_id" placeholder="tu_client_id"
+            class="w-full rounded-xl bg-gray-50 px-4 py-3 text-sm font-mono dark:bg-white/5 dark:text-white placeholder-gray-400 outline-none border-none focus:ring-2 focus:ring-purple-500/30 transition-all" />
+        </div>
+        <div>
+          <label class="mb-2 block text-sm font-bold text-gray-700 dark:text-gray-200">Client Secret</label>
+          <input type="password" x-model="form.twitch_client_secret" placeholder="tu_client_secret"
+            class="w-full rounded-xl bg-gray-50 px-4 py-3 text-sm font-mono dark:bg-white/5 dark:text-white placeholder-gray-400 outline-none border-none focus:ring-2 focus:ring-purple-500/30 transition-all" />
+        </div>
+      </div>
+    </div>
+
+    <div class="flex justify-end border-t border-gray-200 pt-6 dark:border-gray-700">
+      <button type="submit" :disabled="saving"
+        class="inline-flex items-center gap-2 rounded-xl bg-green-500/10 dark:bg-green-500/20 px-6 py-2.5 font-bold text-green-700 dark:text-green-300 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 shadow-[0_10px_40px_-10px_rgba(16,185,129,0.4)]">
+        <i class="fa-solid fa-floppy-disk" x-show="!saving"></i>
+        <i class="fa-solid fa-spinner fa-spin" x-show="saving"></i>
+        <span x-text="saving ? 'Guardando...' : 'Guardar'"></span>
+      </button>
+    </div>
+  </form>
+</section>

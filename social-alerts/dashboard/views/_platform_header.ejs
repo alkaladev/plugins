@@ -1,0 +1,12 @@
+<%
+  const { color, icon, name, desc } = locals;
+%>
+<div class="mb-6 flex items-center gap-4">
+  <div class="flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg" style="background:<%= color %>22">
+    <i class="<%= icon %> text-xl" style="color:<%= color %>"></i>
+  </div>
+  <div>
+    <h3 class="text-xl font-bold text-gray-900 dark:text-white"><%= name %></h3>
+    <p class="text-sm text-gray-500 dark:text-gray-400"><%= desc %></p>
+  </div>
+</div>
