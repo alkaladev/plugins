@@ -18,24 +18,24 @@ class MusicPlugin extends BotPlugin {
         // 🟢 EVENTOS IPC
         this.ipcEvents = new Map();
         
-        //console.log('[MUSIC-PLUGIN] Constructor: inicializando ipcEvents...');
+        console.log('[MUSIC-PLUGIN] Constructor: inicializando ipcEvents...');
         
         this.ipcEvents.set("getStatus", async (payload) => {
-            //console.log('[MUSIC-IPC-EVENT] getStatus llamado con payload:', payload);
+            console.log('[MUSIC-IPC-EVENT] getStatus llamado con payload:', payload);
             return await this.handleGetStatus(payload);
         });
 
         this.ipcEvents.set("control", async (payload) => {
-            //console.log('[MUSIC-IPC-EVENT] control llamado con payload:', payload);
+            console.log('[MUSIC-IPC-EVENT] control llamado con payload:', payload);
             return await this.handleControl(payload);
         });
 
-        // ✅ Handler para búsqueda
+        // ✅ NUEVO: Handler para búsqueda
         this.ipcEvents.set("search", async (payload) => {
-            console.log('[MUSIC-IPC-EVENT] search llamado con payload:', payload);
+            console.log('[MUSIC-IPC-EVENT] ¡¡SEARCH LLAMADO!! payload:', payload);
             try {
                 const result = await this.handleSearch(payload);
-                console.log('[MUSIC-IPC-EVENT] search completado, retornando resultado');
+                console.log('[MUSIC-IPC-EVENT] search completado, retornando:', result);
                 return result;
             } catch (error) {
                 console.error('[MUSIC-IPC-EVENT] search ERROR:', error);
@@ -43,7 +43,7 @@ class MusicPlugin extends BotPlugin {
             }
         });
 
-        //console.log('[MUSIC-PLUGIN] ipcEvents registrados:', Array.from(this.ipcEvents.keys()));
+        console.log('[MUSIC-PLUGIN] ipcEvents registrados:', Array.from(this.ipcEvents.keys()));
     }
 
     getPlayer(guildId) {
@@ -51,14 +51,14 @@ class MusicPlugin extends BotPlugin {
     }
 
     /**
-     * 🟢 HANDLER IPC: Búsqueda de canciones (LAVALINK 2.9+)
+     * 🟢 HANDLER IPC: Búsqueda de canciones
      */
     async handleSearch(payload) {
         const requestId = `REQ-SEARCH-${Date.now()}`;
         const startTotal = Date.now();
         
-        //console.log(`\n[MUSIC-SEARCH-IPC] ============ INICIO SEARCH: ${requestId} ============`);
-        //console.log(`[MUSIC-SEARCH-IPC-${requestId}] Payload recibido:`, payload);
+        console.log(`\n[MUSIC-SEARCH-IPC] ============ INICIO SEARCH: ${requestId} ============`);
+        console.log(`[MUSIC-SEARCH-IPC-${requestId}] Payload recibido:`, payload);
         
         try {
             const { guildId, query, page = 1 } = payload;
@@ -87,14 +87,14 @@ class MusicPlugin extends BotPlugin {
 
             const startSearch = Date.now();
             console.log(`[MUSIC-SEARCH-IPC-${requestId}] Ejecutando player.search()...`);
-            console.log(`[MUSIC-SEARCH-IPC-${requestId}] 🔧 Búsqueda en SPOTIFY (spsearch)`);
+            console.log(`[MUSIC-SEARCH-IPC-${requestId}] Player.search es function:`, typeof player.search === 'function');
 
-            // 🔧 LAVALINK 2.9+: search() devuelve directamente el resultado
-            // Buscar en Spotify en lugar de YouTube
-            const searchResult = await player.search(query, { source: "spsearch" });
+            const searchResult = await player.search(query, { source: "youtube" });
 
             const searchTime = Date.now() - startSearch;
             console.log(`[MUSIC-SEARCH-IPC-${requestId}] Búsqueda completada en: ${searchTime}ms`);
+            console.log(`[MUSIC-SEARCH-IPC-${requestId}] searchResult tipo:`, typeof searchResult);
+            console.log(`[MUSIC-SEARCH-IPC-${requestId}] searchResult.tracks existe:`, !!searchResult?.tracks);
             console.log(`[MUSIC-SEARCH-IPC-${requestId}] searchResult.tracks.length:`, searchResult?.tracks?.length || 0);
 
             if (!searchResult || !searchResult.tracks || searchResult.tracks.length === 0) {
@@ -109,7 +109,6 @@ class MusicPlugin extends BotPlugin {
             console.log(`[MUSIC-SEARCH-IPC-${requestId}] ✅ ÉXITO - ${searchResult.tracks.length} resultados - TOTAL TIME: ${totalTime}ms`);
             console.log(`[MUSIC-SEARCH-IPC] ============ FIN SEARCH: ${requestId} ============\n`);
 
-            // 🔧 RETORNAR SOLO LOS DATOS, SIN ENVOLTURA EXTRA
             return {
                 tracks: searchResult.tracks,
                 query: query
@@ -117,7 +116,8 @@ class MusicPlugin extends BotPlugin {
 
         } catch (error) {
             const totalTime = Date.now() - startTotal;
-            console.error(`[MUSIC-SEARCH-IPC-${requestId}] ❌ ERROR:`, error.message);
+            console.error(`[MUSIC-SEARCH-IPC-${requestId}] ❌ ERROR:`, error);
+            console.error(`[MUSIC-SEARCH-IPC-${requestId}] Error message:`, error.message);
             console.log(`[MUSIC-SEARCH-IPC] ============ FIN SEARCH (CON ERROR): ${requestId} ============\n`);
             throw error;
         }
@@ -132,75 +132,15 @@ class MusicPlugin extends BotPlugin {
 
         switch (action) {
             case "music:TOGGLE_PAUSE": 
-                // 🔧 LAVALINK 2.9+: Toggle Pause/Play - Usando resume() para reanudar
-                try {
-                    console.log('[MUSIC-ACTION] TOGGLE_PAUSE inicio');
-                    console.log('[MUSIC-ACTION] - player.paused:', player.paused);
-                    
-                    if (!player.queue?.current) {
-                        throw new Error('No hay canción para pausar/reanudar');
-                    }
-                    
-                    const currentPausedState = player.paused;
-                    
-                    // IMPORTANTE: Usar resume() para reanudar, no pause(false)
-                    if (currentPausedState) {
-                        // Está pausado → REANUDAR
-                        console.log('[MUSIC-ACTION] - Está pausado, reanudando con resume()');
-                        try {
-                            await player.resume();
-                            console.log('[MUSIC-ACTION] - resume() ejecutado correctamente');
-                        } catch (resumeErr) {
-                            console.error('[MUSIC-ACTION] - resume() error:', resumeErr.message);
-                            // Si resume() falla, intentar pause(false)
-                            try {
-                                await player.pause(false);
-                                console.log('[MUSIC-ACTION] - pause(false) ejecutado correctamente');
-                            } catch (pauseErr) {
-                                console.error('[MUSIC-ACTION] - pause(false) también falló:', pauseErr.message);
-                            }
-                        }
-                    } else {
-                        // Está reproduciendo → PAUSAR
-                        console.log('[MUSIC-ACTION] - Está reproduciendo, pausando con pause(true)');
-                        try {
-                            await player.pause(true);
-                            console.log('[MUSIC-ACTION] - pause(true) ejecutado correctamente');
-                        } catch (pauseErr) {
-                            console.error('[MUSIC-ACTION] - pause(true) error:', pauseErr.message);
-                        }
-                    }
-                    
-                    console.log('[MUSIC-ACTION] - player.paused después:', player.paused);
-                    
-                    // Retornar el estado ACTUAL
-                    return { 
-                        success: true, 
-                        paused: player.paused,
-                        message: player.paused ? 'Pausado' : 'Reproduciéndose'
-                    };
-                    
-                } catch (err) {
-                    console.error('[MUSIC-ACTION] TOGGLE_PAUSE ERROR:', err.message);
-                    
-                    // Retornar estado actual
-                    return { 
-                        success: true, 
-                        paused: player.paused,
-                        message: 'Error: ' + err.message
-                    };
-                }
+                return await player.pause(!player.paused);
             case "music:SKIP_TRACK": 
-                await player.skip();
-                return { success: true, message: 'Canción saltada' };
+                return await player.skip();
             case "music:STOP_PLAYER": 
-                await player.destroy();
-                return { success: true, message: 'Reproductor detenido' };
+                return await player.destroy();
             case "music:SET_VOLUME": 
                 const vol = parseInt(data.volume);
                 if (isNaN(vol)) throw new Error("Volumen inválido");
-                await player.setVolume(vol);
-                return { success: true, volume: vol };
+                return await player.setVolume(vol);
             case "music:ADD_QUEUE":
                 return await this.addToQueue(guildId, data.track);
             default: 
@@ -229,7 +169,7 @@ class MusicPlugin extends BotPlugin {
             // Si tenemos el URI, buscamos especificamente ese track
             if (trackData.uri) {
                 console.log('[MUSIC-ADD-QUEUE] Buscando por URI:', trackData.uri);
-                const searchResult = await player.search(trackData.uri, { source: "spsearch" });
+                const searchResult = await player.search(trackData.uri, { source: "youtube" });
                 
                 if (searchResult?.tracks && searchResult.tracks.length > 0) {
                     trackToAdd = searchResult.tracks[0];
@@ -241,7 +181,7 @@ class MusicPlugin extends BotPlugin {
             if (!trackToAdd) {
                 const query = `${trackData.title} ${trackData.author || ''}`.trim();
                 console.log('[MUSIC-ADD-QUEUE] Buscando por query:', query);
-                const searchResult = await player.search(query, { source: "spsearch" });
+                const searchResult = await player.search(query, { source: "youtube" });
                 
                 if (searchResult?.tracks && searchResult.tracks.length > 0) {
                     trackToAdd = searchResult.tracks[0];
@@ -307,13 +247,8 @@ class MusicPlugin extends BotPlugin {
                 current: current ? {
                     title: current.info?.title || 'Unknown',
                     author: current.info?.author || 'Unknown',
-                    artwork: current.info?.artworkUrl || 
-                            current.info?.thumbnail ||
-                            current.info?.image ||
-                            current.info?.iconUrl ||
-                            '',
-                    uri: current.info?.uri || '',
-                    duration: current.info?.length || 0
+                    artwork: current.info?.artworkUrl || '',
+                    uri: current.info?.uri || ''
                 } : null,
                 queue: (player.queue?.tracks || [])
                     .slice(0, 10)
@@ -338,6 +273,8 @@ class MusicPlugin extends BotPlugin {
         console.log('[MUSIC-CONTROL-IPC] ============ CONTROL LLAMADO ============');
         console.log('[MUSIC-CONTROL-IPC] guildId:', guildId);
         console.log('[MUSIC-CONTROL-IPC] event:', event);
+        console.log('[MUSIC-CONTROL-IPC] data tipo:', typeof data);
+        console.log('[MUSIC-CONTROL-IPC] data:', data);
         
         // Validar que data sea un objeto limpio sin funciones
         let cleanData = {};
@@ -369,7 +306,7 @@ class MusicPlugin extends BotPlugin {
     }
 
     async onReady(client) {
-        //console.log('[MUSIC-PLUGIN] onReady llamado');
+        console.log('[MUSIC-PLUGIN] onReady llamado');
         await this._initializeMusic(client);
     }
 
@@ -381,7 +318,7 @@ class MusicPlugin extends BotPlugin {
 
         try {
             const HOST = process.env.LAVALINK_HOST || "lavalink.jirayu.net";
-            const PORT = parseInt(process.env.LAVALINK_PORT) || 2333; // 🔧 LAVALINK 2.9+: Puerto por defecto es 2333
+            const PORT = parseInt(process.env.LAVALINK_PORT) || 13592;
             const PASS = process.env.LAVALINK_PASSWORD || "youshallnotpass";
 
             this.music = new LavalinkManager({
@@ -404,14 +341,7 @@ class MusicPlugin extends BotPlugin {
                 playerOptions: {
                     clientBasedPositionUpdateInterval: 150,
                     defaultSearchPlatform: "ytsearch",
-                    // 🔧 LAVALINK 2.9+: Configuración recomendada
-                    applySearchIfNeeded: true, 
-                    onUndeclaredResponsetype: "ignore" 
                 },
-                // 🔧 LAVALINK 2.9+: Configuración de búsqueda
-                searchOptions: {
-                    allowedSearchSources: ["ytsearch", "ytmsearch", "scsearch", "spsearch"],
-                }
             });
 
             client.music = this.music;
@@ -499,7 +429,7 @@ class MusicPlugin extends BotPlugin {
             this.music.on("nodeError", (node, error) => Logger.error(`[MUSIC] Error nodo: ${error.message}`));
 
             await this.music.init(client.user.id);
-            Logger.success("[MUSIC] Sistema de música inicializado correctamente para Lavalink 2.9+");
+            Logger.success("[MUSIC] Sistema de música inicializado correctamente");
 
         } catch (error) {
             Logger.error("[MUSIC] Fallo al inicializar plugin:", error);

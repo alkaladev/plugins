@@ -1,4 +1,4 @@
-// plugins/music/dashboard/router.js - LAVALINK 2.9+
+// plugins/music/dashboard/router.js
 
 const path = require("path");
 const router = require("express").Router();
@@ -7,7 +7,7 @@ const { Logger } = require("strange-sdk/utils");
 const VIEW_FILE = path.join(__dirname, "view.ejs");
 
 // Configuración
-const IPC_TIMEOUT = 8000; // 8 segundos de timeout (aumentado para Lavalink 2.9+)
+const IPC_TIMEOUT = 5000; // 5 segundos de timeout
 const IPC_CLIENT_NAME = "Bot #0";
 const ALLOWED_EVENTS = [
     "music:TOGGLE_PAUSE",
@@ -162,7 +162,7 @@ router.get("/status", async (req, res) => {
     }
 
     try {
-        //Logger.info(`[MUSIC-DASH] /status: Requesting status for guild ${guildId}`);
+        Logger.info(`[MUSIC-DASH] /status: Requesting status for guild ${guildId}`);
         
         const response = await sendIPCMessage(
             ipcClient,
@@ -170,12 +170,7 @@ router.get("/status", async (req, res) => {
             { guildId }
         );
 
-        // 🔧 LAVALINK 2.9+: Desenvuelve la respuesta si viene envuelta
-        let data = response;
-        
-        if (response?.success === true && response?.data) {
-            data = response.data;
-        }
+        const data = response?.data || response;
 
         if (!data) {
             Logger.warn(`[MUSIC-DASH] /status: No data returned for guild ${guildId}`);
@@ -196,13 +191,7 @@ router.get("/status", async (req, res) => {
             current: data.current ? {
                 title: String(data.current.title || 'Unknown'),
                 author: String(data.current.author || 'Unknown'),
-                artwork: String(
-                    data.current.artwork ||
-                    data.current.info?.artworkUrl ||
-                    data.current.info?.thumbnail ||
-                    data.current.info?.iconUrl ||
-                    ''
-                ),
+                artwork: String(data.current.artwork || ''),
                 duration: Number(data.current.duration) || null,
                 position: Number(data.current.position) || null
             } : null,
@@ -212,7 +201,7 @@ router.get("/status", async (req, res) => {
             })) : []
         };
 
-        //Logger.success(`[MUSIC-DASH] /status: Status retrieved for guild ${guildId}`);
+        Logger.success(`[MUSIC-DASH] /status: Status retrieved for guild ${guildId}`);
         return res.json(validatedData);
 
     } catch (err) {
@@ -291,19 +280,9 @@ router.post("/search", async (req, res) => {
         console.log('[SEARCH-ROUTER] response.success:', response?.success);
         console.log('[SEARCH-ROUTER] response.data existe:', !!response?.data);
         
-        // 🔧 LAVALINK 2.9+: Desenvuelve las respuestas envueltas por IPC
-        let searchData = response;
-        
-        if (response?.success === true && response?.data) {
-            searchData = response.data;
-        }
-        
-        // Si la data aún tiene success/data, desenvuelve nuevamente
-        if (searchData?.success === true && searchData?.data) {
-            searchData = searchData.data;
-        }
-        
-        console.log('[SEARCH-ROUTER] searchData final:', searchData);
+        // ✅ IMPORTANTE: El IPC retorna { success: true, data: { tracks: [...] } }
+        const searchData = response?.data || response;
+        console.log('[SEARCH-ROUTER] searchData:', searchData);
         console.log('[SEARCH-ROUTER] searchData.tracks existe:', !!searchData?.tracks);
         console.log('[SEARCH-ROUTER] searchData.tracks.length:', searchData?.tracks?.length);
         
@@ -336,14 +315,12 @@ router.post("/search", async (req, res) => {
 
         const results = paginatedTracks.map((track, index) => {
             console.log(`[SEARCH-ROUTER] Mapeando track ${index}:`, track?.info?.title);
-            console.log(`[SEARCH-ROUTER] Track duration (ms):`, track?.info?.length);
             return {
                 id: track.info?.identifier || `${track.info?.title}_${index}`,
                 title: track.info?.title || 'Unknown',
                 author: track.info?.author || 'Unknown Artist',
                 thumbnail: track.info?.artworkUrl || 'https://via.placeholder.com/50?text=No+Image',
                 duration: formatDuration(track.info?.length || 0),
-                durationMs: track.info?.length || 0,
                 uri: track.info?.uri || ''
             };
         });
@@ -428,6 +405,8 @@ router.post("/control", async (req, res) => {
         console.log('[MUSIC-CONTROL-ROUTER] Enviando IPC...');
         console.log('[MUSIC-CONTROL-ROUTER] event:', event);
         console.log('[MUSIC-CONTROL-ROUTER] data:', data);
+        console.log('[MUSIC-CONTROL-ROUTER] data tipo:', typeof data);
+        console.log('[MUSIC-CONTROL-ROUTER] data keys:', Object.keys(data || {}));
         
         // Asegurar que data sea un objeto limpio sin funciones
         const cleanData = {};
@@ -448,37 +427,16 @@ router.post("/control", async (req, res) => {
         );
 
         console.log('[MUSIC-CONTROL-ROUTER] Response recibida:', response);
-        console.log('[MUSIC-CONTROL-ROUTER] response.success:', response?.success);
-        console.log('[MUSIC-CONTROL-ROUTER] response.data:', response?.data);
 
         if (!response) {
             Logger.warn(`[MUSIC-DASH] /control: No response for ${event}`);
             return res.status(500).json({ error: 'No response from bot' });
         }
 
-        // 🔧 Manejar respuestas envueltas por IPC
-        let innerResponse = response;
-        
-        if (response?.success === true && response?.data) {
-            innerResponse = response.data;
-        }
-        
-        console.log('[MUSIC-CONTROL-ROUTER] innerResponse:', innerResponse);
-        console.log('[MUSIC-CONTROL-ROUTER] innerResponse.success:', innerResponse?.success);
-        console.log('[MUSIC-CONTROL-ROUTER] innerResponse.error:', innerResponse?.error);
-
-        // Si success explícitamente es false, error
-        if (innerResponse?.success === false) {
-            console.error('[MUSIC-CONTROL-ROUTER] Error:', innerResponse.error);
-            Logger.error(`[MUSIC-DASH] /control: Failed - ${innerResponse.error}`);
-            return res.status(400).json({ error: innerResponse.error || 'Unknown error' });
-        }
-        
-        // Si tiene un error field, también es error
-        if (innerResponse?.error) {
-            console.error('[MUSIC-CONTROL-ROUTER] Error:', innerResponse.error);
-            Logger.error(`[MUSIC-DASH] /control: Failed - ${innerResponse.error}`);
-            return res.status(400).json({ error: innerResponse.error });
+        if (response.success === false) {
+            console.error('[MUSIC-CONTROL-ROUTER] Error:', response.error);
+            Logger.error(`[MUSIC-DASH] /control: Failed - ${response.error}`);
+            return res.status(400).json({ error: response.error || 'Unknown error' });
         }
 
         console.log('[MUSIC-CONTROL-ROUTER] ✅ Action completed successfully');
