@@ -1,11 +1,7 @@
 const { EmbedBuilder, ApplicationCommandOptionType } = require("discord.js");
 const { stripIndent } = require("common-tags");
-// IMPORTAMOS EL PLUGIN DIRECTAMENTE
-const musicPlugin = require("../index"); 
+const musicPlugin = require("../index");
 
-/**
- * @type {import('strange-sdk').CommandType}
- */
 module.exports = {
     name: "play",
     description: "music:PLAY.DESCRIPTION",
@@ -43,58 +39,58 @@ module.exports = {
 async function play(context, query) {
     const { guild, member, channel, client } = context;
 
-    // --- LOGS DE DEPURACIÓN ---
-    console.log("--- DEBUG MUSIC COMMAND ---");
-    console.log("1. ¿musicPlugin existe?:", !!musicPlugin);
-    console.log("2. ¿musicPlugin.music tiene valor?:", !!(musicPlugin && musicPlugin.music));
-    console.log("3. ¿client.music tiene valor?:", !!client.music);
-    console.log("---------------------------");
-
-    if (!member.voice.channel) return guild.getT("music:ERRORS.NO_VOICE");
-
-    // Intentamos obtener el manager de cualquiera de los dos sitios
-    const musicManager = (musicPlugin && musicPlugin.music) || client.music;
-
-    if (!musicManager) {
-        return "🚫 El sistema de música no está listo. Revisa los logs de la consola.";
+    if (!member.voice.channel) {
+        return { content: guild.getT("music:ERRORS.NO_VOICE"), ephemeral: true };
     }
-    
-    let player = musicManager.players.get(guild.id);
 
-    if (!player) {
-        player = musicManager.createPlayer({
-            guildId: guild.id,
-            voiceChannelId: member.voice.channel.id,
-            textChannelId: channel.id,
-            selfDeaf: true,
-            volume: 80
-        });
+    // Intentamos obtener el manager de varias formas para asegurar compatibilidad
+    const musicManager = musicPlugin.getManager() || client.music;
+    
+    if (!musicManager) {
+        return { content: "🚫 El sistema de música no está listo.", ephemeral: true };
     }
 
     try {
+        let player = musicManager.players.get(guild.id);
+
+        if (!player) {
+            player = musicManager.createPlayer({
+                guildId: guild.id,
+                voiceChannelId: member.voice.channel.id,
+                textChannelId: channel.id,
+                selfDeaf: true,
+                volume: 80
+            });
+        }
+
         if (!player.connected) await player.connect();
 
+        // --- CORRECCIÓN DE BÚSQUEDA ---
+        // En v2.2.0, si .search no está en la raíz, suele estar en el player o requiere usar manager.utils
+        console.log(`[MUSIC-PLAY] 🔍 Buscando: "${query}"`);
+        
+        // Intentar búsqueda a través del player (método estándar en la mayoría de setups v2)
         const res = await player.search(query, member.user);
-        if (!res.tracks || !res.tracks.length) return guild.getT("music:ERRORS.NO_RESULTS");
 
-        const embed = new EmbedBuilder().setColor("#2f3136");
+        if (!res || !res.tracks || res.tracks.length === 0 || res.loadType === "error") {
+            return { content: guild.getT("music:ERRORS.NO_RESULTS"), ephemeral: true };
+        }
+
+        const embed = new EmbedBuilder().setColor("#2f3136").setAuthor({ name: "🎵 Sistema de Música" });
 
         if (res.loadType === "playlist") {
             player.queue.add(res.tracks);
-            embed
-                .setAuthor({ name: guild.getT("music:PLAY.PLAYLIST_ADDED") })
-                .setDescription(stripIndent`
+            embed.setTitle(guild.getT("music:PLAY.PLAYLIST_ADDED"))
+                 .setDescription(stripIndent`
                     **${res.playlist.name}**
                     ${res.tracks.length} ${guild.getT("music:PLAY.TRACKS")}
                 `);
         } else {
             const track = res.tracks[0];
             player.queue.add(track);
-            embed
-                .setAuthor({ name: guild.getT("music:PLAY.TRACK_ADDED") })
-                .setDescription(`[${track.info.title}](${track.info.uri})`)
-                .setThumbnail(track.info.artworkUrl)
-                .setFooter({ text: `${guild.getT("music:PLAY.REQUESTER")}: ${member.user.username}` });
+            embed.setTitle(guild.getT("music:PLAY.TRACK_ADDED"))
+                 .setDescription(`[${track.info.title}](${track.info.uri})`)
+                 .setThumbnail(track.info.artworkUrl || null);
         }
 
         if (!player.playing && !player.paused) await player.play();
@@ -102,7 +98,7 @@ async function play(context, query) {
         return { embeds: [embed] };
 
     } catch (error) {
-        console.error("Error en el comando Play:", error);
-        return "🚫 Ocurrió un error al intentar reproducir la canción.";
+        console.error("[MUSIC-PLAY] Error detallado:", error);
+        return { content: `🚫 Error: ${error.message}`, ephemeral: true };
     }
 }

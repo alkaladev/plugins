@@ -41,7 +41,7 @@
   },
   "QUEUE": {
     "DESCRIPTION": "Muestra la lista de canciones en espera.",
-    "TITLE": "Cola de reproducción",
+    "TITLE": "Lista de reproducción",
     "CURRENT": "Reproduciendo ahora:",
     "UP_NEXT": "Siguientes canciones:",
     "EMPTY": "No hay más canciones en la cola."

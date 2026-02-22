@@ -6,8 +6,9 @@
     "author": "Jorge",
     "license": "ISC",
     "dependencies": {
-        "lavalink-client": "^2.2.0",
-        "common-tags": "^1.8.2"
+        "axios": "^1.13.5",
+        "common-tags": "^1.8.2",
+        "lavalink-client": "^2.2.0"
     },
     "peerDependencies": {
         "discord.js": "^14.19.0",

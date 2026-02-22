@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reproductor de Música</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body, #root {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f9fafb;
+            color: #111827;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #0f172a;
+                color: white;
+            }
+        }
+
+        .music-player-container {
+            background: white;
+            border-radius: 1rem;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .music-player-container {
+                background: #090e2c;
+                box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.4);
+            }
+        }
+
+        .player-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            padding: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            box-shadow: 0 10px 30px rgba(79, 70, 229, 0.2);
+        }
+
+        .player-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: white;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .player-title i {
+            font-size: 1.75rem;
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .last-update {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+        }
+
+        .connection-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .connection-badge.connected {
+            background: rgba(34, 197, 94, 0.925);
+            border-color: rgba(34, 197, 94, 0.815);
+        }
+
+        .connection-badge.disconnected {
+            background: rgba(239, 68, 68, 0.884);
+            border-color: rgba(239, 68, 68, 0.856);
+        }
+
+        .player-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 0;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        @media (max-width: 1024px) {
+            .player-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .player-main {
+            padding: 2.5rem;
+            overflow-y: auto;
+            background: white;
+            border-right: 1px solid rgba(229, 231, 235, 0.5);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .player-main {
+                background: #090e2c;
+                border-right-color: rgba(79, 70, 229, 0.15);
+            }
+        }
+
+        .search-panel {
+            padding: 2.5rem;
+            background: #f9fafb;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .search-panel {
+                background: #090e2c;
+            }
+        }
+
+        .search-title {
+            font-size: 1.125rem;
+            font-weight: 800;
+            color: #111827;
+            margin: 0 0 1.75rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .search-title {
+                color: white;
+            }
+        }
+
+        .search-title i {
+            color: #22c55e;
+            font-size: 1.375rem;
+        }
+
+        .state-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .state-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 5rem;
+            height: 5rem;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            margin-bottom: 1.5rem;
+            font-size: 2.5rem;
+            color: #9ca3af;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .state-icon {
+                background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+                color: #6b7280;
+            }
+        }
+
+        .state-icon.pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .state-text {
+            font-size: 1.125rem;
+            color: #374151;
+            font-weight: 600;
+            margin: 0 0 0.5rem 0;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .state-text {
+                color: #e5e7eb;
+            }
+        }
+
+        .state-subtitle {
+            font-size: 0.875rem;
+            color: #9ca3af;
+            margin: 0;
+        }
+
+        .error-box {
+            border-radius: 1rem;
+            background: linear-gradient(135deg, rgba(254, 226, 226, 0.8) 0%, rgba(254, 242, 242, 0.8) 100%);
+            padding: 1.5rem;
+            border: 1px solid rgba(252, 165, 165, 0.5);
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .error-box {
+                background: linear-gradient(135deg, rgba(127, 29, 29, 0.2) 0%, rgba(127, 29, 29, 0.1) 100%);
+                border-color: rgba(220, 38, 38, 0.3);
+            }
+        }
+
+        .error-box i {
+            font-size: 1.5rem;
+            color: #dc2626;
+            flex-shrink: 0;
+            margin-top: 0.25rem;
+        }
+
+        .error-box h4 {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #dc2626;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .error-box p {
+            font-size: 0.875rem;
+            color: #991b1b;
+            margin: 0;
+        }
+
+        .player-active {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+
+        .album-section {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 2rem;
+        }
+
+        .album-art {
+            position: relative;
+            width: 11rem;
+            height: 11rem;
+            border-radius: 1.25rem;
+            overflow: hidden;
+            border: 2px solid rgba(79, 70, 229, 0.2);
+            box-shadow: 0 25px 50px -12px rgba(79, 70, 229, 0.2);
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            flex-shrink: 0;
+        }
+
+        .album-art img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .song-info {
+            text-align: left;
+            width: 100%;
+            flex: 1;
+        }
+
+        .now-playing-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #4f46e5;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .song-title {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #111827;
+            margin: 0 0 0.35rem 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            letter-spacing: -0.5px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .song-title {
+                color: white;
+            }
+        }
+
+        .song-artist {
+            font-size: 0.95rem;
+            color: #6b7280;
+            font-weight: 600;
+            margin: 0 0 1rem 0;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .song-artist {
+                color: #9ca3af;
+            }
+        }
+
+        .status-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: flex-start;
+            margin-bottom: 1.5rem;
+        }
+
+        .badge {
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .badge-paused {
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.15) 0%, rgba(234, 179, 8, 0.1) 100%);
+            color: #b45309;
+            border-color: rgba(234, 179, 8, 0.3);
+        }
+
+        .badge-playing {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.1) 100%);
+            color: #15803d;
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .badge-volume {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.1) 100%);
+            color: #1e40af;
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .progress-section {
+            margin-bottom: 2rem;
+        }
+
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            position: relative;
+            width: 100%;
+            height: 0.5rem;
+            background: linear-gradient(90deg, #e5e7eb 0%, #d1d5db 100%);
+            border-radius: 999px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .progress-bar {
+                background: linear-gradient(90deg, #374151 0%, #1f2937 100%);
+            }
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%);
+            transition: width 0.1s linear;
+        }
+
+        .progress-thumb {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1.25rem;
+            height: 1.25rem;
+            background: white;
+            border-radius: 999px;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            opacity: 0;
+            transition: opacity 0.2s;
+            border: 2px solid #4f46e5;
+        }
+
+        .progress-bar:hover .progress-thumb {
+            opacity: 1;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: flex-start;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 3.5rem;
+            width: 3.5rem;
+            border-radius: 1rem;
+            border: none;
+            color: white;
+            font-weight: 700;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .btn:hover:not(:disabled)::before {
+            opacity: 1;
+        }
+
+        .btn:active:not(:disabled) {
+            transform: scale(1);
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-play {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            box-shadow: 0 10px 30px -5px rgba(34, 197, 94, 0.4);
+        }
+
+        .btn-play:hover:not(:disabled) {
+            box-shadow: 0 15px 40px -5px rgba(34, 197, 94, 0.5);
+        }
+
+        .btn-pause {
+            background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
+            box-shadow: 0 10px 30px -5px rgba(234, 179, 8, 0.4);
+        }
+
+        .btn-pause:hover:not(:disabled) {
+            box-shadow: 0 15px 40px -5px rgba(234, 179, 8, 0.5);
+        }
+
+        .btn-skip {
+            background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+            color: #1f2937;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .btn-skip {
+                background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+                color: white;
+            }
+        }
+
+        .btn-skip:hover:not(:disabled) {
+            box-shadow: 0 15px 40px -5px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%);
+            color: #dc2626;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-stop:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.25) 100%);
+        }
+
+        .volume-section {
+            border-top: 1px solid rgba(229, 231, 235, 0.5);
+            padding-top: 2rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .volume-section {
+                border-top-color: rgba(79, 70, 229, 0.15);
+            }
+        }
+
+        .volume-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 1rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .volume-label {
+                color: #e5e7eb;
+            }
+        }
+
+        .volume-label strong {
+            color: #4f46e5;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: #6b7280;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .volume-control {
+                color: #9ca3af;
+            }
+        }
+
+        .volume-slider {
+            flex: 1;
+            height: 0.5rem;
+            background: linear-gradient(90deg, #e5e7eb 0%, #d1d5db 100%);
+            border-radius: 999px;
+            appearance: none;
+            cursor: pointer;
+            accent-color: #4f46e5;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .volume-slider {
+                background: linear-gradient(90deg, #374151 0%, #1f2937 100%);
+            }
+        }
+
+        .volume-slider:disabled {
+            opacity: 0.5;
+        }
+
+        .queue-section {
+            border-top: 1px solid rgba(229, 231, 235, 0.5);
+            padding-top: 2rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .queue-section {
+                border-top-color: rgba(79, 70, 229, 0.15);
+            }
+        }
+
+        .queue-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #374151;
+            margin: 0 0 1.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .queue-title {
+                color: #e5e7eb;
+            }
+        }
+
+        .queue-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 14rem;
+            overflow-y: auto;
+        }
+
+        .queue-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 0.875rem;
+            border-radius: 0.875rem;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            transition: all 0.2s;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .queue-item {
+                background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+            }
+        }
+
+        .queue-item:hover {
+            background: linear-gradient(135deg, #f0f4ff 0%, #ede9fe 100%);
+        }
+
+        .queue-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.75rem;
+            height: 1.75rem;
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.2) 0%, rgba(124, 58, 237, 0.1) 100%);
+            color: #4f46e5;
+            font-size: 0.75rem;
+            font-weight: 800;
+            flex-shrink: 0;
+            border: 1px solid rgba(79, 70, 229, 0.2);
+        }
+
+        .queue-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .queue-track-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #111827;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .queue-track-title {
+                color: white;
+            }
+        }
+
+        .queue-track-author {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin: 0.25rem 0 0 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .search-input-wrapper {
+            margin-bottom: 1rem;
+        }
+
+        .search-input-container {
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border-radius: 0.875rem;
+            background: white;
+            border: 1px solid #e5e7eb;
+            color: #111827;
+            font-size: 0.875rem;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .search-input {
+                background: #1f2937;
+                border-color: #374151;
+                color: white;
+            }
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+        }
+
+        .search-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .search-hint {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .search-hint {
+                color: #6b7280;
+            }
+        }
+
+        .search-results-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .search-results {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-radius: 0.875rem;
+            background: white;
+            border: 1px solid rgba(229, 231, 235, 0.6);
+            transition: all 0.3s;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .search-result-item {
+                background: rgba(31, 41, 55, 0.5);
+                border-color: rgba(79, 70, 229, 0.15);
+            }
+        }
+
+        .search-result-item:hover {
+            background: #f0f4ff;
+            border-color: #818cf8;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .search-result-item:hover {
+                background: rgba(31, 41, 55, 0.8);
+            }
+        }
+
+        .result-thumbnail {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 0.75rem;
+            object-fit: cover;
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            flex-shrink: 0;
+            border: 1px solid rgba(229, 231, 235, 0.5);
+        }
+
+        .result-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .result-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #111827;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .result-title {
+                color: white;
+            }
+        }
+
+        .result-author {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin: 0.25rem 0 0 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .result-duration {
+            font-size: 0.75rem;
+            color: #d1d5db;
+            margin: 0.5rem 0 0 0;
+            font-weight: 500;
+        }
+
+        .btn-add {
+            flex-shrink: 0;
+            height: 2.75rem;
+            width: 2.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.875rem;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 800;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-add:hover:not(:disabled) {
+            box-shadow: 0 15px 35px -5px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-add:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(229, 231, 235, 0.5);
+            flex-wrap: wrap;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .pagination {
+                border-top-color: rgba(79, 70, 229, 0.15);
+            }
+        }
+
+        .btn-pagination {
+            padding: 0.625rem 1rem;
+            border-radius: 0.75rem;
+            background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+            color: #374151;
+            border: 1px solid rgba(229, 231, 235, 0.6);
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .btn-pagination {
+                background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+                border-color: rgba(79, 70, 229, 0.2);
+                color: #e5e7eb;
+            }
+        }
+
+        .btn-pagination:hover:not(:disabled) {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-pagination:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-pagination.btn-next {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border-color: rgba(79, 70, 229, 0.5);
+            box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.2);
+        }
+
+        .btn-pagination.btn-next:hover:not(:disabled) {
+            box-shadow: 0 15px 35px -5px rgba(79, 70, 229, 0.3);
+        }
+
+        .page-info {
+            padding: 0.625rem 1rem;
+            font-size: 0.75rem;
+            color: #9ca3af;
+            font-weight: 700;
+        }
+
+        @media (max-width: 640px) {
+            .player-main, .search-panel {
+                padding: 1.5rem;
+            }
+
+            .album-art {
+                width: 10rem;
+                height: 10rem;
+            }
+
+            .btn {
+                height: 3rem;
+                width: 3rem;
+                font-size: 1rem;
+            }
+
+            .player-header {
+                padding: 1.5rem;
+            }
+
+            .player-title {
+                font-size: 1.25rem;
+            }
+
+            .player-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(79, 70, 229, 0.3);
+            border-radius: 999px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(79, 70, 229, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script>
+        const state = {
+            loading: true,
+            error: null,
+            isConnected: false,
+            lastUpdate: null,
+            isLoadingAction: false,
+            currentPosition: 0,
+            status: {
+                active: false,
+                paused: true,
+                volume: 50,
+                current: null,
+                queue: []
+            },
+            searchQuery: '',
+            searchResults: [],
+            searchLoading: false,
+            searchPage: 1,
+            searchHasMore: false,
+            searchCache: {}
+        };
+
+        const guildId = '<%= guild.id %>';
+        let updateInterval = null;
+        let positionInterval = null;
+        let searchTimeout = null;
+
+        function formatTime(ms) {
+            if (!ms) return '0:00';
+            const seconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${minutes}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function getCurrentProgress() {
+            if (!state.status.current?.duration) return 0;
+            return (state.currentPosition / state.status.current.duration) * 100;
+        }
+
+        async function updateStatus() {
+            if (state.isLoadingAction) return;
+
+            try {
+                const response = await fetch(`./status`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const json = await response.json();
+                
+                if (json.error) {
+                    throw new Error(json.error);
+                }
+
+                state.status = json;
+                state.isConnected = true;
+                state.lastUpdate = new Date().toLocaleTimeString('es-ES');
+                state.error = null;
+            } catch (err) {
+                console.error('[PLAYER] Status Error:', err);
+                state.isConnected = false;
+                state.error = err.message || 'No se puede conectar al reproductor';
+            } finally {
+                state.loading = false;
+                render();
+            }
+        }
+
+        async function performSearch(query, page = 1) {
+            if (!query.trim()) {
+                state.searchResults = [];
+                render();
+                return;
+            }
+
+            const cacheKey = `${query}_${page}`;
+
+            if (state.searchCache[cacheKey]) {
+                state.searchResults = state.searchCache[cacheKey].results;
+                state.searchHasMore = state.searchCache[cacheKey].hasMore;
+                render();
+                return;
+            }
+
+            state.searchLoading = true;
+            render();
+
+            try {
+                const response = await fetch(`./search`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, page })
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const json = await response.json();
+                
+                if (json.error) {
+                    throw new Error(json.error);
+                }
+
+                state.searchResults = json.results || [];
+                state.searchHasMore = json.hasMore || false;
+
+                state.searchCache[cacheKey] = {
+                    results: state.searchResults,
+                    hasMore: state.searchHasMore
+                };
+            } catch (err) {
+                console.error('[SEARCH] Error:', err);
+                state.error = `Error en búsqueda: ${err.message}`;
+                state.searchResults = [];
+                state.searchHasMore = false;
+            } finally {
+                state.searchLoading = false;
+                render();
+            }
+        }
+
+        function debounceSearch(query) {
+            clearTimeout(searchTimeout);
+            state.searchQuery = query;
+            state.searchPage = 1;
+
+            searchTimeout = setTimeout(() => {
+                performSearch(query, 1);
+            }, 500);
+        }
+
+        async function executeAction(eventName, data = {}) {
+            if (state.isLoadingAction) return;
+
+            state.isLoadingAction = true;
+
+            if (eventName === 'music:TOGGLE_PAUSE') {
+                state.status.paused = !state.status.paused;
+            }
+            if (eventName === 'music:STOP_PLAYER') {
+                state.status.active = false;
+            }
+            if (eventName === 'music:SKIP_TRACK') {
+                if (state.status.queue?.length > 0) {
+                    state.status.current = state.status.queue.shift();
+                }
+            }
+
+            render();
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+                const response = await fetch(`./control`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ event: eventName, data }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.error || `HTTP ${response.status}`);
+                }
+
+                const json = await response.json();
+                state.error = null;
+            } catch (err) {
+                console.error('[CONTROL] Error:', err.message);
+                state.error = err.message;
+            } finally {
+                state.isLoadingAction = false;
+                render();
+                
+                updateStatus().catch(err => console.error('[UPDATE]', err));
+            }
+        }
+
+        async function addToQueue(song) {
+            if (state.isLoadingAction) return;
+
+            state.isLoadingAction = true;
+            render();
+
+            try {
+                const response = await fetch(`./control`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        event: 'music:ADD_QUEUE',
+                        data: {
+                            track: {
+                                title: song.title,
+                                author: song.author,
+                                uri: song.uri,
+                                thumbnail: song.thumbnail,
+                                duration: song.duration
+                            }
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.error || `HTTP ${response.status}`);
+                }
+
+                const json = await response.json();
+                state.error = null;
+                await new Promise(r => setTimeout(r, 500));
+                updateStatus();
+            } catch (err) {
+                console.error('[QUEUE] Error:', err.message);
+                state.error = `Error al agregar: ${err.message}`;
+            } finally {
+                state.isLoadingAction = false;
+                render();
+            }
+        }
+
+        function setVolume(vol) {
+            const volume = Number(vol);
+            state.status.volume = volume;
+            executeAction('music:SET_VOLUME', { volume });
+        }
+
+        function seekTrack(e) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            state.currentPosition = percent * (state.status.current?.duration || 0);
+            render();
+        }
+
+        function render() {
+            const root = document.getElementById('root');
+            root.innerHTML = '';
+
+            const container = document.createElement('div');
+            container.className = 'music-player-container';
+
+            const header = document.createElement('div');
+            header.className = 'player-header';
+            header.innerHTML = `
+                <h3 class="player-title">
+                    <i class="fa-solid fa-music"></i>
+                    Reproductor de Música
+                </h3>
+                <div class="header-status">
+                    ${state.lastUpdate ? `<span class="last-update">Actualizado: ${state.lastUpdate}</span>` : ''}
+                    <span class="connection-badge ${state.isConnected ? 'connected' : 'disconnected'}">
+                        <i class="fa-solid ${state.isConnected ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
+                        <span>${state.isConnected ? 'Conectado' : 'Desconectado'}</span>
+                    </span>
+                </div>
+            `;
+
+            const grid = document.createElement('div');
+            grid.className = 'player-grid';
+
+            const main = document.createElement('div');
+            main.className = 'player-main';
+
+            if (state.loading) {
+                main.innerHTML = `
+                    <div class="state-container">
+                        <div class="state-icon pulse">
+                            <i class="fa-solid fa-compact-disc"></i>
+                        </div>
+                        <p class="state-text">Cargando reproductor...</p>
+                    </div>
+                `;
+            } else if (state.error && !state.status.active) {
+                main.innerHTML = `
+                    <div class="error-box">
+                        <i class="fa-solid fa-exclamation-triangle"></i>
+                        <div>
+                            <h4>Error de conexión</h4>
+                            <p>${state.error}</p>
+                        </div>
+                    </div>
+                `;
+            } else if (!state.status.active) {
+                main.innerHTML = `
+                    <div class="state-container">
+                        <div class="state-icon">
+                            <i class="fa-solid fa-headphones"></i>
+                        </div>
+                        <p class="state-text">No hay nada reproduciéndose</p>
+                        <p class="state-subtitle">Reproduce una canción en Discord para comenzar</p>
+                    </div>
+                `;
+            } else if (state.status.active && state.status.current) {
+                main.innerHTML = `
+                    <div class="player-active">
+                        <div class="album-section">
+                            <div class="album-art">
+                                <img src="${state.status.current.artwork || 'https://png.pngtree.com/png-vector/20190830/ourlarge/pngtree-music-icon-design-vector-png-image_1714137.jpg'}" alt="Album" />
+                            </div>
+                            <div class="song-info">
+                                <p class="now-playing-label">Reproduciendo ahora</p>
+                                <h2 class="song-title">${state.status.current.title || 'Desconocido'}</h2>
+                                <p class="song-artist">${state.status.current.author || 'Artista desconocido'}</p>
+                                <div class="status-badges">
+                                    <span class="badge ${state.status.paused ? 'badge-paused' : 'badge-playing'}">
+                                        <i class="fa-solid ${state.status.paused ? 'fa-pause' : 'fa-circle-play'}"></i>
+                                        <span>${state.status.paused ? 'Pausado' : 'Reproduciéndose'}</span>
+                                    </span>
+                                    <span class="badge badge-volume">
+                                        <i class="fa-solid fa-volume-high"></i>
+                                        <span>${state.status.volume}%</span>
+                                    </span>
+                                </div>
+                                <div class="progress-section">
+                                    <div class="time-display">
+                                        <span>${formatTime(state.currentPosition)}</span>
+                                        <span>${formatTime(state.status.current.duration || 0)}</span>
+                                    </div>
+                                    <div class="progress-bar" onclick="seekTrack(event)">
+                                        <div class="progress-bar-fill" style="width: ${getCurrentProgress()}%"></div>
+                                        <div class="progress-thumb" style="left: ${getCurrentProgress()}%"></div>
+                                    </div>
+                                </div>
+                                <div class="controls">
+                                    <button class="btn btn-play" onclick="executeAction('music:TOGGLE_PAUSE')" ${state.isLoadingAction || !state.status.paused ? 'disabled' : ''} title="Reproducir">
+                                        <i class="fa-solid ${state.isLoadingAction ? 'fa-circle-notch fa-spin' : 'fa-play'}"></i>
+                                    </button>
+                                    <button class="btn btn-pause" onclick="executeAction('music:TOGGLE_PAUSE')" ${state.isLoadingAction || state.status.paused ? 'disabled' : ''} title="Pausar">
+                                        <i class="fa-solid ${state.isLoadingAction ? 'fa-circle-notch fa-spin' : 'fa-pause'}"></i>
+                                    </button>
+                                    <button class="btn btn-skip" onclick="executeAction('music:SKIP_TRACK')" ${state.isLoadingAction ? 'disabled' : ''} title="Siguiente">
+                                        <i class="fa-solid ${state.isLoadingAction ? 'fa-circle-notch fa-spin' : 'fa-forward-step'}"></i>
+                                    </button>
+                                    <button class="btn btn-stop" onclick="executeAction('music:STOP_PLAYER')" ${state.isLoadingAction ? 'disabled' : ''} title="Detener">
+                                        <i class="fa-solid ${state.isLoadingAction ? 'fa-circle-notch fa-spin' : 'fa-stop'}"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="volume-section">
+                            <label class="volume-label">
+                                <i class="fa-solid fa-volume-low"></i>
+                                <span>Volumen: <strong>${state.status.volume}%</strong></span>
+                            </label>
+                            <div class="volume-control">
+                                <i class="fa-solid fa-volume-low"></i>
+                                <input type="range" min="0" max="100" value="${state.status.volume}" onchange="setVolume(this.value)" ${state.isLoadingAction ? 'disabled' : ''} class="volume-slider" />
+                                <i class="fa-solid fa-volume-high"></i>
+                            </div>
+                        </div>
+                        ${state.status.queue && state.status.queue.length > 0 ? `
+                            <div class="queue-section">
+                                <h4 class="queue-title">
+                                    <i class="fa-solid fa-list"></i>
+                                    <span>Próximas (${state.status.queue.length})</span>
+                                </h4>
+                                <div class="queue-list">
+                                    ${state.status.queue.slice(0, 10).map((track, idx) => `
+                                        <div class="queue-item">
+                                            <span class="queue-number">${idx + 1}</span>
+                                            <div class="queue-info">
+                                                <p class="queue-track-title">${track.title || 'Título desconocido'}</p>
+                                                <p class="queue-track-author">${track.author || 'Artista desconocido'}</p>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            const search = document.createElement('div');
+            search.className = 'search-panel';
+
+            let searchHTML = `
+                <h3 class="search-title">
+                    <i class="fa-brands fa-spotify"></i>
+                    <span>Buscar en Spotify</span>
+                </h3>
+                <div class="search-input-wrapper">
+                    <div class="search-input-container">
+                        <input type="text" class="search-input" placeholder="Busca una canción o artista..." value="${state.searchQuery}" oninput="debounceSearch(this.value)" />
+                    </div>
+                    <p class="search-hint"><i class="fa-solid fa-pen"></i> Escribe para buscar canciones</p>
+                </div>
+            `;
+
+            if (state.searchLoading) {
+                searchHTML += `
+                    <div class="state-container">
+                        <div class="state-icon pulse">
+                            <i class="fa-solid fa-compact-disc"></i>
+                        </div>
+                        <p class="state-text">Buscando...</p>
+                    </div>
+                `;
+            } else if (state.searchResults.length > 0) {
+                searchHTML += `
+                    <div class="search-results-container">
+                        <div class="search-results">
+                            ${state.searchResults.map((song, idx) => `
+                                <div class="search-result-item">
+                                    <img src="${song.thumbnail}" alt="${song.title}" class="result-thumbnail" />
+                                    <div class="result-info">
+                                        <p class="result-title">${song.title}</p>
+                                        <p class="result-author">${song.author}</p>
+                                        <p class="result-duration">${song.duration}</p>
+                                    </div>
+                                    <button class="btn-add" onclick='addToQueue(${JSON.stringify(song).replace(/"/g, '&quot;')})' ${state.isLoadingAction ? 'disabled' : ''}>
+                                        <i class="fa-solid ${state.isLoadingAction ? 'fa-circle-notch fa-spin' : 'fa-plus'}"></i>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        ${(state.searchHasMore || state.searchPage > 1) ? `
+                            <div class="pagination">
+                                <button class="btn-pagination" onclick="state.searchPage = Math.max(1, state.searchPage - 1); performSearch(state.searchQuery, state.searchPage);" ${state.searchPage <= 1 || state.searchLoading ? 'disabled' : ''}>
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                    <span>Anterior</span>
+                                </button>
+                                <span class="page-info">Página ${state.searchPage}</span>
+                                <button class="btn-pagination btn-next" onclick="state.searchPage++; performSearch(state.searchQuery, state.searchPage);" ${!state.searchHasMore || state.searchLoading ? 'disabled' : ''}>
+                                    <span>Siguiente</span>
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            } else if (state.searchQuery === '') {
+                searchHTML += `
+                    <div class="state-container">
+                        <div class="state-icon">
+                            <i class="fa-brands fa-spotify"></i>
+                        </div>
+                        <p class="state-text">Comienza a buscar</p>
+                        <p class="state-subtitle">Escribe una canción o artista</p>
+                    </div>
+                `;
+            } else {
+                searchHTML += `
+                    <div class="state-container">
+                        <div class="state-icon">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </div>
+                        <p class="state-text">Sin resultados</p>
+                        <p class="state-subtitle">Intenta otra búsqueda</p>
+                    </div>
+                `;
+            }
+
+            search.innerHTML = searchHTML;
+
+            grid.appendChild(main);
+            grid.appendChild(search);
+            container.appendChild(header);
+            container.appendChild(grid);
+            root.appendChild(container);
+        }
+
+        updateStatus();
+        render();
+        updateInterval = setInterval(updateStatus, 3000);
+        positionInterval = setInterval(() => {
+            if (state.status.active && !state.status.paused) {
+                state.currentPosition += 200;
+                render();
+            }
+        }, 200);
+
+        window.addEventListener('beforeunload', () => {
+            clearInterval(updateInterval);
+            clearInterval(positionInterval);
+        });
+    </script>
+</body>
+</html>

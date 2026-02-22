@@ -1,8 +1,5 @@
-/**
- * @type {import('strange-sdk').CommandType}
- */
 module.exports = {
-    name: "skip",
+    name: "saltar",
     description: "music:SKIP.DESCRIPTION",
     cooldown: 3,
     command: { enabled: true },
@@ -19,12 +16,18 @@ module.exports = {
     },
 };
 
-async function skip({ guild, member, client }) {
-    if (!member.voice.channel) return guild.getT("music:ERRORS.NO_VOICE");
-    
-    const player = client.music.players.get(guild.id);
-    if (!player) return guild.getT("music:ERRORS.NO_PLAYER");
+async function skip(context) {
+    const { guild, member, client } = context;
 
-    await player.skip();
-    return guild.getT("music:SKIP.SUCCESS");
+    if (!member.voice.channel) return { content: guild.getT("music:ERRORS.NO_VOICE"), ephemeral: true };
+
+    const player = client.music?.players.get(guild.id);
+    if (!player) return { content: guild.getT("music:ERRORS.NO_PLAYER"), ephemeral: true };
+
+    try {
+        await player.skip();
+        return { content: "⏭️ " + guild.getT("music:SKIP.SUCCESS"), ephemeral: true };
+    } catch (error) {
+        return { content: `🚫 Error: ${error.message}`, ephemeral: true };
+    }
 }
