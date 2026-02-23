@@ -11,67 +11,22 @@
   const rl = s.roles       || {};
 %>
 
-<%# ══════════════════ MACRO: Toggle de evento ══════════════════ %>
-<% function eventToggle(cat, key, label, icon) { %>
-<div class="flex items-center justify-between rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3">
-  <div class="flex items-center gap-3">
-    <i class="<%= icon %> text-sm text-gray-400 w-4 text-center"></i>
-    <span class="text-sm text-gray-700 dark:text-gray-300"><%= label %></span>
-  </div>
-  <button type="button" @click="toggleEvent('<%= cat %>', '<%= key %>')"
-    class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
-    :style="form.<%= cat %>.events['<%= key %>'] ? 'background-color:rgb(126,58,242)' : 'background-color:rgb(209,213,219)'">
-    <span class="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transition-all duration-200"
-      :style="form.<%= cat %>.events['<%= key %>'] ? 'transform:translateX(16px)' : 'transform:translateX(0)'"></span>
-  </button>
-</div>
-<% } %>
-
-<%# ══════════════════ MACRO: Selector de canal ══════════════════ %>
-<% function channelSelector(cat, accentColor) { %>
-<div>
-  <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Canal de logs</label>
-  <button type="button" x-ref="ch_<%= cat %>" @click="openFixed('<%= cat %>')"
-    class="flex w-full items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-left dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all outline-none border-none">
-    <span class="truncate text-sm font-medium text-gray-900 dark:text-white" x-text="chName('<%= cat %>')"></span>
-    <i class="fa-solid fa-chevron-down text-[10px] text-gray-400 transition-transform" :class="dropdowns['<%= cat %>']?'rotate-180':''"></i>
-  </button>
-  <template x-teleport="body">
-    <div x-show="dropdowns['<%= cat %>']" x-transition @click.away="dropdowns['<%= cat %>']=false"
-      :style="dropPos['<%= cat %>']?`position:fixed;top:${dropPos['<%= cat %>'].top}px;left:${dropPos['<%= cat %>'].left}px;width:${dropPos['<%= cat %>'].width}px;z-index:9999`:'position:fixed;top:-9999px'"
-      class="max-h-48 overflow-auto rounded-xl bg-white p-1.5 shadow-2xl ring-1 ring-black/5 dark:bg-[#0d123d] dark:ring-white/10 scrollbar-hide">
-      <div @click="selectChannel('<%= cat %>', ''); dropdowns['<%= cat %>']=false"
-        class="cursor-pointer rounded-lg px-3 py-2 text-sm italic text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10">Sin canal</div>
-      <% channels.forEach(c => { %>
-      <div @click="selectChannel('<%= cat %>', '<%= c.id %>'); dropdowns['<%= cat %>']=false"
-        class="group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-purple-500/10">
-        <span class="text-gray-700 dark:text-gray-300 group-hover:text-purple-500"># <%= c.name %></span>
-        <i class="fa-solid fa-check text-[10px] text-purple-500" x-show="form['<%= cat %>'].channel==='<%= c.id %>'"></i>
-      </div>
-      <% }); %>
-    </div>
-  </template>
-</div>
-<% } %>
-
-<%# ══════════════════ TAB PRINCIPAL: RESUMEN ══════════════════ %>
+<%# ══ TAB PRINCIPAL: RESUMEN ══ %>
 <section x-data="loggerData()" class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c] transition-colors duration-300">
   <h3 class="mb-2 text-xl font-bold text-gray-900 dark:text-white">Resumen de Logs</h3>
-  <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">Activa o desactiva cada categoría de logs. Configura los detalles en cada pestaña.</p>
+  <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">Activa o desactiva cada categoría. Configura los detalles en cada pestaña.</p>
   <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-    <%
-      const cats = [
-        { key:'channels',   label:'Canales',      icon:'fa-solid fa-hashtag',         color:'#5865F2' },
-        { key:'server',     label:'Servidor',     icon:'fa-solid fa-server',           color:'#FEE75C' },
-        { key:'members',    label:'Miembros',     icon:'fa-solid fa-users',            color:'#57F287' },
-        { key:'messages',   label:'Mensajes',     icon:'fa-solid fa-message',          color:'#EB459E' },
-        { key:'voice',      label:'Voz',          icon:'fa-solid fa-microphone',       color:'#ED4245' },
-        { key:'moderation', label:'Moderación',   icon:'fa-solid fa-shield-halved',    color:'#ED4245' },
-        { key:'threads',    label:'Hilos',        icon:'fa-solid fa-layer-group',      color:'#9B59B6' },
-        { key:'invites',    label:'Invitaciones', icon:'fa-solid fa-link',             color:'#1ABC9C' },
-        { key:'roles',      label:'Roles',        icon:'fa-solid fa-tag',              color:'#E67E22' },
-      ];
-    %>
+    <% const cats = [
+      { key:'channels',   label:'Canales',      icon:'fa-solid fa-hashtag',      color:'#5865F2' },
+      { key:'server',     label:'Servidor',     icon:'fa-solid fa-server',        color:'#FEE75C' },
+      { key:'members',    label:'Miembros',     icon:'fa-solid fa-users',         color:'#57F287' },
+      { key:'messages',   label:'Mensajes',     icon:'fa-solid fa-message',       color:'#EB459E' },
+      { key:'voice',      label:'Voz',          icon:'fa-solid fa-microphone',    color:'#ED4245' },
+      { key:'moderation', label:'Moderación',   icon:'fa-solid fa-shield-halved', color:'#ED4245' },
+      { key:'threads',    label:'Hilos',        icon:'fa-solid fa-layer-group',   color:'#9B59B6' },
+      { key:'invites',    label:'Invitaciones', icon:'fa-solid fa-link',          color:'#1ABC9C' },
+      { key:'roles',      label:'Roles',        icon:'fa-solid fa-tag',           color:'#E67E22' },
+    ]; %>
     <% cats.forEach(p => { %>
     <div class="flex items-center justify-between rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-4">
       <div class="flex items-center gap-3">
@@ -96,10 +51,9 @@
 
 <script>
 function loggerData() {
-  const _channels = <%- JSON.stringify(channels) %>;
-
+  const _ch = <%- JSON.stringify(channels) %>;
   return {
-    dropdowns: { channels:false, server:false, members:false, messages:false, voice:false, moderation:false, threads:false, invites:false, roles:false },
+    dropdowns: {channels:false,server:false,members:false,messages:false,voice:false,moderation:false,threads:false,invites:false,roles:false},
     dropPos: {},
     form: {
       channels:   { enabled:<%- JSON.stringify(ch.enabled||false) %>, channel:<%- JSON.stringify(ch.channel||'') %>, color:<%- JSON.stringify(ch.color||'#5865F2') %>, events:<%- JSON.stringify(ch.events||{}) %> },
@@ -112,486 +66,248 @@ function loggerData() {
       invites:    { enabled:<%- JSON.stringify(iv.enabled||false) %>, channel:<%- JSON.stringify(iv.channel||'') %>, color:<%- JSON.stringify(iv.color||'#1ABC9C') %>, events:<%- JSON.stringify(iv.events||{}) %> },
       roles:      { enabled:<%- JSON.stringify(rl.enabled||false) %>, channel:<%- JSON.stringify(rl.channel||'') %>, color:<%- JSON.stringify(rl.color||'#E67E22') %>, events:<%- JSON.stringify(rl.events||{}) %> },
     },
-
-    chName(cat) {
-      const c = _channels.find(c => c.id === this.form[cat].channel);
-      return c ? '# ' + c.name : 'Seleccionar canal';
-    },
-
+    chName(cat) { const c=_ch.find(c=>c.id===this.form[cat].channel); return c?'# '+c.name:'Seleccionar canal'; },
     openFixed(cat) {
-      this.dropdowns[cat] = !this.dropdowns[cat];
-      if (this.dropdowns[cat]) {
-        const ref = this.$refs['ch_' + cat];
-        if (!ref) return;
-        const rect = ref.getBoundingClientRect();
-        this.dropPos[cat] = { top: rect.bottom + window.scrollY + 8, left: rect.left + window.scrollX, width: rect.width };
-      }
+      this.dropdowns[cat]=!this.dropdowns[cat];
+      if(this.dropdowns[cat]){const ref=this.$refs['ch_'+cat];if(!ref)return;const r=ref.getBoundingClientRect();this.dropPos[cat]={top:r.bottom+window.scrollY+8,left:r.left+window.scrollX,width:r.width};}
     },
-
-    async save(cat, field, value) {
-      try {
-        const res = await fetch(window.location.href, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ category: cat, field, value }),
-        });
-        if (res.ok) Alpine.store('toast').show('Guardado', 'success');
-        else throw new Error();
-      } catch { Alpine.store('toast').show('Error al guardar', 'error'); }
+    async save(cat,field,value){
+      try{const r=await fetch(window.location.href,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({category:cat,field,value})});if(r.ok)Alpine.store('toast').show('Guardado','success');else throw new Error();}catch{Alpine.store('toast').show('Error al guardar','error');}
     },
-
-    async toggleCategory(cat) {
-      this.form[cat].enabled = !this.form[cat].enabled;
-      await this.save(cat, 'enabled', this.form[cat].enabled);
-    },
-
-    async selectChannel(cat, id) {
-      this.form[cat].channel = id;
-      await this.save(cat, 'channel', id || null);
-    },
-
-    async changeColor(cat, val) {
-      this.form[cat].color = val;
-      await this.save(cat, 'color', val);
-    },
-
-    async toggleEvent(cat, key) {
-      if (!this.form[cat].events) this.form[cat].events = {};
-      this.form[cat].events[key] = !this.form[cat].events[key];
-      await this.save(cat, 'events.' + key, this.form[cat].events[key]);
-    },
+    async toggleCategory(cat){this.form[cat].enabled=!this.form[cat].enabled;await this.save(cat,'enabled',this.form[cat].enabled);},
+    async selectChannel(cat,id){this.form[cat].channel=id;await this.save(cat,'channel',id||null);},
+    async changeColor(cat,val){this.form[cat].color=val;await this.save(cat,'color',val);},
+    async toggleEvent(cat,key){if(!this.form[cat].events)this.form[cat].events={};this.form[cat].events[key]=!this.form[cat].events[key];await this.save(cat,'events.'+key,this.form[cat].events[key]);},
   };
 }
 </script>
 
+<%# ════ HELPERS (inline como EJS functions) ════ %>
+<% function catHeader(key, label, desc, icon, color) { %>
+<div class="flex items-center justify-between">
+  <div class="flex items-center gap-4">
+    <div class="flex h-12 w-12 items-center justify-center rounded-2xl" style="background:<%=color%>22">
+      <i class="<%=icon%> text-xl" style="color:<%=color%>"></i>
+    </div>
+    <div>
+      <h3 class="text-xl font-bold text-gray-900 dark:text-white"><%=label%></h3>
+      <p class="text-sm text-gray-500 dark:text-gray-400"><%=desc%></p>
+    </div>
+  </div>
+  <button type="button" @click="toggleCategory('<%=key%>')"
+    class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
+    :style="form['<%=key%>'].enabled?'background-color:rgb(126,58,242)':'background-color:rgb(209,213,219)'">
+    <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-all duration-200"
+      :style="form['<%=key%>'].enabled?'transform:translateX(20px)':'transform:translateX(0)'"></span>
+  </button>
+</div>
+<% } %>
 
-<%# ══════════════════ TAB: CANALES ══════════════════ %>
+<% function colorAndChannel(key) { %>
+<div class="grid gap-4 md:grid-cols-2">
+  <div>
+    <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Canal de logs</label>
+    <button type="button" x-ref="ch_<%=key%>" @click="openFixed('<%=key%>')"
+      class="flex w-full items-center justify-between rounded-xl bg-gray-50 px-4 py-3 text-left dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all outline-none border-none">
+      <span class="truncate text-sm font-medium text-gray-900 dark:text-white" x-text="chName('<%=key%>')"></span>
+      <i class="fa-solid fa-chevron-down text-[10px] text-gray-400 transition-transform" :class="dropdowns['<%=key%>']?'rotate-180':''"></i>
+    </button>
+    <template x-teleport="body">
+      <div x-show="dropdowns['<%=key%>']" x-transition @click.away="dropdowns['<%=key%>']=false"
+        :style="dropPos['<%=key%>']?`position:fixed;top:${dropPos['<%=key%>'].top}px;left:${dropPos['<%=key%>'].left}px;width:${dropPos['<%=key%>'].width}px;z-index:9999`:'position:fixed;top:-9999px'"
+        class="max-h-48 overflow-auto rounded-xl bg-white p-1.5 shadow-2xl ring-1 ring-black/5 dark:bg-[#0d123d] dark:ring-white/10 scrollbar-hide">
+        <div @click="selectChannel('<%=key%>','');dropdowns['<%=key%>']=false" class="cursor-pointer rounded-lg px-3 py-2 text-sm italic text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10">Sin canal</div>
+        <% channels.forEach(c => { %>
+        <div @click="selectChannel('<%=key%>','<%=c.id%>');dropdowns['<%=key%>']=false" class="group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-purple-500/10">
+          <span class="text-gray-700 dark:text-gray-300 group-hover:text-purple-500"># <%=c.name%></span>
+          <i class="fa-solid fa-check text-[10px] text-purple-500" x-show="form['<%=key%>'].channel==='<%=c.id%>'"></i>
+        </div>
+        <% }); %>
+      </div>
+    </template>
+  </div>
+  <div>
+    <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Color del embed</label>
+    <div class="flex items-center gap-3 rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3">
+      <input type="color" x-model="form['<%=key%>'].color" @change="changeColor('<%=key%>',form['<%=key%>'].color)"
+        class="h-8 w-8 cursor-pointer rounded-lg border-none bg-transparent p-0 outline-none" />
+      <span class="text-sm font-mono text-gray-700 dark:text-gray-300" x-text="form['<%=key%>'].color"></span>
+      <span class="ml-auto text-xs text-gray-400">Color del embed</span>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<% function evToggle(cat, key, label, icon) { %>
+<div class="flex items-center justify-between rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3">
+  <div class="flex items-center gap-3">
+    <i class="<%=icon%> text-sm text-gray-400 w-4 text-center"></i>
+    <span class="text-sm text-gray-700 dark:text-gray-300"><%=label%></span>
+  </div>
+  <button type="button" @click="toggleEvent('<%=cat%>','<%=key%>')"
+    class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
+    :style="form['<%=cat%>'].events['<%=key%>']===false?'background-color:rgb(209,213,219)':'background-color:rgb(126,58,242)'">
+    <span class="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transition-all duration-200"
+      :style="form['<%=cat%>'].events['<%=key%>']===false?'transform:translateX(0)':'transform:translateX(16px)'"></span>
+  </button>
+</div>
+<% } %>
+
+
+<%# ══ TAB: CANALES ══ %>
 <%- contentFor("Canales") %>
-
 <section x-data="loggerData()" class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c] space-y-6">
-  <div class="flex items-center justify-between">
-    <div class="flex items-center gap-4">
-      <div class="flex h-12 w-12 items-center justify-center rounded-2xl" style="background:#5865F222">
-        <i class="fa-solid fa-hashtag text-xl" style="color:#5865F2"></i>
-      </div>
-      <div>
-        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Logs de Canales</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Registro de creación, eliminación y cambios en canales.</p>
-      </div>
-    </div>
-    <button type="button" @click="toggleCategory('channels')"
-      class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
-      :style="form.channels.enabled ? 'background-color:rgb(126,58,242)' : 'background-color:rgb(209,213,219)'">
-      <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-all duration-200"
-        :style="form.channels.enabled ? 'transform:translateX(20px)' : 'transform:translateX(0)'"></span>
-    </button>
-  </div>
-
-  <div class="grid gap-4 md:grid-cols-2">
-    <%- channelSelector('channels', '#5865F2') %>
-    <div>
-      <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Color del embed</label>
-      <div class="flex items-center gap-3 rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3">
-        <input type="color" x-model="form.channels.color" @change="changeColor('channels', form.channels.color)"
-          class="h-8 w-8 cursor-pointer rounded-lg border-none bg-transparent p-0 outline-none" />
-        <span class="text-sm text-gray-700 dark:text-gray-300 font-mono" x-text="form.channels.color"></span>
-        <span class="ml-auto text-xs text-gray-400">Color del borde del embed</span>
-      </div>
-    </div>
-  </div>
-
+  <%- catHeader('channels','Logs de Canales','Creación, eliminación y cambios en canales.','fa-solid fa-hashtag','#5865F2') %>
+  <%- colorAndChannel('channels') %>
   <div>
     <label class="mb-3 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Eventos a registrar</label>
     <div class="grid gap-2 md:grid-cols-2">
-      <%- eventToggle('channels', 'channelCreate',     'Canal creado',                 'fa-solid fa-plus') %>
-      <%- eventToggle('channels', 'channelDelete',     'Canal eliminado',              'fa-solid fa-trash') %>
-      <%- eventToggle('channels', 'channelUpdate',     'Canal editado (nombre/tema)',  'fa-solid fa-pen') %>
-      <%- eventToggle('channels', 'channelPermUpdate', 'Permisos del canal editados',  'fa-solid fa-lock') %>
+      <%- evToggle('channels','channelCreate',    'Canal creado',                'fa-solid fa-plus') %>
+      <%- evToggle('channels','channelDelete',    'Canal eliminado',             'fa-solid fa-trash') %>
+      <%- evToggle('channels','channelUpdate',    'Canal editado (nombre/tema)', 'fa-solid fa-pen') %>
+      <%- evToggle('channels','channelPermUpdate','Permisos del canal editados', 'fa-solid fa-lock') %>
     </div>
   </div>
 </section>
 
 
-<%# ══════════════════ TAB: SERVIDOR ══════════════════ %>
+<%# ══ TAB: SERVIDOR ══ %>
 <%- contentFor("Servidor") %>
-
 <section x-data="loggerData()" class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c] space-y-6">
-  <div class="flex items-center justify-between">
-    <div class="flex items-center gap-4">
-      <div class="flex h-12 w-12 items-center justify-center rounded-2xl" style="background:#FEE75C22">
-        <i class="fa-solid fa-server text-xl" style="color:#FEE75C"></i>
-      </div>
-      <div>
-        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Logs del Servidor</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Cambios en la configuración, emojis, stickers y webhooks.</p>
-      </div>
-    </div>
-    <button type="button" @click="toggleCategory('server')"
-      class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
-      :style="form.server.enabled ? 'background-color:rgb(126,58,242)' : 'background-color:rgb(209,213,219)'">
-      <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-all duration-200"
-        :style="form.server.enabled ? 'transform:translateX(20px)' : 'transform:translateX(0)'"></span>
-    </button>
-  </div>
-
-  <div class="grid gap-4 md:grid-cols-2">
-    <%- channelSelector('server', '#FEE75C') %>
-    <div>
-      <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Color del embed</label>
-      <div class="flex items-center gap-3 rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3">
-        <input type="color" x-model="form.server.color" @change="changeColor('server', form.server.color)"
-          class="h-8 w-8 cursor-pointer rounded-lg border-none bg-transparent p-0 outline-none" />
-        <span class="text-sm text-gray-700 dark:text-gray-300 font-mono" x-text="form.server.color"></span>
-        <span class="ml-auto text-xs text-gray-400">Color del borde del embed</span>
-      </div>
-    </div>
-  </div>
-
+  <%- catHeader('server','Logs del Servidor','Cambios en la configuración, emojis, stickers y webhooks.','fa-solid fa-server','#FEE75C') %>
+  <%- colorAndChannel('server') %>
   <div>
     <label class="mb-3 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Eventos a registrar</label>
     <div class="grid gap-2 md:grid-cols-2">
-      <%- eventToggle('server', 'guildUpdate',   'Servidor actualizado',       'fa-solid fa-gear') %>
-      <%- eventToggle('server', 'emojiCreate',   'Emoji añadido',              'fa-solid fa-face-smile') %>
-      <%- eventToggle('server', 'emojiDelete',   'Emoji eliminado',            'fa-solid fa-face-smile') %>
-      <%- eventToggle('server', 'emojiUpdate',   'Emoji editado',              'fa-solid fa-pen') %>
-      <%- eventToggle('server', 'stickerCreate', 'Sticker añadido',            'fa-solid fa-note-sticky') %>
-      <%- eventToggle('server', 'stickerDelete', 'Sticker eliminado',          'fa-solid fa-note-sticky') %>
-      <%- eventToggle('server', 'webhookCreate', 'Webhook creado',             'fa-solid fa-webhook') %>
-      <%- eventToggle('server', 'webhookDelete', 'Webhook eliminado',          'fa-solid fa-webhook') %>
+      <%- evToggle('server','guildUpdate',  'Servidor actualizado','fa-solid fa-gear') %>
+      <%- evToggle('server','emojiCreate',  'Emoji añadido',       'fa-solid fa-face-smile') %>
+      <%- evToggle('server','emojiDelete',  'Emoji eliminado',     'fa-solid fa-face-smile') %>
+      <%- evToggle('server','emojiUpdate',  'Emoji editado',       'fa-solid fa-pen') %>
+      <%- evToggle('server','stickerCreate','Sticker añadido',     'fa-solid fa-note-sticky') %>
+      <%- evToggle('server','stickerDelete','Sticker eliminado',   'fa-solid fa-note-sticky') %>
+      <%- evToggle('server','webhookUpdate','Webhook modificado',  'fa-solid fa-link') %>
     </div>
   </div>
 </section>
 
 
-<%# ══════════════════ TAB: MIEMBROS ══════════════════ %>
+<%# ══ TAB: MIEMBROS ══ %>
 <%- contentFor("Miembros") %>
-
 <section x-data="loggerData()" class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c] space-y-6">
-  <div class="flex items-center justify-between">
-    <div class="flex items-center gap-4">
-      <div class="flex h-12 w-12 items-center justify-center rounded-2xl" style="background:#57F28722">
-        <i class="fa-solid fa-users text-xl" style="color:#57F287"></i>
-      </div>
-      <div>
-        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Logs de Miembros</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Entradas, salidas, cambios de perfil y timeouts.</p>
-      </div>
-    </div>
-    <button type="button" @click="toggleCategory('members')"
-      class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
-      :style="form.members.enabled ? 'background-color:rgb(126,58,242)' : 'background-color:rgb(209,213,219)'">
-      <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-all duration-200"
-        :style="form.members.enabled ? 'transform:translateX(20px)' : 'transform:translateX(0)'"></span>
-    </button>
-  </div>
-
-  <div class="grid gap-4 md:grid-cols-2">
-    <%- channelSelector('members', '#57F287') %>
-    <div>
-      <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Color del embed</label>
-      <div class="flex items-center gap-3 rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3">
-        <input type="color" x-model="form.members.color" @change="changeColor('members', form.members.color)"
-          class="h-8 w-8 cursor-pointer rounded-lg border-none bg-transparent p-0 outline-none" />
-        <span class="text-sm text-gray-700 dark:text-gray-300 font-mono" x-text="form.members.color"></span>
-        <span class="ml-auto text-xs text-gray-400">Color del borde del embed</span>
-      </div>
-    </div>
-  </div>
-
+  <%- catHeader('members','Logs de Miembros','Entradas, salidas, cambios de perfil y timeouts.','fa-solid fa-users','#57F287') %>
+  <%- colorAndChannel('members') %>
   <div>
     <label class="mb-3 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Eventos a registrar</label>
     <div class="grid gap-2 md:grid-cols-2">
-      <%- eventToggle('members', 'memberJoin',     'Miembro entró al servidor',    'fa-solid fa-user-plus') %>
-      <%- eventToggle('members', 'memberLeave',    'Miembro abandonó el servidor', 'fa-solid fa-user-minus') %>
-      <%- eventToggle('members', 'memberUpdate',   'Miembro actualizado',          'fa-solid fa-user-pen') %>
-      <%- eventToggle('members', 'nicknameChange', 'Apodo cambiado',               'fa-solid fa-signature') %>
-      <%- eventToggle('members', 'userUpdate',     'Perfil de usuario actualizado','fa-solid fa-circle-user') %>
-      <%- eventToggle('members', 'timeoutAdd',     'Timeout aplicado',             'fa-solid fa-clock') %>
-      <%- eventToggle('members', 'timeoutRemove',  'Timeout eliminado',            'fa-solid fa-clock-rotate-left') %>
+      <%- evToggle('members','memberJoin',    'Miembro entró al servidor',    'fa-solid fa-user-plus') %>
+      <%- evToggle('members','memberLeave',   'Miembro abandonó el servidor', 'fa-solid fa-user-minus') %>
+      <%- evToggle('members','nicknameChange','Apodo cambiado',               'fa-solid fa-signature') %>
+      <%- evToggle('members','userUpdate',    'Perfil actualizado',           'fa-solid fa-circle-user') %>
+      <%- evToggle('members','timeoutAdd',    'Timeout aplicado',             'fa-solid fa-clock') %>
+      <%- evToggle('members','timeoutRemove', 'Timeout eliminado',            'fa-solid fa-clock-rotate-left') %>
     </div>
   </div>
 </section>
 
 
-<%# ══════════════════ TAB: MENSAJES ══════════════════ %>
+<%# ══ TAB: MENSAJES ══ %>
 <%- contentFor("Mensajes") %>
-
 <section x-data="loggerData()" class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c] space-y-6">
-  <div class="flex items-center justify-between">
-    <div class="flex items-center gap-4">
-      <div class="flex h-12 w-12 items-center justify-center rounded-2xl" style="background:#EB459E22">
-        <i class="fa-solid fa-message text-xl" style="color:#EB459E"></i>
-      </div>
-      <div>
-        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Logs de Mensajes</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Mensajes eliminados, editados y pins.</p>
-      </div>
-    </div>
-    <button type="button" @click="toggleCategory('messages')"
-      class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
-      :style="form.messages.enabled ? 'background-color:rgb(126,58,242)' : 'background-color:rgb(209,213,219)'">
-      <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-all duration-200"
-        :style="form.messages.enabled ? 'transform:translateX(20px)' : 'transform:translateX(0)'"></span>
-    </button>
-  </div>
-
-  <div class="grid gap-4 md:grid-cols-2">
-    <%- channelSelector('messages', '#EB459E') %>
-    <div>
-      <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Color del embed</label>
-      <div class="flex items-center gap-3 rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3">
-        <input type="color" x-model="form.messages.color" @change="changeColor('messages', form.messages.color)"
-          class="h-8 w-8 cursor-pointer rounded-lg border-none bg-transparent p-0 outline-none" />
-        <span class="text-sm text-gray-700 dark:text-gray-300 font-mono" x-text="form.messages.color"></span>
-        <span class="ml-auto text-xs text-gray-400">Color del borde del embed</span>
-      </div>
-    </div>
-  </div>
-
+  <%- catHeader('messages','Logs de Mensajes','Mensajes eliminados, editados y pins.','fa-solid fa-message','#EB459E') %>
+  <%- colorAndChannel('messages') %>
   <div>
     <label class="mb-3 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Eventos a registrar</label>
     <div class="grid gap-2 md:grid-cols-2">
-      <%- eventToggle('messages', 'messageDelete',     'Mensaje eliminado',              'fa-solid fa-trash') %>
-      <%- eventToggle('messages', 'messageBulkDelete', 'Borrado masivo de mensajes',     'fa-solid fa-trash-can') %>
-      <%- eventToggle('messages', 'messageUpdate',     'Mensaje editado',                'fa-solid fa-pen') %>
-      <%- eventToggle('messages', 'messagePinned',     'Mensaje fijado/desfijado',       'fa-solid fa-thumbtack') %>
+      <%- evToggle('messages','messageDelete',    'Mensaje eliminado',          'fa-solid fa-trash') %>
+      <%- evToggle('messages','messageBulkDelete','Borrado masivo de mensajes', 'fa-solid fa-trash-can') %>
+      <%- evToggle('messages','messageUpdate',    'Mensaje editado',            'fa-solid fa-pen') %>
+      <%- evToggle('messages','messagePinned',    'Mensaje fijado/desfijado',   'fa-solid fa-thumbtack') %>
     </div>
   </div>
 </section>
 
 
-<%# ══════════════════ TAB: VOZ ══════════════════ %>
+<%# ══ TAB: VOZ ══ %>
 <%- contentFor("Voz") %>
-
 <section x-data="loggerData()" class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c] space-y-6">
-  <div class="flex items-center justify-between">
-    <div class="flex items-center gap-4">
-      <div class="flex h-12 w-12 items-center justify-center rounded-2xl" style="background:#ED424522">
-        <i class="fa-solid fa-microphone text-xl" style="color:#ED4245"></i>
-      </div>
-      <div>
-        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Logs de Voz</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Conexiones, desconexiones y cambios en canales de voz.</p>
-      </div>
-    </div>
-    <button type="button" @click="toggleCategory('voice')"
-      class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
-      :style="form.voice.enabled ? 'background-color:rgb(126,58,242)' : 'background-color:rgb(209,213,219)'">
-      <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-all duration-200"
-        :style="form.voice.enabled ? 'transform:translateX(20px)' : 'transform:translateX(0)'"></span>
-    </button>
-  </div>
-
-  <div class="grid gap-4 md:grid-cols-2">
-    <%- channelSelector('voice', '#ED4245') %>
-    <div>
-      <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Color del embed</label>
-      <div class="flex items-center gap-3 rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3">
-        <input type="color" x-model="form.voice.color" @change="changeColor('voice', form.voice.color)"
-          class="h-8 w-8 cursor-pointer rounded-lg border-none bg-transparent p-0 outline-none" />
-        <span class="text-sm text-gray-700 dark:text-gray-300 font-mono" x-text="form.voice.color"></span>
-        <span class="ml-auto text-xs text-gray-400">Color del borde del embed</span>
-      </div>
-    </div>
-  </div>
-
+  <%- catHeader('voice','Logs de Voz','Conexiones, desconexiones y cambios en canales de voz.','fa-solid fa-microphone','#ED4245') %>
+  <%- colorAndChannel('voice') %>
   <div>
     <label class="mb-3 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Eventos a registrar</label>
     <div class="grid gap-2 md:grid-cols-2">
-      <%- eventToggle('voice', 'voiceJoin',   'Se unió a un canal de voz',    'fa-solid fa-right-to-bracket') %>
-      <%- eventToggle('voice', 'voiceLeave',  'Abandonó un canal de voz',     'fa-solid fa-right-from-bracket') %>
-      <%- eventToggle('voice', 'voiceSwitch', 'Cambió de canal de voz',       'fa-solid fa-shuffle') %>
-      <%- eventToggle('voice', 'voiceMute',   'Muteado / Desmuteado',         'fa-solid fa-microphone-slash') %>
-      <%- eventToggle('voice', 'voiceDeafen', 'Sordo / Dessordo',             'fa-solid fa-headphones') %>
-      <%- eventToggle('voice', 'voiceStream', 'Empezó / Paró stream en voz',  'fa-solid fa-tower-broadcast') %>
+      <%- evToggle('voice','voiceJoin',  'Se unió a un canal de voz',   'fa-solid fa-right-to-bracket') %>
+      <%- evToggle('voice','voiceLeave', 'Abandonó un canal de voz',    'fa-solid fa-right-from-bracket') %>
+      <%- evToggle('voice','voiceSwitch','Cambió de canal de voz',      'fa-solid fa-shuffle') %>
+      <%- evToggle('voice','voiceMute',  'Muteado / Desmuteado',        'fa-solid fa-microphone-slash') %>
+      <%- evToggle('voice','voiceDeafen','Ensordecido / Desensordecido','fa-solid fa-headphones') %>
+      <%- evToggle('voice','voiceStream','Stream iniciado / finalizado','fa-solid fa-tower-broadcast') %>
     </div>
   </div>
 </section>
 
 
-<%# ══════════════════ TAB: MODERACIÓN ══════════════════ %>
+<%# ══ TAB: MODERACIÓN ══ %>
 <%- contentFor("Moderación") %>
-
 <section x-data="loggerData()" class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c] space-y-6">
-  <div class="flex items-center justify-between">
-    <div class="flex items-center gap-4">
-      <div class="flex h-12 w-12 items-center justify-center rounded-2xl" style="background:#ED424522">
-        <i class="fa-solid fa-shield-halved text-xl" style="color:#ED4245"></i>
-      </div>
-      <div>
-        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Logs de Moderación</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Baneos, expulsiones, advertencias y sanciones.</p>
-      </div>
-    </div>
-    <button type="button" @click="toggleCategory('moderation')"
-      class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
-      :style="form.moderation.enabled ? 'background-color:rgb(126,58,242)' : 'background-color:rgb(209,213,219)'">
-      <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-all duration-200"
-        :style="form.moderation.enabled ? 'transform:translateX(20px)' : 'transform:translateX(0)'"></span>
-    </button>
-  </div>
-
-  <div class="grid gap-4 md:grid-cols-2">
-    <%- channelSelector('moderation', '#ED4245') %>
-    <div>
-      <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Color del embed</label>
-      <div class="flex items-center gap-3 rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3">
-        <input type="color" x-model="form.moderation.color" @change="changeColor('moderation', form.moderation.color)"
-          class="h-8 w-8 cursor-pointer rounded-lg border-none bg-transparent p-0 outline-none" />
-        <span class="text-sm text-gray-700 dark:text-gray-300 font-mono" x-text="form.moderation.color"></span>
-        <span class="ml-auto text-xs text-gray-400">Color del borde del embed</span>
-      </div>
-    </div>
-  </div>
-
+  <%- catHeader('moderation','Logs de Moderación','Baneos, expulsiones y sanciones.','fa-solid fa-shield-halved','#ED4245') %>
+  <%- colorAndChannel('moderation') %>
   <div>
     <label class="mb-3 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Eventos a registrar</label>
     <div class="grid gap-2 md:grid-cols-2">
-      <%- eventToggle('moderation', 'banAdd',    'Usuario baneado',    'fa-solid fa-ban') %>
-      <%- eventToggle('moderation', 'banRemove', 'Ban eliminado',      'fa-solid fa-circle-check') %>
-      <%- eventToggle('moderation', 'kickMember','Usuario expulsado',  'fa-solid fa-boot') %>
-      <%- eventToggle('moderation', 'warnAdd',   'Advertencia emitida','fa-solid fa-triangle-exclamation') %>
+      <%- evToggle('moderation','banAdd',    'Usuario baneado',  'fa-solid fa-ban') %>
+      <%- evToggle('moderation','banRemove', 'Ban eliminado',    'fa-solid fa-circle-check') %>
+      <%- evToggle('moderation','kickMember','Usuario expulsado','fa-solid fa-boot') %>
     </div>
   </div>
 </section>
 
 
-<%# ══════════════════ TAB: HILOS ══════════════════ %>
+<%# ══ TAB: HILOS ══ %>
 <%- contentFor("Hilos") %>
-
 <section x-data="loggerData()" class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c] space-y-6">
-  <div class="flex items-center justify-between">
-    <div class="flex items-center gap-4">
-      <div class="flex h-12 w-12 items-center justify-center rounded-2xl" style="background:#9B59B622">
-        <i class="fa-solid fa-layer-group text-xl" style="color:#9B59B6"></i>
-      </div>
-      <div>
-        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Logs de Hilos</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Creación, eliminación y archivado de hilos.</p>
-      </div>
-    </div>
-    <button type="button" @click="toggleCategory('threads')"
-      class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
-      :style="form.threads.enabled ? 'background-color:rgb(126,58,242)' : 'background-color:rgb(209,213,219)'">
-      <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-all duration-200"
-        :style="form.threads.enabled ? 'transform:translateX(20px)' : 'transform:translateX(0)'"></span>
-    </button>
-  </div>
-
-  <div class="grid gap-4 md:grid-cols-2">
-    <%- channelSelector('threads', '#9B59B6') %>
-    <div>
-      <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Color del embed</label>
-      <div class="flex items-center gap-3 rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3">
-        <input type="color" x-model="form.threads.color" @change="changeColor('threads', form.threads.color)"
-          class="h-8 w-8 cursor-pointer rounded-lg border-none bg-transparent p-0 outline-none" />
-        <span class="text-sm text-gray-700 dark:text-gray-300 font-mono" x-text="form.threads.color"></span>
-        <span class="ml-auto text-xs text-gray-400">Color del borde del embed</span>
-      </div>
-    </div>
-  </div>
-
+  <%- catHeader('threads','Logs de Hilos','Creación, eliminación y archivado de hilos.','fa-solid fa-layer-group','#9B59B6') %>
+  <%- colorAndChannel('threads') %>
   <div>
     <label class="mb-3 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Eventos a registrar</label>
     <div class="grid gap-2 md:grid-cols-2">
-      <%- eventToggle('threads', 'threadCreate',  'Hilo creado',    'fa-solid fa-plus') %>
-      <%- eventToggle('threads', 'threadDelete',  'Hilo eliminado', 'fa-solid fa-trash') %>
-      <%- eventToggle('threads', 'threadUpdate',  'Hilo editado',   'fa-solid fa-pen') %>
-      <%- eventToggle('threads', 'threadArchive', 'Hilo archivado', 'fa-solid fa-box-archive') %>
+      <%- evToggle('threads','threadCreate', 'Hilo creado',   'fa-solid fa-plus') %>
+      <%- evToggle('threads','threadDelete', 'Hilo eliminado','fa-solid fa-trash') %>
+      <%- evToggle('threads','threadUpdate', 'Hilo editado',  'fa-solid fa-pen') %>
+      <%- evToggle('threads','threadArchive','Hilo archivado','fa-solid fa-box-archive') %>
     </div>
   </div>
 </section>
 
 
-<%# ══════════════════ TAB: INVITACIONES ══════════════════ %>
+<%# ══ TAB: INVITACIONES ══ %>
 <%- contentFor("Invitaciones") %>
-
 <section x-data="loggerData()" class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c] space-y-6">
-  <div class="flex items-center justify-between">
-    <div class="flex items-center gap-4">
-      <div class="flex h-12 w-12 items-center justify-center rounded-2xl" style="background:#1ABC9C22">
-        <i class="fa-solid fa-link text-xl" style="color:#1ABC9C"></i>
-      </div>
-      <div>
-        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Logs de Invitaciones</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Creación, uso y eliminación de invitaciones al servidor.</p>
-      </div>
-    </div>
-    <button type="button" @click="toggleCategory('invites')"
-      class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
-      :style="form.invites.enabled ? 'background-color:rgb(126,58,242)' : 'background-color:rgb(209,213,219)'">
-      <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-all duration-200"
-        :style="form.invites.enabled ? 'transform:translateX(20px)' : 'transform:translateX(0)'"></span>
-    </button>
-  </div>
-
-  <div class="grid gap-4 md:grid-cols-2">
-    <%- channelSelector('invites', '#1ABC9C') %>
-    <div>
-      <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Color del embed</label>
-      <div class="flex items-center gap-3 rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3">
-        <input type="color" x-model="form.invites.color" @change="changeColor('invites', form.invites.color)"
-          class="h-8 w-8 cursor-pointer rounded-lg border-none bg-transparent p-0 outline-none" />
-        <span class="text-sm text-gray-700 dark:text-gray-300 font-mono" x-text="form.invites.color"></span>
-        <span class="ml-auto text-xs text-gray-400">Color del borde del embed</span>
-      </div>
-    </div>
-  </div>
-
+  <%- catHeader('invites','Logs de Invitaciones','Creación, uso y eliminación de invitaciones.','fa-solid fa-link','#1ABC9C') %>
+  <%- colorAndChannel('invites') %>
   <div>
     <label class="mb-3 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Eventos a registrar</label>
     <div class="grid gap-2 md:grid-cols-2">
-      <%- eventToggle('invites', 'inviteCreate', 'Invitación creada',   'fa-solid fa-plus') %>
-      <%- eventToggle('invites', 'inviteDelete', 'Invitación eliminada','fa-solid fa-trash') %>
-      <%- eventToggle('invites', 'inviteUse',    'Invitación usada',    'fa-solid fa-door-open') %>
+      <%- evToggle('invites','inviteCreate','Invitación creada',  'fa-solid fa-plus') %>
+      <%- evToggle('invites','inviteDelete','Invitación eliminada','fa-solid fa-trash') %>
+      <%- evToggle('invites','inviteUse',  'Invitación usada',   'fa-solid fa-door-open') %>
     </div>
   </div>
 </section>
 
 
-<%# ══════════════════ TAB: ROLES ══════════════════ %>
+<%# ══ TAB: ROLES ══ %>
 <%- contentFor("Roles") %>
-
 <section x-data="loggerData()" class="rounded-2xl bg-white p-6 shadow-lg dark:bg-[#090e2c] space-y-6">
-  <div class="flex items-center justify-between">
-    <div class="flex items-center gap-4">
-      <div class="flex h-12 w-12 items-center justify-center rounded-2xl" style="background:#E67E2222">
-        <i class="fa-solid fa-tag text-xl" style="color:#E67E22"></i>
-      </div>
-      <div>
-        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Logs de Roles</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Creación, edición, asignación y eliminación de roles.</p>
-      </div>
-    </div>
-    <button type="button" @click="toggleCategory('roles')"
-      class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
-      :style="form.roles.enabled ? 'background-color:rgb(126,58,242)' : 'background-color:rgb(209,213,219)'">
-      <span class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-all duration-200"
-        :style="form.roles.enabled ? 'transform:translateX(20px)' : 'transform:translateX(0)'"></span>
-    </button>
-  </div>
-
-  <div class="grid gap-4 md:grid-cols-2">
-    <%- channelSelector('roles', '#E67E22') %>
-    <div>
-      <label class="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Color del embed</label>
-      <div class="flex items-center gap-3 rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3">
-        <input type="color" x-model="form.roles.color" @change="changeColor('roles', form.roles.color)"
-          class="h-8 w-8 cursor-pointer rounded-lg border-none bg-transparent p-0 outline-none" />
-        <span class="text-sm text-gray-700 dark:text-gray-300 font-mono" x-text="form.roles.color"></span>
-        <span class="ml-auto text-xs text-gray-400">Color del borde del embed</span>
-      </div>
-    </div>
-  </div>
-
+  <%- catHeader('roles','Logs de Roles','Creación, edición y asignación de roles.','fa-solid fa-tag','#E67E22') %>
+  <%- colorAndChannel('roles') %>
   <div>
     <label class="mb-3 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Eventos a registrar</label>
     <div class="grid gap-2 md:grid-cols-2">
-      <%- eventToggle('roles', 'roleCreate', 'Rol creado',            'fa-solid fa-plus') %>
-      <%- eventToggle('roles', 'roleDelete', 'Rol eliminado',         'fa-solid fa-trash') %>
-      <%- eventToggle('roles', 'roleUpdate', 'Rol editado',           'fa-solid fa-pen') %>
-      <%- eventToggle('roles', 'roleAssign', 'Rol asignado a miembro','fa-solid fa-user-tag') %>
-      <%- eventToggle('roles', 'roleRemove', 'Rol quitado a miembro', 'fa-solid fa-user-minus') %>
+      <%- evToggle('roles','roleCreate','Rol creado',            'fa-solid fa-plus') %>
+      <%- evToggle('roles','roleDelete','Rol eliminado',         'fa-solid fa-trash') %>
+      <%- evToggle('roles','roleUpdate','Rol editado',           'fa-solid fa-pen') %>
+      <%- evToggle('roles','roleAssign','Rol asignado a miembro','fa-solid fa-user-tag') %>
+      <%- evToggle('roles','roleRemove','Rol quitado a miembro', 'fa-solid fa-user-minus') %>
     </div>
   </div>
 </section>

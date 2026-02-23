@@ -1,9 +1,14 @@
 {
   "name": "logs",
   "version": "1.0.0",
-  "description": "Logs completos para Discord. Registra eventos del servidor en canales configurables",
+  "description": "Plugin de logs completo para Discord",
   "main": "index.js",
-  "dependencies": {
-    "strange-sdk": "*"
+  "author": "Jorge",
+  "license": "ISC",
+  "dependencies": {},
+  "peerDependencies": {
+    "discord.js": "^14.19.0",
+    "express": "^4.21.2",
+    "strange-sdk": "workspace:*"
   }
 }
