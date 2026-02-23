@@ -1,0 +1,4 @@
+{
+  "plugin_name": "Logs del Servidor",
+  "plugin_description": "Registra todos los eventos del servidor en canales de Discord configurables"
+}

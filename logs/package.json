@@ -1,0 +1,9 @@
+{
+  "name": "logs",
+  "version": "1.0.0",
+  "description": "Logs completos para Discord. Registra eventos del servidor en canales configurables",
+  "main": "index.js",
+  "dependencies": {
+    "strange-sdk": "*"
+  }
+}
