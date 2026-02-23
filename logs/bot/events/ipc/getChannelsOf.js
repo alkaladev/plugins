@@ -1,5 +1,4 @@
 const { ChannelType } = require("discord.js");
-
 module.exports = (client, data) => {
     const guild = client.guilds.cache.get(data.guildId);
     if (!guild) return { data: [] };
