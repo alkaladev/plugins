@@ -1,0 +1,1154 @@
+<style>
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .lyrics-line { transition: color 0.4s, font-size 0.3s, opacity 0.4s; }
+  .lyrics-line.active {
+    color: #a855f7 !important;
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    opacity: 1 !important;
+  }
+  .lyrics-line.past { opacity: 0.35; }
+  .lyrics-line.future { opacity: 0.6; }
+  [x-cloak] { display: none !important; }
+</style>
+
+<script>
+function initMusicPlayer() {
+  return {
+    loading: true, error: null, isConnected: false,
+    isLoadingAction: false, currentPosition: 0,
+    status: { active: false, paused: true, volume: 50, current: null, queue: [] },
+
+    // Búsqueda
+    searchOpen: false, searchQuery: '', searchResults: [],
+    searchLoading: false, searchPage: 1, searchHasMore: false,
+    searchCache: {}, _searchTimeout: null,
+
+    // Letras (scroll automático)
+    lyrics: null, lyricsLoading: false, lyricsError: null,
+    _lyricsTrack: null, lyricsLines: [], activeLyricIdx: -1,
+
+    // Recomendaciones
+    recommendations: [], recsLoading: false, _recsTrack: null,
+
+    // Historial y top (DB)
+    history: [], historyLoading: true,
+    topTracks: [], topLoading: true,
+
+    // Playlists y artistas (DB)
+    playlists: [], artistsList: [],
+    playlistsLoading: true, artistsLoading: true,
+
+    // Modal edición playlist/artista
+    modal: { open: false, mode: null, type: null, data: {} },
+    // Modal selector de canal de voz
+    voiceModal: { open: false, channels: [], loading: false, pendingQuery: null },
+
+    _updateInterval: null, _tickInterval: null, _lyricsInterval: null,
+
+    async init() {
+      await this.updateStatus();
+      await Promise.all([
+        this.fetchHistory(), this.fetchTop(),
+        this.fetchPlaylists(), this.fetchArtists()
+      ]);
+      this._updateInterval = setInterval(() => this.updateStatus(), 3000);
+      this._tickInterval = setInterval(() => {
+        if (this.status.active && !this.status.paused && this.status.current?.duration)
+          this.currentPosition = Math.min(this.currentPosition + 500, this.status.current.duration);
+      }, 500);
+    },
+
+    destroy() {
+      clearInterval(this._updateInterval);
+      clearInterval(this._tickInterval);
+    },
+
+    formatTime(ms) {
+      if (!ms || ms <= 0) return '0:00';
+      const s = Math.floor(ms / 1000);
+      return `${Math.floor(s / 60)}:${String(s % 60).padStart(2,'0')}`;
+    },
+
+    formatRelative(ts) {
+      if (!ts) return '';
+      const diff = Date.now() - new Date(ts).getTime();
+      const m = Math.floor(diff / 60000), h = Math.floor(diff / 3600000);
+      if (m < 1) return 'Ahora mismo';
+      if (m < 60) return `Hace ${m}min`;
+      if (h < 24) return `Hace ${h}h`;
+      return `Hace ${Math.floor(h/24)}d`;
+    },
+
+    getProgress() {
+      const dur = this.status.current?.duration;
+      return dur ? Math.min(100, (this.currentPosition / dur) * 100) : 0;
+    },
+
+    async updateStatus() {
+      if (this.isLoadingAction) return;
+      try {
+        const res = await fetch('./status');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (json.error) throw new Error(json.error);
+        const trackChanged = json.current?.title !== this.status.current?.title;
+        this.status = json; this.isConnected = true; this.error = null;
+        if (json.position > 0) this.currentPosition = Number(json.position);
+        else if (trackChanged) this.currentPosition = 0;
+        if (trackChanged && json.current) {
+          this._lyricsTrack = null; this._recsTrack = null;
+          this.fetchLyrics(json.current.title, json.current.author);
+          this.fetchRecommendations(json.current.author, json.current.title);
+          setTimeout(() => { this.fetchHistory(); this.fetchTop(); }, 2000);
+        }
+        // Scroll letras automático
+        this.updateActiveLyric();
+      } catch (err) {
+        this.isConnected = false;
+        this.error = err.message;
+      } finally { this.loading = false; }
+    },
+
+    // ── LETRAS CON SCROLL AUTO ──────────────────────────────────
+    async fetchLyrics(title, artist) {
+      if (this._lyricsTrack === title) return;
+      this._lyricsTrack = title;
+      this.lyrics = null; this.lyricsLines = []; this.lyricsError = null; this.lyricsLoading = true;
+      this.activeLyricIdx = -1;
+      try {
+        const r = await fetch(`./lyrics?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}`);
+        const data = await r.json();
+        if (data.lyrics) {
+          this.lyrics = data.lyrics.trim();
+          this.lyricsLines = this.lyrics.split('\n');
+        } else {
+          this.lyricsError = 'Letras no disponibles para esta canción.';
+        }
+      } catch (e) { this.lyricsError = 'No se pudieron cargar las letras.'; }
+      finally { this.lyricsLoading = false; }
+    },
+
+    // Calcula qué línea debería estar activa basándose en el progreso
+    updateActiveLyric() {
+      if (!this.lyricsLines.length || !this.status.current?.duration) return;
+      const progress = this.currentPosition / this.status.current.duration;
+      const nonEmpty = this.lyricsLines.filter(l => l.trim()).length;
+      const newIdx = Math.floor(progress * nonEmpty);
+      if (newIdx !== this.activeLyricIdx) {
+        this.activeLyricIdx = newIdx;
+        this.$nextTick(() => {
+          const el = document.getElementById('lyric-line-' + newIdx);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      }
+    },
+
+    getLyricClass(line, idx) {
+      if (!line.trim()) return '';
+      const nonEmpty = this.lyricsLines.filter(l => l.trim());
+      const myNonEmptyIdx = nonEmpty.indexOf(line);
+      if (myNonEmptyIdx === -1) return 'lyrics-line future';
+      if (myNonEmptyIdx < this.activeLyricIdx) return 'lyrics-line past';
+      if (myNonEmptyIdx === this.activeLyricIdx) return 'lyrics-line active';
+      return 'lyrics-line future';
+    },
+
+    // ── RECOMENDACIONES ─────────────────────────────────────────
+    async fetchRecommendations(artist, currentTitle) {
+      if (this._recsTrack === artist) return;
+      this._recsTrack = artist; this.recommendations = []; this.recsLoading = true;
+      try {
+        const res = await fetch('./search', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: artist, page: 1 })
+        });
+        const json = await res.json();
+        this.recommendations = (json.results || []).filter(t => t.title !== currentTitle).slice(0, 6);
+      } catch (e) { this.recommendations = []; }
+      finally { this.recsLoading = false; }
+    },
+
+    // ── BÚSQUEDA ────────────────────────────────────────────────
+    debounceSearch(query) {
+      clearTimeout(this._searchTimeout); this.searchQuery = query; this.searchPage = 1;
+      this._searchTimeout = setTimeout(() => this.performSearch(query, 1), 500);
+    },
+    async performSearch(query, page = 1) {
+      if (!query.trim()) { this.searchResults = []; return; }
+      const key = `${query}_${page}`;
+      if (this.searchCache[key]) {
+        this.searchResults = this.searchCache[key].results;
+        this.searchHasMore = this.searchCache[key].hasMore; return;
+      }
+      this.searchLoading = true;
+      try {
+        const res = await fetch('./search', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, page })
+        });
+        const json = await res.json();
+        if (json.error) throw new Error(json.error);
+        this.searchResults = json.results || [];
+        this.searchHasMore = json.hasMore || false;
+        this.searchCache[key] = { results: this.searchResults, hasMore: this.searchHasMore };
+      } catch (err) { this.searchResults = []; this.searchHasMore = false; }
+      finally { this.searchLoading = false; }
+    },
+
+    // ── HISTORIAL / TOP ─────────────────────────────────────────
+    async fetchHistory() {
+      this.historyLoading = true;
+      try { const r = await fetch('./history'); const j = await r.json(); this.history = j.history || []; }
+      catch(e) { this.history = []; } finally { this.historyLoading = false; }
+    },
+    async fetchTop() {
+      this.topLoading = true;
+      try { const r = await fetch('./top'); const j = await r.json(); this.topTracks = j.top || []; }
+      catch(e) { this.topTracks = []; } finally { this.topLoading = false; }
+    },
+
+    // ── PLAYLISTS & ARTISTAS (DB) ───────────────────────────────
+    async fetchPlaylists() {
+      this.playlistsLoading = true;
+      try { const r = await fetch('./pinned/playlists'); const j = await r.json(); this.playlists = j.playlists || []; }
+      catch(e) { this.playlists = []; } finally { this.playlistsLoading = false; }
+    },
+    async fetchArtists() {
+      this.artistsLoading = true;
+      try { const r = await fetch('./pinned/artists'); const j = await r.json(); this.artistsList = j.artists || []; }
+      catch(e) { this.artistsList = []; } finally { this.artistsLoading = false; }
+    },
+
+    openModal(type, mode, data = {}) {
+      this.modal = {
+        open: true, type, mode,
+        data: mode === 'edit' ? { ...data } : {
+          name: '', icon: type === 'playlist' ? 'fa-music' : '',
+          color: 'from-purple-500 to-indigo-600', query: '', artwork: ''
+        }
+      };
+    },
+
+    async saveModal() {
+      const { type, mode, data } = this.modal;
+      const endpoint = `./pinned/${type === 'playlist' ? 'playlists' : 'artists'}`;
+      try {
+        await fetch(endpoint, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        this.modal.open = false;
+        if (type === 'playlist') await this.fetchPlaylists();
+        else await this.fetchArtists();
+        Alpine.store('toast')?.show('Guardado correctamente', 'success');
+      } catch(e) { Alpine.store('toast')?.show('Error al guardar', 'error'); }
+    },
+
+    async deleteModalItem() {
+      const { type, data } = this.modal;
+      const endpoint = `./pinned/${type === 'playlist' ? 'playlists' : 'artists'}/${data._id}`;
+      try {
+        await fetch(endpoint, { method: 'DELETE' });
+        this.modal.open = false;
+        if (type === 'playlist') await this.fetchPlaylists();
+        else await this.fetchArtists();
+        Alpine.store('toast')?.show('Eliminado', 'success');
+      } catch(e) { Alpine.store('toast')?.show('Error al eliminar', 'error'); }
+    },
+
+    // ── REPRODUCIR PLAYLIST/ARTISTA ─────────────────────────────
+    async playItem(query) {
+      // Si el bot ya está activo, añadir directamente a la cola
+      if (this.status.active) {
+        this.isLoadingAction = true;
+        try {
+          await fetch('./join-and-play', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ channelId: this.status.voiceChannelId || null, query })
+          });
+          Alpine.store('toast')?.show('Canciones añadidas a la cola', 'success');
+          await this.updateStatus();
+        } catch(e) { Alpine.store('toast')?.show('Error', 'error'); }
+        finally { this.isLoadingAction = false; }
+        return;
+      }
+      // Si el bot NO está activo, mostrar selector de canal
+      this.voiceModal.open = true;
+      this.voiceModal.pendingQuery = query;
+      this.voiceModal.loading = true;
+      this.voiceModal.channels = [];
+      try {
+        const r = await fetch('./voice-channels');
+        const j = await r.json();
+        this.voiceModal.channels = j.channels || [];
+      } catch(e) { this.voiceModal.channels = []; }
+      finally { this.voiceModal.loading = false; }
+    },
+
+    async joinAndPlay(channelId) {
+      this.voiceModal.open = false;
+      this.isLoadingAction = true;
+      try {
+        const r = await fetch('./join-and-play', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ channelId, query: this.voiceModal.pendingQuery })
+        });
+        const j = await r.json();
+        if (j.error) throw new Error(j.error);
+        Alpine.store('toast')?.show(`Bot unido al canal. ${j.added} canciones añadidas`, 'success');
+        setTimeout(() => this.updateStatus(), 1500);
+      } catch(e) { Alpine.store('toast')?.show(`Error: ${e.message}`, 'error'); }
+      finally { this.isLoadingAction = false; }
+    },
+
+    // ── CONTROLES ───────────────────────────────────────────────
+    async executeAction(event, data = {}) {
+      if (this.isLoadingAction) return;
+      this.isLoadingAction = true;
+      if (event === 'music:TOGGLE_PAUSE') this.status.paused = !this.status.paused;
+      if (event === 'music:STOP_PLAYER') this.status.active = false;
+      if (event === 'music:SKIP_TRACK' && this.status.queue?.length > 0) this.status.current = this.status.queue.shift();
+      try {
+        const r = await fetch('./control', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event, data })
+        });
+        if (!r.ok) { const e = await r.json(); throw new Error(e.error || `HTTP ${r.status}`); }
+      } catch (err) { this.error = err.message; }
+      finally { this.isLoadingAction = false; await this.updateStatus(); }
+    },
+
+    async addToQueue(song) {
+      if (this.isLoadingAction) return;
+      this.isLoadingAction = true;
+      try {
+        const r = await fetch('./control', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event: 'music:ADD_QUEUE', data: { track: song } })
+        });
+        if (!r.ok) { const e = await r.json(); throw new Error(e.error); }
+        Alpine.store('toast')?.show('Canción añadida a la cola', 'success');
+        await new Promise(r => setTimeout(r, 500));
+        await this.updateStatus();
+      } catch (err) { Alpine.store('toast')?.show(`Error: ${err.message}`, 'error'); }
+      finally { this.isLoadingAction = false; }
+    },
+
+    setVolume(vol) {
+      this.status.volume = Number(vol);
+      this.executeAction('music:SET_VOLUME', { volume: Number(vol) });
+    },
+    seekTrack(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      this.currentPosition = ((e.clientX - rect.left) / rect.width) * (this.status.current?.duration || 0);
+    },
+
+    // Paleta de colores y iconos para modales
+    colorOptions: [
+      'from-pink-500 to-rose-600','from-purple-500 to-indigo-600','from-yellow-400 to-orange-500',
+      'from-green-500 to-emerald-600','from-blue-500 to-cyan-600','from-slate-500 to-slate-700',
+      'from-red-500 to-pink-600','from-teal-500 to-cyan-600',
+    ],
+    iconOptions: [
+      'fa-music','fa-heart','fa-star','fa-bolt','fa-moon','fa-fire','fa-guitar',
+      'fa-headphones','fa-drum','fa-compact-disc','fa-microphone','fa-wave-square',
+    ],
+  };
+}
+</script>
+
+<section x-data="initMusicPlayer()" x-init="init()" @beforeunload.window="destroy()" class="space-y-6" x-cloak>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODAL: SELECCIONAR CANAL DE VOZ
+  ══════════════════════════════════════════════════════════ -->
+  <template x-if="voiceModal.open">
+    <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="voiceModal.open = false"></div>
+      <div class="relative z-10 w-full max-w-md rounded-2xl bg-white dark:bg-[#090e2c] shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
+          <div>
+            <h3 class="text-base font-black text-gray-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-tower-broadcast text-purple-500"></i>
+              Selecciona un canal de voz
+            </h3>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">El bot se unirá y empezará a reproducir</p>
+          </div>
+          <button @click="voiceModal.open = false" class="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-all">
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
+        </div>
+        <div class="p-4 max-h-80 overflow-y-auto scrollbar-hide">
+          <template x-if="voiceModal.loading">
+            <div class="flex flex-col items-center py-8 text-center">
+              <i class="fa-solid fa-compact-disc animate-spin text-2xl text-gray-300 dark:text-white/10 mb-2"></i>
+              <p class="text-sm text-gray-400">Cargando canales...</p>
+            </div>
+          </template>
+          <template x-if="!voiceModal.loading && voiceModal.channels.length === 0">
+            <div class="flex flex-col items-center py-8 text-center">
+              <i class="fa-solid fa-circle-xmark text-2xl text-gray-300 dark:text-white/10 mb-2"></i>
+              <p class="text-sm text-gray-400">No hay canales de voz disponibles</p>
+            </div>
+          </template>
+          <div class="space-y-1">
+            <template x-for="ch in voiceModal.channels" :key="ch.id">
+              <button @click="joinAndPlay(ch.id)"
+                class="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all hover:bg-purple-500/10 dark:hover:bg-purple-500/20 active:scale-98 group">
+                <div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-purple-500/10 dark:bg-purple-500/20 group-hover:bg-purple-500/20 dark:group-hover:bg-purple-500/30 transition-colors">
+                  <i class="fa-solid fa-volume-high text-purple-500 text-sm"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-semibold text-gray-900 dark:text-white truncate" x-text="ch.name"></p>
+                  <p class="text-xs text-gray-400 dark:text-gray-500" x-text="ch.memberCount + ' miembro' + (ch.memberCount !== 1 ? 's' : '')"></p>
+                </div>
+                <i class="fa-solid fa-arrow-right text-xs text-gray-300 dark:text-white/20 group-hover:text-purple-500 transition-colors flex-shrink-0"></i>
+              </button>
+            </template>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODAL: EDITAR PLAYLIST / ARTISTA
+  ══════════════════════════════════════════════════════════ -->
+  <template x-if="modal.open">
+    <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="modal.open = false"></div>
+      <div class="relative z-10 w-full max-w-lg rounded-2xl bg-white dark:bg-[#090e2c] shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
+          <h3 class="text-base font-black text-gray-900 dark:text-white"
+            x-text="(modal.mode === 'edit' ? 'Editar' : 'Nueva') + ' ' + (modal.type === 'playlist' ? 'playlist' : 'artista')"></h3>
+          <button @click="modal.open = false" class="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-all">
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <!-- Nombre -->
+          <div>
+            <label class="block text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1.5">
+              <span x-text="modal.type === 'playlist' ? 'Nombre de la playlist' : 'Nombre del artista'"></span>
+            </label>
+            <input type="text" x-model="modal.data.name" placeholder="Ej: Favoritos del servidor"
+              class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-2.5 text-sm text-gray-900 dark:text-white border-none outline-none focus:ring-2 focus:ring-purple-500/40" />
+          </div>
+          <!-- Query de búsqueda -->
+          <div>
+            <label class="block text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1.5">Query en Spotify</label>
+            <input type="text" x-model="modal.data.query"
+              :placeholder="modal.type === 'playlist' ? 'Ej: lo-fi hip hop' : 'Ej: The Weeknd'"
+              class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-2.5 text-sm text-gray-900 dark:text-white border-none outline-none focus:ring-2 focus:ring-purple-500/40" />
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Se buscarán canciones con este término al darle play</p>
+          </div>
+          <!-- Solo playlists: icono + color -->
+          <template x-if="modal.type === 'playlist'">
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Icono</label>
+                <div class="flex flex-wrap gap-2">
+                  <template x-for="icon in iconOptions" :key="icon">
+                    <button @click="modal.data.icon = icon"
+                      :class="modal.data.icon === icon ? 'bg-purple-500 text-white ring-2 ring-purple-500/50' : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'"
+                      class="flex h-9 w-9 items-center justify-center rounded-xl transition-all">
+                      <i class="fa-solid text-sm" :class="icon"></i>
+                    </button>
+                  </template>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Color</label>
+                <div class="flex flex-wrap gap-2">
+                  <template x-for="color in colorOptions" :key="color">
+                    <button @click="modal.data.color = color"
+                      :class="[color, 'bg-gradient-to-br', modal.data.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-gray-100 dark:ring-offset-[#090e2c] scale-110' : '']"
+                      class="h-8 w-8 rounded-xl transition-all hover:scale-110"></button>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </template>
+          <!-- Solo artistas: artwork URL -->
+          <template x-if="modal.type === 'artist'">
+            <div>
+              <label class="block text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1.5">URL de imagen (opcional)</label>
+              <input type="text" x-model="modal.data.artwork" placeholder="https://..."
+                class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-2.5 text-sm text-gray-900 dark:text-white border-none outline-none focus:ring-2 focus:ring-purple-500/40" />
+            </div>
+          </template>
+        </div>
+        <div class="px-6 pb-6 flex items-center justify-between gap-3">
+          <template x-if="modal.mode === 'edit'">
+            <button @click="deleteModalItem()"
+              class="inline-flex items-center gap-2 rounded-xl bg-red-500/10 dark:bg-red-500/20 px-4 py-2 text-sm font-bold text-red-600 dark:text-red-400 hover:scale-105 active:scale-95 transition-all">
+              <i class="fa-solid fa-trash text-xs"></i>
+              Eliminar
+            </button>
+          </template>
+          <div x-show="modal.mode !== 'edit'" class="flex-1"></div>
+          <div class="flex items-center gap-2 ml-auto">
+            <button @click="modal.open = false"
+              class="inline-flex items-center gap-2 rounded-xl bg-gray-100 dark:bg-white/5 px-4 py-2 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 transition-all">
+              Cancelar
+            </button>
+            <button @click="saveModal()"
+              class="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold text-white hover:bg-purple-500 hover:scale-105 active:scale-95 transition-all shadow-[0_8px_20px_-8px_rgba(168,85,247,0.5)]">
+              <i class="fa-solid fa-check text-xs"></i>
+              Guardar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       FILA 1: PLAYLISTS ANCLADAS (slider)
+  ══════════════════════════════════════════════════════════ -->
+  <div class="rounded-2xl bg-white shadow-lg dark:bg-[#090e2c] transition-colors duration-300">
+    <div class="px-6 py-5 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
+      <div>
+        <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <i class="fa-solid fa-thumbtack text-purple-500"></i>
+          Playlists ancladas
+        </h3>
+        <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Toca para reproducir · Mantén para editar</p>
+      </div>
+      <button @click="openModal('playlist', 'create')"
+        class="inline-flex items-center gap-2 rounded-xl bg-green-500/10 dark:bg-green-500/20 px-4 py-2 text-xs font-bold text-green-700 dark:text-green-300 hover:scale-105 active:scale-95 transition-all relative overflow-hidden group">
+        <div class="absolute inset-0 bg-gradient-to-r from-green-500/0 via-green-500/10 to-green-500/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+        <i class="fa-solid fa-plus relative z-10"></i>
+        <span class="relative z-10">Añadir</span>
+      </button>
+    </div>
+    <div class="p-6">
+      <!-- Estado vacío -->
+      <template x-if="!playlistsLoading && playlists.length === 0">
+        <div class="flex flex-col items-center justify-center py-10 text-center">
+          <i class="fa-solid fa-thumbtack text-4xl text-gray-100 dark:text-white/5 mb-3"></i>
+          <p class="text-sm text-gray-400 dark:text-gray-500">Sin playlists ancladas</p>
+          <p class="text-xs text-gray-300 dark:text-gray-600 mt-1">Crea una para acceso rápido</p>
+        </div>
+      </template>
+      <!-- Slider de playlists -->
+      <template x-if="playlists.length > 0 || playlistsLoading">
+        <div class="flex gap-4 overflow-x-auto scrollbar-hide pb-1 snap-x snap-mandatory">
+          <!-- Skeletons cargando -->
+          <template x-if="playlistsLoading">
+            <template x-for="i in [1,2,3,4]" :key="i">
+              <div class="flex-shrink-0 w-40 h-40 rounded-xl bg-gray-100 dark:bg-white/5 animate-pulse snap-start"></div>
+            </template>
+          </template>
+          <!-- Playlists reales -->
+          <template x-if="!playlistsLoading">
+            <template x-for="pl in playlists" :key="pl._id">
+              <div class="flex-shrink-0 w-40 snap-start group relative overflow-hidden rounded-xl cursor-pointer transition-all duration-300 hover:scale-[1.03] hover:shadow-xl active:scale-[0.97]"
+                @click="playItem(pl.query)"
+                @contextmenu.prevent="openModal('playlist', 'edit', pl)">
+                <div class="aspect-square rounded-xl bg-gradient-to-br flex items-end p-3 shadow-md" :class="pl.color">
+                  <i class="fa-solid text-white/20 text-5xl absolute top-2 right-2 transition-all duration-300 group-hover:scale-110 group-hover:rotate-[-8deg] group-hover:text-white/30" :class="pl.icon"></i>
+                  <div class="relative z-10">
+                    <p class="text-white font-black text-sm leading-tight drop-shadow" x-text="pl.name"></p>
+                  </div>
+                </div>
+                <!-- Overlay play -->
+                <div class="absolute inset-0 bg-black/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-xl translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                    <i class="fa-solid fa-play text-gray-900 text-sm ml-0.5"></i>
+                  </div>
+                </div>
+                <!-- Botón editar -->
+                <button @click.stop="openModal('playlist', 'edit', pl)"
+                  class="absolute top-2 left-2 flex h-7 w-7 items-center justify-center rounded-lg bg-black/30 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/50 z-20">
+                  <i class="fa-solid fa-pen text-[10px]"></i>
+                </button>
+              </div>
+            </template>
+          </template>
+        </div>
+      </template>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       FILA 2: ARTISTAS ANCLADOS (grid 8, slider en overflow)
+  ══════════════════════════════════════════════════════════ -->
+  <div class="rounded-2xl bg-white shadow-lg dark:bg-[#090e2c] transition-colors duration-300">
+    <div class="px-6 py-5 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
+      <div>
+        <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <i class="fa-solid fa-user-music text-yellow-500"></i>
+          Artistas favoritos
+        </h3>
+        <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Vincula un artista a su playlist</p>
+      </div>
+      <button @click="openModal('artist', 'create')"
+        class="inline-flex items-center gap-2 rounded-xl bg-yellow-500/10 dark:bg-yellow-500/20 px-4 py-2 text-xs font-bold text-yellow-700 dark:text-yellow-300 hover:scale-105 active:scale-95 transition-all">
+        <i class="fa-solid fa-plus"></i>
+        <span>Añadir</span>
+      </button>
+    </div>
+    <div class="p-6">
+      <template x-if="!artistsLoading && artistsList.length === 0">
+        <div class="flex flex-col items-center justify-center py-10 text-center">
+          <i class="fa-solid fa-user-music text-4xl text-gray-100 dark:text-white/5 mb-3"></i>
+          <p class="text-sm text-gray-400 dark:text-gray-500">Sin artistas anclados</p>
+          <p class="text-xs text-gray-300 dark:text-gray-600 mt-1">Añade artistas para acceso rápido</p>
+        </div>
+      </template>
+      <!-- Grid de 8 con overflow slider -->
+      <div class="flex gap-3 overflow-x-auto scrollbar-hide pb-1 snap-x">
+        <template x-if="artistsLoading">
+          <template x-for="i in [1,2,3,4,5,6,7,8]" :key="i">
+            <div class="flex-shrink-0 w-24 flex flex-col items-center gap-2 snap-start">
+              <div class="h-20 w-20 rounded-full bg-gray-100 dark:bg-white/5 animate-pulse"></div>
+              <div class="h-2.5 w-16 rounded-full bg-gray-100 dark:bg-white/5 animate-pulse"></div>
+            </div>
+          </template>
+        </template>
+        <template x-if="!artistsLoading">
+          <template x-for="art in artistsList" :key="art._id">
+            <div class="flex-shrink-0 w-24 flex flex-col items-center gap-2 snap-start group cursor-pointer"
+              @click="playItem(art.query)">
+              <div class="relative">
+                <template x-if="art.artwork">
+                  <img :src="art.artwork" :alt="art.name"
+                    class="h-20 w-20 rounded-full object-cover shadow-md transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg ring-2 ring-transparent group-hover:ring-yellow-500/40" />
+                </template>
+                <template x-if="!art.artwork">
+                  <div class="h-20 w-20 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-md transition-all group-hover:scale-105">
+                    <i class="fa-solid fa-user text-white text-2xl"></i>
+                  </div>
+                </template>
+                <!-- Overlay play -->
+                <div class="absolute inset-0 rounded-full bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <i class="fa-solid fa-play text-white text-sm ml-0.5"></i>
+                </div>
+                <!-- Botón editar -->
+                <button @click.stop="openModal('artist', 'edit', art)"
+                  class="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-gray-700 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-purple-600 z-10">
+                  <i class="fa-solid fa-pen text-[9px]"></i>
+                </button>
+              </div>
+              <p class="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center truncate w-full px-1" x-text="art.name"></p>
+            </div>
+          </template>
+        </template>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       FILA 3: BÚSQUEDA (colapsable)
+  ══════════════════════════════════════════════════════════ -->
+  <div class="rounded-2xl bg-white shadow-lg dark:bg-[#090e2c] transition-colors duration-300 overflow-hidden">
+    <!-- Header / botón trigger -->
+    <div class="px-6 py-5 flex items-center justify-between cursor-pointer select-none"
+      @click="searchOpen = !searchOpen"
+      :class="searchOpen ? 'border-b border-gray-100 dark:border-white/5' : ''">
+      <div class="flex items-center gap-3">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10 dark:bg-green-500/20 transition-all"
+          :class="searchOpen ? 'bg-green-500 dark:bg-green-500' : ''">
+          <i class="fa-brands fa-spotify text-lg transition-colors" :class="searchOpen ? 'text-white' : 'text-green-500'"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-gray-900 dark:text-white">Buscar en Spotify</h3>
+          <p class="text-xs text-gray-400 dark:text-gray-500" x-text="searchOpen ? 'Clic para cerrar' : 'Clic para buscar canciones'"></p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span :class="isConnected ? 'bg-green-500/10 text-green-700 dark:bg-green-500/20 dark:text-green-300' : 'bg-red-500/10 text-red-700 dark:bg-red-500/20 dark:text-red-300'"
+          class="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold">
+          <i :class="isConnected ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark'"></i>
+          <span class="hidden sm:inline" x-text="isConnected ? 'Conectado' : 'Desconectado'"></span>
+        </span>
+        <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 dark:bg-white/5 text-gray-400 transition-transform duration-300" :class="searchOpen ? 'rotate-180' : ''">
+          <i class="fa-solid fa-chevron-down text-xs"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenido colapsable -->
+    <div x-show="searchOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2">
+      <div class="p-6">
+        <input type="text" :value="searchQuery" @input="debounceSearch($event.target.value)"
+          placeholder="Busca una canción o artista..."
+          class="w-full rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-3 text-sm font-medium text-gray-900 dark:text-white border-none outline-none focus:ring-2 focus:ring-green-500/40 transition-all mb-4" />
+        <template x-if="searchLoading">
+          <div class="flex flex-col items-center justify-center py-10 text-center">
+            <i class="fa-solid fa-compact-disc text-2xl text-gray-200 dark:text-white/10 animate-spin mb-2"></i>
+            <p class="text-sm text-gray-400">Buscando...</p>
+          </div>
+        </template>
+        <template x-if="!searchLoading && searchQuery === ''">
+          <div class="flex flex-col items-center justify-center py-10 text-center">
+            <i class="fa-brands fa-spotify text-5xl text-gray-100 dark:text-white/5 mb-3"></i>
+            <p class="text-sm text-gray-400 dark:text-gray-500">Escribe para buscar canciones</p>
+          </div>
+        </template>
+        <template x-if="!searchLoading && searchQuery !== '' && searchResults.length === 0">
+          <div class="flex flex-col items-center justify-center py-10 text-center">
+            <i class="fa-solid fa-circle-xmark text-2xl text-gray-200 dark:text-white/10 mb-2"></i>
+            <p class="text-sm text-gray-400">Sin resultados</p>
+          </div>
+        </template>
+        <template x-if="!searchLoading && searchResults.length > 0">
+          <div>
+            <div class="space-y-0.5">
+              <template x-for="(song, idx) in searchResults" :key="idx">
+                <div class="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/5 group cursor-default transition-colors">
+                  <span class="text-xs font-bold text-gray-300 dark:text-white/20 w-4 text-center flex-shrink-0" x-text="idx + 1"></span>
+                  <img :src="song.thumbnail" :alt="song.title" class="h-10 w-10 rounded-lg object-cover flex-shrink-0" />
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate text-sm font-semibold text-gray-900 dark:text-white" x-text="song.title"></p>
+                    <p class="truncate text-xs text-gray-400 dark:text-gray-500" x-text="song.author + ' · ' + song.duration"></p>
+                  </div>
+                  <button @click="addToQueue(song)" :disabled="isLoadingAction"
+                    class="opacity-0 group-hover:opacity-100 inline-flex items-center gap-1 rounded-xl bg-purple-500/10 dark:bg-purple-500/20 px-3 py-1.5 text-xs font-bold text-purple-700 dark:text-purple-300 transition-all hover:scale-105 active:scale-95 disabled:opacity-40 flex-shrink-0">
+                    <i class="fa-solid fa-plus"></i>
+                    Añadir
+                  </button>
+                </div>
+              </template>
+            </div>
+            <template x-if="searchHasMore || searchPage > 1">
+              <div class="flex items-center justify-center gap-2 border-t border-gray-100 dark:border-white/5 pt-3 mt-3">
+                <button @click="searchPage = Math.max(1, searchPage - 1); performSearch(searchQuery, searchPage)" :disabled="searchPage <= 1 || searchLoading"
+                  class="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-40 transition-all">
+                  <i class="fa-solid fa-chevron-left text-xs"></i>
+                </button>
+                <span class="flex h-8 items-center rounded-xl bg-purple-600 px-3 text-xs font-bold text-white" x-text="'Pág. ' + searchPage"></span>
+                <button @click="searchPage++; performSearch(searchQuery, searchPage)" :disabled="!searchHasMore || searchLoading"
+                  class="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-40 transition-all">
+                  <i class="fa-solid fa-chevron-right text-xs"></i>
+                </button>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       FILA 4: LETRA + RECOMENDACIONES
+  ══════════════════════════════════════════════════════════ -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- LETRA (scroll automático por progreso) -->
+    <div class="rounded-2xl bg-white shadow-lg dark:bg-[#090e2c] transition-colors duration-300">
+      <div class="px-6 py-5 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <i class="fa-solid fa-microphone-lines text-purple-500"></i>
+            Letra
+          </h3>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate"
+            x-text="status.current ? status.current.title + ' — ' + status.current.author : 'Sin canción activa'"></p>
+        </div>
+        <template x-if="lyrics">
+          <span class="inline-flex items-center gap-1.5 rounded-xl bg-purple-500/10 dark:bg-purple-500/20 px-3 py-1.5 text-xs font-bold text-purple-700 dark:text-purple-300 flex-shrink-0">
+            <i class="fa-solid fa-circle-check text-[10px]"></i>
+            Sincronizada
+          </span>
+        </template>
+      </div>
+      <div class="p-6">
+        <template x-if="!status.active">
+          <div class="flex flex-col items-center justify-center py-16 text-center">
+            <i class="fa-solid fa-microphone-slash text-5xl text-gray-100 dark:text-white/5 mb-3"></i>
+            <p class="text-sm text-gray-400 dark:text-gray-500">Reproduce una canción para ver la letra</p>
+          </div>
+        </template>
+        <template x-if="status.active && lyricsLoading">
+          <div class="flex flex-col items-center justify-center py-16 text-center">
+            <i class="fa-solid fa-compact-disc text-3xl text-purple-300 dark:text-purple-500/30 animate-spin mb-3"></i>
+            <p class="text-sm text-gray-400">Buscando letra...</p>
+          </div>
+        </template>
+        <template x-if="status.active && !lyricsLoading && lyricsError">
+          <div class="flex flex-col items-center justify-center py-16 text-center">
+            <i class="fa-solid fa-file-circle-xmark text-4xl text-gray-100 dark:text-white/5 mb-3"></i>
+            <p class="text-sm text-gray-500 dark:text-gray-400" x-text="lyricsError"></p>
+            <button @click="_lyricsTrack = null; fetchLyrics(status.current.title, status.current.author)"
+              class="mt-3 inline-flex items-center gap-2 rounded-xl bg-purple-500/10 dark:bg-purple-500/20 px-4 py-2 text-xs font-bold text-purple-700 dark:text-purple-300 hover:scale-105 active:scale-95 transition-all">
+              <i class="fa-solid fa-rotate-right"></i>
+              Reintentar
+            </button>
+          </div>
+        </template>
+        <template x-if="status.active && !lyricsLoading && lyrics">
+          <div class="relative">
+            <div id="lyrics-scroll" class="max-h-96 overflow-y-auto scrollbar-hide space-y-1 pr-1">
+              <template x-for="(line, i) in lyricsLines" :key="i">
+                <p :id="'lyric-line-' + i"
+                   :class="[getLyricClass(line, i), line.trim() ? 'text-base leading-relaxed py-0.5' : 'h-4']"
+                   class="transition-all duration-400 cursor-default select-none"
+                   x-text="line"></p>
+              </template>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-white dark:from-[#090e2c] to-transparent pointer-events-none"></div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- RECOMENDACIONES -->
+    <div class="rounded-2xl bg-white shadow-lg dark:bg-[#090e2c] transition-colors duration-300">
+      <div class="px-6 py-5 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <i class="fa-solid fa-wand-magic-sparkles text-yellow-500"></i>
+            Recomendaciones
+          </h3>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5"
+            x-text="status.current ? 'Basado en ' + status.current.author : 'Reproduce algo para ver recomendaciones'"></p>
+        </div>
+        <template x-if="status.current">
+          <span class="inline-flex items-center gap-1.5 rounded-xl bg-yellow-500/10 dark:bg-yellow-500/20 px-3 py-1.5 text-xs font-bold text-yellow-700 dark:text-yellow-300">
+            <i class="fa-brands fa-spotify text-[10px]"></i>
+            Spotify
+          </span>
+        </template>
+      </div>
+      <div class="p-4">
+        <template x-if="!status.active">
+          <div class="flex flex-col items-center justify-center py-12 text-center">
+            <i class="fa-solid fa-wand-magic-sparkles text-4xl text-gray-100 dark:text-white/5 mb-3"></i>
+            <p class="text-sm text-gray-400 dark:text-gray-500">Reproduce una canción para ver recomendaciones</p>
+          </div>
+        </template>
+        <template x-if="status.active && recsLoading">
+          <div class="space-y-2">
+            <template x-for="i in [1,2,3,4,5,6]" :key="i">
+              <div class="flex items-center gap-3 rounded-xl px-3 py-2.5">
+                <div class="h-11 w-11 rounded-lg bg-gray-100 dark:bg-white/5 flex-shrink-0 animate-pulse"></div>
+                <div class="flex-1 space-y-1.5">
+                  <div class="h-3 rounded-full bg-gray-100 dark:bg-white/5 animate-pulse" :style="'width:' + (50 + i * 7) + '%'"></div>
+                  <div class="h-2.5 rounded-full bg-gray-100 dark:bg-white/5 animate-pulse w-1/3"></div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </template>
+        <template x-if="status.active && !recsLoading && recommendations.length === 0">
+          <div class="flex flex-col items-center justify-center py-12 text-center">
+            <i class="fa-solid fa-circle-xmark text-3xl text-gray-100 dark:text-white/5 mb-3"></i>
+            <p class="text-sm text-gray-400 dark:text-gray-500">No se encontraron recomendaciones</p>
+          </div>
+        </template>
+        <template x-if="status.active && !recsLoading && recommendations.length > 0">
+          <div class="space-y-0.5">
+            <template x-for="(song, idx) in recommendations" :key="idx">
+              <div class="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 group cursor-default transition-colors">
+                <img :src="song.thumbnail" :alt="song.title" class="h-11 w-11 rounded-lg object-cover flex-shrink-0 shadow-sm" />
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-semibold text-gray-900 dark:text-white" x-text="song.title"></p>
+                  <p class="truncate text-xs text-gray-400 dark:text-gray-500" x-text="song.author + ' · ' + song.duration"></p>
+                </div>
+                <button @click="addToQueue(song)" :disabled="isLoadingAction"
+                  class="opacity-0 group-hover:opacity-100 flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/10 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 transition-all hover:scale-110 active:scale-95 disabled:opacity-40 flex-shrink-0">
+                  <i class="fa-solid fa-plus text-xs"></i>
+                </button>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       FILA 5: COLA + TOP DEL SERVIDOR
+  ══════════════════════════════════════════════════════════ -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Cola -->
+    <div class="rounded-2xl bg-white shadow-lg dark:bg-[#090e2c] transition-colors duration-300">
+      <div class="px-6 py-5 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
+        <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <i class="fa-solid fa-list text-purple-500"></i>
+          Cola de reproducción
+          <template x-if="status.queue && status.queue.length > 0">
+            <span class="rounded-full bg-purple-500/10 dark:bg-purple-500/20 px-2 py-0.5 text-xs font-black text-purple-600 dark:text-purple-300" x-text="status.queue.length"></span>
+          </template>
+        </h3>
+      </div>
+      <div class="p-4">
+        <template x-if="!status.queue || status.queue.length === 0">
+          <div class="flex flex-col items-center justify-center py-12 text-center">
+            <i class="fa-solid fa-list-ul text-3xl text-gray-100 dark:text-white/5 mb-3"></i>
+            <p class="text-sm text-gray-400 dark:text-gray-500">La cola está vacía</p>
+            <p class="text-xs text-gray-300 dark:text-gray-600 mt-1">Añade canciones desde la búsqueda</p>
+          </div>
+        </template>
+        <template x-if="status.queue && status.queue.length > 0">
+          <div class="space-y-0.5">
+            <template x-for="(track, idx) in status.queue.slice(0, 8)" :key="idx">
+              <div class="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                <span class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-purple-500/10 dark:bg-purple-500/20 text-xs font-black text-purple-600 dark:text-purple-300" x-text="idx + 1"></span>
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-semibold text-gray-900 dark:text-white" x-text="track.title"></p>
+                  <p class="truncate text-xs text-gray-400 dark:text-gray-500" x-text="track.author"></p>
+                </div>
+              </div>
+            </template>
+            <template x-if="status.queue.length > 8">
+              <p class="text-center text-xs text-gray-400 dark:text-gray-500 pt-2 pb-1" x-text="'+ ' + (status.queue.length - 8) + ' más en cola'"></p>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Top del servidor (persistido en DB) -->
+    <div class="rounded-2xl bg-white shadow-lg dark:bg-[#090e2c] transition-colors duration-300">
+      <div class="px-6 py-5 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <i class="fa-solid fa-trophy text-yellow-500"></i>
+            Top del servidor
+          </h3>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Histórico de todas las sesiones</p>
+        </div>
+        <button @click="fetchTop()"
+          class="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-all hover:scale-105 active:scale-95">
+          <i class="fa-solid fa-rotate-right text-xs" :class="topLoading ? 'animate-spin' : ''"></i>
+        </button>
+      </div>
+      <div class="p-4">
+        <template x-if="topLoading">
+          <div class="space-y-2">
+            <template x-for="i in [1,2,3,4,5]" :key="i">
+              <div class="flex items-center gap-3 rounded-xl px-3 py-2.5">
+                <div class="w-5 h-4 rounded bg-gray-100 dark:bg-white/5 animate-pulse flex-shrink-0"></div>
+                <div class="h-10 w-10 rounded-lg bg-gray-100 dark:bg-white/5 flex-shrink-0 animate-pulse"></div>
+                <div class="flex-1 space-y-1.5">
+                  <div class="h-3 rounded-full bg-gray-100 dark:bg-white/5 animate-pulse w-3/4"></div>
+                  <div class="h-2.5 rounded-full bg-gray-100 dark:bg-white/5 animate-pulse w-1/2"></div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </template>
+        <template x-if="!topLoading && topTracks.length === 0">
+          <div class="flex flex-col items-center justify-center py-12 text-center">
+            <i class="fa-solid fa-trophy text-4xl text-gray-100 dark:text-white/5 mb-3"></i>
+            <p class="text-sm text-gray-400 dark:text-gray-500">Aún no hay datos</p>
+            <p class="text-xs text-gray-300 dark:text-gray-600 mt-1">Reproduce canciones para ver el top</p>
+          </div>
+        </template>
+        <template x-if="!topLoading && topTracks.length > 0">
+          <div class="space-y-1">
+            <template x-for="(track, idx) in topTracks" :key="idx">
+              <div class="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                <span class="w-5 text-center text-sm flex-shrink-0"
+                  x-text="idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1)"></span>
+                <img :src="track.artwork || 'https://png.pngtree.com/png-vector/20190830/ourlarge/pngtree-music-icon-design-vector-png-image_1714137.jpg'"
+                  :alt="track.title" class="h-10 w-10 rounded-lg object-cover flex-shrink-0 shadow-sm" />
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-semibold text-gray-900 dark:text-white" x-text="track.title"></p>
+                  <p class="truncate text-xs text-gray-400 dark:text-gray-500" x-text="track.author"></p>
+                </div>
+                <span class="inline-flex items-center gap-1 rounded-full bg-yellow-500/10 dark:bg-yellow-500/20 px-2 py-0.5 text-xs font-bold text-yellow-700 dark:text-yellow-300 flex-shrink-0">
+                  <i class="fa-solid fa-play text-[9px]"></i>
+                  <span x-text="track.count + 'x'"></span>
+                </span>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       FILA 6: HISTORIAL (persistido en DB)
+  ══════════════════════════════════════════════════════════ -->
+  <div class="rounded-2xl bg-white shadow-lg dark:bg-[#090e2c] transition-colors duration-300">
+    <div class="px-6 py-5 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
+      <div>
+        <h3 class="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <i class="fa-solid fa-clock-rotate-left text-purple-500"></i>
+          Reproducidas recientemente
+        </h3>
+        <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Historial persistido entre sesiones</p>
+      </div>
+      <button @click="fetchHistory()"
+        class="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-all hover:scale-105 active:scale-95">
+        <i class="fa-solid fa-rotate-right text-xs" :class="historyLoading ? 'animate-spin' : ''"></i>
+      </button>
+    </div>
+    <div class="p-4">
+      <template x-if="historyLoading">
+        <div class="space-y-2">
+          <% for(let i = 0; i < 5; i++) { %>
+          <div class="flex items-center gap-3 rounded-xl px-3 py-2.5">
+            <div class="h-9 w-9 rounded-lg bg-gray-100 dark:bg-white/5 animate-pulse flex-shrink-0"></div>
+            <div class="flex-1 space-y-1.5">
+              <div class="h-3 rounded-full bg-gray-100 dark:bg-white/5 animate-pulse w-3/4"></div>
+              <div class="h-2.5 rounded-full bg-gray-100 dark:bg-white/5 animate-pulse w-1/2"></div>
+            </div>
+            <div class="h-3 w-14 rounded-full bg-gray-100 dark:bg-white/5 animate-pulse flex-shrink-0"></div>
+          </div>
+          <% } %>
+        </div>
+      </template>
+      <template x-if="!historyLoading && history.length === 0">
+        <div class="flex flex-col items-center justify-center py-12 text-center">
+          <i class="fa-solid fa-clock-rotate-left text-4xl text-gray-100 dark:text-white/5 mb-3"></i>
+          <p class="text-sm text-gray-400 dark:text-gray-500">Sin historial aún</p>
+          <p class="text-xs text-gray-300 dark:text-gray-600 mt-1">Se guarda automáticamente al reproducir</p>
+        </div>
+      </template>
+      <template x-if="!historyLoading && history.length > 0">
+        <div class="overflow-x-auto">
+          <table class="min-w-full">
+            <thead>
+              <tr class="border-b border-gray-100 dark:border-white/5">
+                <th class="p-3 text-left text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 w-8">#</th>
+                <th class="p-3 text-left text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500">Canción</th>
+                <th class="p-3 text-left text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 hidden sm:table-cell">Artista</th>
+                <th class="p-3 text-left text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 hidden md:table-cell">Duración</th>
+                <th class="p-3 text-right text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500">Cuándo</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50 dark:divide-white/5">
+              <template x-for="(track, idx) in history" :key="idx">
+                <tr class="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                  <td class="p-3 text-xs font-bold text-gray-300 dark:text-white/20" x-text="idx + 1"></td>
+                  <td class="p-3">
+                    <div class="flex items-center gap-3">
+                      <img :src="track.artwork || 'https://png.pngtree.com/png-vector/20190830/ourlarge/pngtree-music-icon-design-vector-png-image_1714137.jpg'"
+                        :alt="track.title" class="h-9 w-9 rounded-lg object-cover flex-shrink-0 shadow-sm" />
+                      <p class="truncate text-sm font-semibold text-gray-900 dark:text-white max-w-xs" x-text="track.title"></p>
+                    </div>
+                  </td>
+                  <td class="p-3 hidden sm:table-cell">
+                    <p class="text-sm text-gray-500 dark:text-gray-400 truncate max-w-[140px]" x-text="track.author"></p>
+                  </td>
+                  <td class="p-3 hidden md:table-cell">
+                    <p class="text-xs text-gray-400 dark:text-gray-500 font-medium" x-text="formatTime(track.duration)"></p>
+                  </td>
+                  <td class="p-3 text-right whitespace-nowrap">
+                    <span class="text-xs text-gray-400 dark:text-gray-500" x-text="formatRelative(track.played_at)"></span>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </template>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       STICKY PLAYER INFERIOR
+  ══════════════════════════════════════════════════════════ -->
+  <div id="music-sticky-anchor" class="w-full"></div>
+  <div id="music-sticky-bar" class="fixed bottom-4 z-50 pointer-events-none" style="left:0;width:200px">
+    <div class="pointer-events-auto relative overflow-hidden rounded-2xl bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl shadow-2xl border border-white/30 dark:border-white/5">
+      <template x-if="status.active && status.current">
+        <div class="absolute top-0 left-0 right-0 h-0.5 bg-gray-200/50 dark:bg-white/10 cursor-pointer z-10" @click="seekTrack($event)">
+          <div class="h-full bg-purple-500 transition-all duration-500" :style="'width:' + getProgress() + '%'"></div>
+        </div>
+      </template>
+      <div class="px-5 py-3.5">
+        <template x-if="!status.active">
+          <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="h-9 w-9 rounded-lg bg-gray-100 dark:bg-white/5 flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-headphones text-gray-400 text-sm"></i>
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-gray-500 dark:text-gray-400">Sin reproducción activa</p>
+                <p class="text-xs text-gray-400 dark:text-gray-500">Reproduce una canción en Discord</p>
+              </div>
+            </div>
+            <span :class="isConnected ? 'bg-green-500/10 text-green-700 dark:bg-green-500/20 dark:text-green-300' : 'bg-red-500/10 text-red-700 dark:bg-red-500/20 dark:text-red-300'"
+              class="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold flex-shrink-0">
+              <i :class="isConnected ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark'"></i>
+              <span x-text="isConnected ? 'Conectado' : 'Desconectado'"></span>
+            </span>
+          </div>
+        </template>
+        <template x-if="status.active && status.current">
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3 w-64 flex-shrink-0 min-w-0">
+              <img :src="status.current.artwork || 'https://png.pngtree.com/png-vector/20190830/ourlarge/pngtree-music-icon-design-vector-png-image_1714137.jpg'"
+                class="h-11 w-11 rounded-lg object-cover shadow flex-shrink-0" />
+              <div class="min-w-0">
+                <p class="truncate text-sm font-bold text-gray-900 dark:text-white" x-text="status.current.title"></p>
+                <p class="truncate text-xs text-gray-500 dark:text-gray-400" x-text="status.current.author"></p>
+              </div>
+            </div>
+            <div class="flex flex-col items-center gap-1.5 flex-1">
+              <div class="flex items-center gap-2">
+                <button @click="executeAction('music:TOGGLE_PAUSE')" :disabled="isLoadingAction || !status.paused"
+                  class="flex h-8 w-8 items-center justify-center rounded-full bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-300 transition-all hover:scale-110 active:scale-95 disabled:opacity-30 disabled:scale-100">
+                  <i class="fa-solid fa-play text-xs ml-0.5"></i>
+                </button>
+                <button @click="executeAction('music:TOGGLE_PAUSE')" :disabled="isLoadingAction || status.paused"
+                  class="flex h-8 w-8 items-center justify-center rounded-full bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 transition-all hover:scale-110 active:scale-95 disabled:opacity-30 disabled:scale-100">
+                  <i class="fa-solid fa-pause text-xs"></i>
+                </button>
+                <button @click="executeAction('music:SKIP_TRACK')" :disabled="isLoadingAction"
+                  class="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all hover:scale-110 active:scale-95 disabled:opacity-40">
+                  <i class="fa-solid fa-forward-step text-xs"></i>
+                </button>
+                <button @click="executeAction('music:STOP_PLAYER')" :disabled="isLoadingAction"
+                  class="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-500/10 transition-all hover:scale-110 active:scale-95 disabled:opacity-40">
+                  <i class="fa-solid fa-stop text-[10px]"></i>
+                </button>
+              </div>
+              <div class="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 dark:text-gray-500">
+                <span x-text="formatTime(currentPosition)"></span>
+                <span class="text-gray-200 dark:text-white/10">/</span>
+                <span x-text="formatTime(status.current.duration || 0)"></span>
+              </div>
+            </div>
+            <div class="hidden sm:flex items-center gap-2 w-48 flex-shrink-0 justify-end">
+              <i class="fa-solid fa-volume-low text-[11px] text-gray-400 flex-shrink-0"></i>
+              <input type="range" min="0" max="100" :value="status.volume" @change="setVolume($event.target.value)"
+                class="w-24 accent-purple-500 cursor-pointer" />
+              <span class="text-[11px] font-bold text-gray-400 dark:text-gray-500 w-7 text-right flex-shrink-0" x-text="status.volume + '%'"></span>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <div class="h-24"></div>
+
+</section>
+
+<script>
+  (function positionStickyPlayer() {
+    function update() {
+      const anchor = document.getElementById('music-sticky-anchor');
+      const bar = document.getElementById('music-sticky-bar');
+      if (!anchor || !bar) return;
+      const rect = anchor.getBoundingClientRect();
+      bar.style.left = (rect.left + window.scrollX) + 'px';
+      bar.style.width = rect.width + 'px';
+    }
+    update();
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update);
+    setTimeout(update, 100);
+    setTimeout(update, 500);
+  })();
+</script>

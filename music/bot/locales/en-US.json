@@ -1,0 +1,59 @@
+{
+  "PLAY": {
+    "DESCRIPTION": "Reproduce una canción o playlist de YouTube/Spotify.",
+    "SONG_DESC": "Nombre o URL de la canción",
+    "TRACK_ADDED": "Canción añadida a la cola",
+    "PLAYLIST_ADDED": "Playlist añadida a la cola",
+    "TRACKS": "canciones",
+    "REQUESTER": "Solicitado por"
+  },
+  "SKIP": {
+    "DESCRIPTION": "Salta la canción actual.",
+    "SUCCESS": "Se ha saltado la canción actual."
+  },
+  "STOP": {
+    "DESCRIPTION": "Detiene la música y saca al bot del canal.",
+    "SUCCESS": "Reproducción detenida y cola limpiada."
+  },
+  "PAUSE": {
+    "DESCRIPTION": "Pausa la reproducción actual.",
+    "SUCCESS": "Reproducción pausada correctamente.",
+    "ALREADY_PAUSED": "La música ya está pausada."
+  },
+  "RESUME": {
+    "DESCRIPTION": "Reanuda la música pausada.",
+    "SUCCESS": "Reproducción reanudada.",
+    "ALREADY_RESUMED": "La música ya se está reproduciendo."
+  },
+  "VOLUME": {
+    "DESCRIPTION": "Ajusta el volumen del bot.",
+    "VALUE_DESC": "Nivel de volumen (0-100)",
+    "CURRENT": "Volumen actual",
+    "INVALID_RANGE": "Por favor, introduce un número entre 0 y 100.",
+    "SUCCESS": "Nuevo volumen establecido"
+  },
+  "LOOP": {
+    "DESCRIPTION": "Cambia el modo de repetición.",
+    "MODE_DESC": "Modo de repetición (pista, cola o desactivado)",
+    "TRACK": "Repetición de la pista actual activada.",
+    "QUEUE": "Repetición de la cola activada.",
+    "OFF": "Repetición desactivada."
+  },
+  "QUEUE": {
+    "DESCRIPTION": "Muestra la lista de canciones en espera.",
+    "TITLE": "Lista de reproducción",
+    "CURRENT": "Reproduciendo ahora:",
+    "UP_NEXT": "Siguientes canciones:",
+    "EMPTY": "No hay más canciones en la cola."
+  },
+  "SEARCH": {
+    "DESCRIPTION": "Busca una canción y reproduce el primer resultado.",
+    "QUERY_DESC": "Término de búsqueda",
+    "SUCCESS": "Resultado encontrado y añadido"
+  },
+  "ERRORS": {
+    "NO_VOICE": "❌ ¡Debes estar en un canal de voz para usar este comando!",
+    "NO_PLAYER": "❌ No hay música reproduciéndose en este servidor.",
+    "NO_RESULTS": "❌ No se encontraron resultados para tu búsqueda."
+  }
+}
